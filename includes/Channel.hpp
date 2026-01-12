@@ -4,6 +4,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 struct MemberInfo {
   int fd;
@@ -32,6 +33,26 @@ class Channel {
 
   void addUser(std::string nickname);
   void delUser(std::string nickname);
+  std::unordered_map<std::string, MemberInfo> getUsers() const;
+
+  int promoteToOp(std::string prompter, std::string target);
+
+  void setInvite(bool value);
+  bool getInvite() const;
+  void inviteUser(std::string nickname);
+
+  void setTopicMode(bool value);
+  bool getTopicMode() const;
+  void setTopic(std::string topic);
+  std::string getTopic() const;
+
+  void setKey(std::string newKey);
+  std::string getKey() const;
+
+  // in rfc 2812 section 3.2.3 `MODE #42 -k oulu` is the
+  // command to remove the "oulu" channel key on channel #42
+  // but in ngircd it does not need to remove key.
+  void removeKey(std::string currentKey);
 };
 
 #endif
