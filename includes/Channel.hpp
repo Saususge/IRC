@@ -5,7 +5,8 @@
 #include <string>
 #include <unordered_map>
 
-struct MemberState {
+struct MemberInfo {
+  int fd;
   bool voice;  // unnessary variable for ft-irc
   bool op;
 };
@@ -23,7 +24,7 @@ class Channel {
   std::string key;
   int userLimit;
 
-  std::unordered_map<std::string, MemberState> users;
+  std::unordered_map<std::string, MemberInfo> users;
 
  public:
   Channel();
