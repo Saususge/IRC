@@ -12,6 +12,8 @@ struct MemberInfo {
   bool op;
 };
 
+typedef std::unordered_map<std::string, MemberInfo>::iterator mIter;
+
 class Channel {
  private:
   // i(invite only), t(restrictions of topic), k(channel key),
@@ -31,9 +33,9 @@ class Channel {
   Channel();
   ~Channel();
 
-  int addUser(std::string nickname, int fd);
+  int addUser(std::string nickname, int fd, bool isCreator = false);
   int delUser(std::string nickname);
-  int getUserInfo(std::string nickname, MemberInfo* info);
+  int getUserInfo(std::string nickname, MemberInfo* info = NULL);
   const std::unordered_map<std::string, MemberInfo>& getUsers() const;
 
   int promoteToOp(std::string prompter, std::string target);
