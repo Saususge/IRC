@@ -31,9 +31,10 @@ class Channel {
   Channel();
   ~Channel();
 
-  void addUser(std::string nickname);
-  void delUser(std::string nickname);
-  std::unordered_map<std::string, MemberInfo> getUsers() const;
+  int addUser(std::string nickname, int fd);
+  int delUser(std::string nickname);
+  int getUserInfo(std::string nickname, MemberInfo* info);
+  const std::unordered_map<std::string, MemberInfo>& getUsers() const;
 
   int promoteToOp(std::string prompter, std::string target);
 
