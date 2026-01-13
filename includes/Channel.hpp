@@ -38,6 +38,9 @@ class Channel {
   int getUserInfo(std::string nickname, MemberInfo* info = NULL);
   const std::unordered_map<std::string, MemberInfo>& getUsers() const;
 
+  // OPER <name> <password>
+  int promoteToOp(std::string nickname);
+  // MODE <chan> +o <nick>
   int promoteToOp(std::string prompter, std::string target);
 
   void setInvite(bool value);

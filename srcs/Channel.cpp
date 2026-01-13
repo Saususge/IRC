@@ -38,7 +38,23 @@ const std::unordered_map<std::string, MemberInfo>& Channel::getUsers() const {
   return users;
 }
 
-int Channel::promoteToOp(std::string prompter, std::string target) {}
+int Channel::promoteToOp(std::string prompter, std::string target) {
+  MemberInfo* info;
+  if (getUserInfo(prompter, info) == -1) return -1;
+
+  if (info->op == false) {
+#ifdef DEBUG
+    std::cerr << "User " << prompter << " is not channel operator."
+              << std::endl;
+#endif
+    return -2;
+  }
+
+  if (getUserInfo(target, info)) return -1;
+
+  info->op = true;
+  return 1;
+}
 
 void Channel::setInvite(bool value) {}
 bool Channel::getInvite() const {}
