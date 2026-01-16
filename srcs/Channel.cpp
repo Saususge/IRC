@@ -56,9 +56,26 @@ int Channel::promoteToOp(std::string prompter, std::string target) {
   return 1;
 }
 
-void Channel::setInvite(bool value) {}
-bool Channel::getInvite() const {}
-void Channel::inviteUser(std::string nickname) {}
+int Channel::setInvite(bool value) {
+  if (value == inviteOnly) return 0;  // do nothing
+
+  inviteOnly = value;
+  return 1;
+}
+bool Channel::getInvite() const { return inviteOnly; }
+int Channel::inviteUser(std::string opNick, std::string target) {
+  MemberInfo* info;
+
+  if (getUserInfo(target, info) == -1) return -1;
+
+  if (info->op == false) {
+#ifdef DEBUG
+    std::cerr << "User " << opNick << " is not operator." << std::endl;
+#endif
+    return -2;
+  }
+  invitedUsers.insert(target);
+}
 
 void Channel::setTopicMode(bool value) {}
 bool Channel::getTopicMode() const {}

@@ -43,9 +43,9 @@ class Channel {
   // MODE <chan> +o <nick>
   int promoteToOp(std::string prompter, std::string target);
 
-  void setInvite(bool value);
+  int setInvite(bool value);
   bool getInvite() const;
-  void inviteUser(std::string nickname);
+  int inviteUser(std::string opNick, std::string target);
 
   void setTopicMode(bool value);
   bool getTopicMode() const;
