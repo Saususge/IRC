@@ -6,8 +6,23 @@
 #include <unordered_map>
 #include <vector>
 
+struct User {
+  // other users see in channels. unique on the network, can change while
+  // connected.
+  std::string nickname;
+
+  // idnet. comes from the client's connection/login; servers use it to identify
+  // the account or system user behind the session and is part of the prefix
+  // nick!username@host
+  std::string username;
+
+  // purely descriptive metadata that apperars in WHOIS output.
+  std::string realname;
+};
+
 struct MemberInfo {
   int fd;
+  User& user;
   bool voice;  // unnessary variable for ft-irc
   bool op;
 };
@@ -33,26 +48,26 @@ class Channel {
   Channel();
   ~Channel();
 
-  int addUser(std::string nickname, int fd, bool isCreator = false);
-  int delUser(std::string nickname);
+  int addUser(int fd, User& user, bool isCreator = false);
+  int delUser(User user);
   int getUserInfo(std::string nickname, MemberInfo* info = NULL);
   const std::unordered_map<std::string, MemberInfo>& getUsers() const;
 
   // OPER <name> <password>
-  int promoteToOp(std::string nickname);
+  int promoteToOp(User user);
   // MODE <chan> +o <nick>
-  int promoteToOp(std::string prompter, std::string target);
+  int promoteToOp(User user, std::string targetNick);
 
-  int setInvite(bool value);
+  int setInvite(User user, bool value);
   bool getInvite() const;
-  int inviteUser(std::string opNick, std::string target);
+  int inviteUser(User user, std::string targetNick);
 
-  void setTopicMode(bool value);
+  void setTopicMode(User user, bool value);
   bool getTopicMode() const;
-  void setTopic(std::string topic);
+  void setTopic(User user, std::string topic);
   std::string getTopic() const;
 
-  void setKey(std::string newKey);
+  void setKey(User user, std::string newKey);
   std::string getKey() const;
 
   // in rfc 2812 section 3.2.3 `MODE #42 -k oulu` is the

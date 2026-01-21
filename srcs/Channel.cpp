@@ -1,23 +1,28 @@
 #include "Channel.hpp"
 
-Channel::Channel() {}
+Channel::Channel() {
+  inviteOnly = false;
+  restrictTopic = false;
+  topic = "";
+  key = "";
+}
 
 Channel::~Channel() {}
 
-int Channel::addUser(std::string nickname, int fd, bool isCreator) {
-  if (getUserInfo(nickname) == 1) {
+int Channel::addUser(int fd, User& user, bool isCreator) {
+  if (getUserInfo(user.nickname) == 1) {
 #ifdef DEBUG
     std::cerr << "User " << nickname << " already exists." << std::endl;
 #endif
     return -1;
   }
-  users.emplace(nickname, (MemberInfo){fd, false, isCreator});
+  users.emplace(user.nickname, (MemberInfo){fd, user, false, isCreator});
   return 1;
 }
-int Channel::delUser(std::string nickname) {
-  if (getUserInfo(nickname) == -1) return -1;
+int Channel::delUser(User user) {
+  if (getUserInfo(user.nickname) == -1) return -1;
 
-  users.erase(nickname);
+  users.erase(user.nickname);
   return 1;
 }
 
@@ -38,9 +43,9 @@ const std::unordered_map<std::string, MemberInfo>& Channel::getUsers() const {
   return users;
 }
 
-int Channel::promoteToOp(std::string prompter, std::string target) {
+int Channel::promoteToOp(User user, std::string target) {
   MemberInfo* info;
-  if (getUserInfo(prompter, info) == -1) return -1;
+  if (getUserInfo(user.nickname, info) == -1) return -1;
 
   if (info->op == false) {
 #ifdef DEBUG
@@ -56,16 +61,19 @@ int Channel::promoteToOp(std::string prompter, std::string target) {
   return 1;
 }
 
-int Channel::setInvite(bool value) {
+int Channel::setInvite(User user, bool value) {
+  (void)user;                         // TODO: check fd is operator
   if (value == inviteOnly) return 0;  // do nothing
 
   inviteOnly = value;
   return 1;
 }
 bool Channel::getInvite() const { return inviteOnly; }
-int Channel::inviteUser(std::string opNick, std::string target) {
+
+int Channel::inviteUser(User user, std::string target) {
   MemberInfo* info;
 
+  (void)user;  // TODO: check fd is operator
   if (getUserInfo(target, info) == -1) return -1;
 
   if (info->op == false) {
@@ -77,10 +85,23 @@ int Channel::inviteUser(std::string opNick, std::string target) {
   invitedUsers.insert(target);
 }
 
-void Channel::setTopicMode(bool value) {}
-bool Channel::getTopicMode() const {}
-void Channel::setTopic(std::string topic) {}
-std::string Channel::getTopic() const {}
+void Channel::setTopicMode(User user, bool value) {  // not implemented
+  (void)user;
+  (void)value;
+}
 
-void Channel::setKey(std::string newKey) {}
-std::string Channel::getKey() const {}
+bool Channel::getTopicMode() const { return restrictTopic; }
+
+void Channel::setTopic(User user, std::string topic) {  // not implemented
+  (void)user;
+  (void)topic;
+}
+
+std::string Channel::getTopic() const { return topic; }
+
+void Channel::setKey(User user, std::string newKey) {  // not implemented
+  (void)user;
+  (void)newKey;
+}
+
+std::string Channel::getKey() const { return key; }
