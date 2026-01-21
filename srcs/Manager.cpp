@@ -36,6 +36,7 @@ int Manager::doRequest(std::string request, int fd) {
     std::cout << "nick" << std::endl;
   } else if (cmd == "user") {
     std::cout << "user" << std::endl;
+    users.insert(std::pair<int, User>(fd, User(tokVec[1], tokVec[1], tokVec[4])));
   } else if (cmd == "pass") {
     std::cout << "pass" << std::endl;
   } else if (cmd == "join") {
@@ -44,7 +45,7 @@ int Manager::doRequest(std::string request, int fd) {
       channels.insert(std::pair<std::string, Channel>(tokVec[1], Channel()));
     }
 
-    Channel channel = channels.find(tokVec[1])->second;
+    Channel &channel = channels.find(tokVec[1])->second;
 
     channel.addUser(fd, &(users.find(fd)->second));
   }

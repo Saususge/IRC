@@ -12,13 +12,17 @@ Channel::~Channel() {}
 int Channel::addUser(int fd, User* user, bool isCreator) {
   if (getUserInfo(user->nickname) == 1) {
 #ifdef DEBUG
-    std::cerr << "User " << nickname << " already exists." << std::endl;
+    std::cerr << "User " << user->nickname << " already exists." << std::endl;
 #endif
     return -1;
   }
   users.insert(std::pair<std::string, MemberInfo>(user->nickname, MemberInfo(fd, user, isCreator)));
+#ifdef DEBUG
+    std::cerr << "User " << user->nickname << " joined to the channel." << std::endl;
+#endif
   return 1;
 }
+
 int Channel::delUser(User user) {
   if (getUserInfo(user.nickname) == -1) return -1;
 
@@ -35,7 +39,7 @@ int Channel::getUserInfo(std::string nickname, MemberInfo* info) {
     return -1;
   }
 
-  if (info != NULL) info = &(memberIter->second);
+  if (info != NULL) *info = memberIter->second;
   return 1;
 }
 
@@ -49,13 +53,13 @@ int Channel::promoteToOp(User user, std::string target) {
 
   if (info.op == false) {
 #ifdef DEBUG
-    std::cerr << "User " << prompter << " is not channel operator."
+    std::cerr << "User " << user.nickname << " is not channel operator."
               << std::endl;
 #endif
     return -2;
   }
 
-  if (getUserInfo(target, &info)) return -1;
+  if (getUserInfo(target, &info) == -1) return -1;
 
   info.op = true;
   return 1;
@@ -78,7 +82,7 @@ int Channel::inviteUser(User user, std::string target) {
 
   if (info.op == false) {
 #ifdef DEBUG
-    std::cerr << "User " << opNick << " is not operator." << std::endl;
+    std::cerr << "User " << user.nickname << " is not operator." << std::endl;
 #endif
     return -2;
   }

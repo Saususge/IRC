@@ -5,6 +5,9 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <iostream>
+
+#define DEBUG
 
 struct User {
   // other users see in channels. unique on the network, can change while
@@ -18,6 +21,9 @@ struct User {
 
   // purely descriptive metadata that apperars in WHOIS output.
   std::string realname;
+
+  User(std::string nickname, std::string username, std::string realname)
+    : nickname(nickname), username(username), realname(realname) {}
 };
 
 struct MemberInfo {
