@@ -31,6 +31,10 @@ class Server
 
 		std::vector<struct pollfd> _pollFds;
 		std::map<int, std::string> _inbuf;
+		std::map<int, std::string> _outbuf;
+		void queueMessage(int fd, const std::string &msg);
+		void handleClientWritable(size_t pollIndex);
+		void updatePollEvents(int fd);
 };
 
 #endif

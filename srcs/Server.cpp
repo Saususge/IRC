@@ -1,10 +1,12 @@
 #include "Server.hpp"
 #include "utils.hpp"
+#include "numeric.hpp"
 
 #include <iostream>
 #include <cstdlib>
 #include <cerrno>
 #include <cstring>
+#include <sstream> 
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -65,8 +67,10 @@ void Server::closeClient(size_t pollIndex)
 {
 	int fd = _pollFds[pollIndex].fd;
 	_inbuf.erase(fd);
+	_outbuf.erase(fd);
 	::close(fd);
 	_pollFds.erase(_pollFds.begin() + pollIndex);
+	
 }
 
 void Server::acceptClients()
@@ -98,14 +102,22 @@ void Server::acceptClients()
 
 void Server::onLine(int fd, const std::string &line)
 {
-	// Starter behavior: log. Next step is IRC parsing (PASS/NICK/USER/etc.).
-	std::cout << "fd=" << fd << " << " << line << std::endl;
+	std::stringstream ss;
+
+	std::cout << "fd=" << fd << " << " << line << std::endl;	
+	std::string command, param;
+	ss >> command >> param;
+	if (command == "PASS")
+	{
+		if (param == this->_password)
+
+	}
 }
 
 void Server::handleClientReadable(size_t pollIndex)
 {
 	int fd = _pollFds[pollIndex].fd;
-	char buf[4096];
+	char buf[6974];
 
 	while (true)
 	{
@@ -125,7 +137,6 @@ void Server::handleClientReadable(size_t pollIndex)
 
 		_inbuf[fd].append(buf, n);
 
-		// Extract complete lines. RFC uses CRLF, but accept LF too.
 		while (true)
 		{
 			std::string &acc = _inbuf[fd];
@@ -165,24 +176,94 @@ void Server::run()
 				continue;
 			}
 
-			if (!(_pollFds[i].revents & POLLIN))
-			{
-				++i;
-				continue;
-			}
-
 			if (fd == _serverFd)
 			{
-				acceptClients();
+				if (_pollFds[i].revents & POLLIN)
+					acceptClients();
 				++i;
 				continue;
 			}
 
-			handleClientReadable(i);
+			if (_pollFds[i].revents & POLLIN)
+				handleClientReadable(i);
+
+			// handleClientReadable() may have closed the client (and erased this poll entry).
+			if (i >= _pollFds.size() || _pollFds[i].fd != fd)
+				continue;
+
+			if (_pollFds[i].revents & POLLOUT)
+				handleClientWritable(i);
 
 			// If the client got closed, the current index now points to the next fd.
 			if (i < _pollFds.size() && _pollFds[i].fd == fd)
 				++i;
 		}
 	}
+}
+
+void Server::queueMessage(int fd, const std::string &msg)
+{
+	_outbuf[fd] += msg + "\r\n";
+	updatePollEvents(fd);
+}
+
+void Server::handleClientWritable(size_t pollIndex)
+{
+	int fd = _pollFds[pollIndex].fd;
+    std::cout << "[DEBUG] handleClientWritable fd=" << fd 
+              << " bufsize=" << _outbuf[fd].size() << std::endl;
+
+	std::map<int, std::string>::iterator it = _outbuf.find(fd);
+	if (it == _outbuf.end() || it->second.empty())
+	{
+		updatePollEvents(fd);
+		return;
+	}
+
+	while (!it->second.empty())
+	{
+		ssize_t n = ::send(fd, it->second.data(), it->second.size(), 0);
+		if (n < 0)
+		{
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+				break;
+			closeClient(pollIndex);
+			return;
+		}
+		if (n == 0)
+			break;
+		it->second.erase(0, static_cast<std::string::size_type>(n));
+	}
+
+	updatePollEvents(fd);
+}
+void Server::updatePollEvents(int fd)
+{
+    // 1. fd를 찾기
+    size_t i;
+    for (i = 0; i < _pollFds.size(); ++i)
+    {
+        if (_pollFds[i].fd == fd)
+            break;
+    }
+    
+    // 2. Guard: 못 찾으면 조기 반환
+    if (i == _pollFds.size())
+    {
+        std::cerr << "[ERROR] fd=" << fd << " not found in _pollFds" << std::endl;
+        return;  // 또는 assert(false);
+    }
+    
+    // 3. Happy Path: 정상 로직
+    short events = POLLIN;
+    std::map<int, std::string>::const_iterator it = _outbuf.find(fd);
+    if (it != _outbuf.end() && !it->second.empty())
+        events |= POLLOUT;
+    _pollFds[i].events = events;
+    
+    // 4. 성공 로그 (실제로 설정 후)
+    std::cout << "[DEBUG] fd=" << fd << " events set to: " 
+              << (events & POLLIN ? "POLLIN " : "")
+              << (events & POLLOUT ? "POLLOUT" : "") 
+              << std::endl;
 }
