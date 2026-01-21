@@ -6,6 +6,8 @@
 # include <map>
 # include <poll.h>
 
+#include "Manager.hpp"
+
 class Server
 {
 	public:
@@ -31,6 +33,8 @@ class Server
 
 		std::vector<struct pollfd> _pollFds;
 		std::map<int, std::string> _inbuf;
+
+		Manager manager;
 };
 
 #endif

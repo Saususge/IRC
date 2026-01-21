@@ -3,7 +3,7 @@
 
 #include <set>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 struct User {
@@ -22,12 +22,15 @@ struct User {
 
 struct MemberInfo {
   int fd;
-  User& user;
+  User* user;
   bool voice;  // unnessary variable for ft-irc
   bool op;
+
+  MemberInfo() : user(NULL) {}
+  MemberInfo(int fd, User* user, bool op) : fd(fd), user(user), voice(false), op(op) {}
 };
 
-typedef std::unordered_map<std::string, MemberInfo>::iterator mIter;
+typedef std::map<std::string, MemberInfo>::iterator mIter;
 
 class Channel {
  private:
@@ -42,16 +45,16 @@ class Channel {
   std::string key;
   int userLimit;
 
-  std::unordered_map<std::string, MemberInfo> users;
+  std::map<std::string, MemberInfo> users;
 
  public:
   Channel();
   ~Channel();
 
-  int addUser(int fd, User& user, bool isCreator = false);
+  int addUser(int fd, User* user, bool isCreator = false);
   int delUser(User user);
   int getUserInfo(std::string nickname, MemberInfo* info = NULL);
-  const std::unordered_map<std::string, MemberInfo>& getUsers() const;
+  const std::map<std::string, MemberInfo>& getUsers() const;
 
   // OPER <name> <password>
   int promoteToOp(User user);

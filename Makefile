@@ -8,7 +8,10 @@ INCLUDES := -Iincludes
 SRCS := \
 	main.cpp \
 	srcs/Server.cpp \
-	srcs/utils.cpp
+	srcs/utils.cpp \
+	srcs/Channel.cpp \
+	srcs/Manager.cpp
+
 
 OBJS := $(SRCS:.cpp=.o)
 

@@ -100,6 +100,7 @@ void Server::onLine(int fd, const std::string &line)
 {
 	// Starter behavior: log. Next step is IRC parsing (PASS/NICK/USER/etc.).
 	std::cout << "fd=" << fd << " << " << line << std::endl;
+	manager.doRequest(line, fd);
 }
 
 void Server::handleClientReadable(size_t pollIndex)

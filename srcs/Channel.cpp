@@ -9,14 +9,14 @@ Channel::Channel() {
 
 Channel::~Channel() {}
 
-int Channel::addUser(int fd, User& user, bool isCreator) {
-  if (getUserInfo(user.nickname) == 1) {
+int Channel::addUser(int fd, User* user, bool isCreator) {
+  if (getUserInfo(user->nickname) == 1) {
 #ifdef DEBUG
     std::cerr << "User " << nickname << " already exists." << std::endl;
 #endif
     return -1;
   }
-  users.emplace(user.nickname, (MemberInfo){fd, user, false, isCreator});
+  users.insert(std::pair<std::string, MemberInfo>(user->nickname, MemberInfo(fd, user, isCreator)));
   return 1;
 }
 int Channel::delUser(User user) {
@@ -39,15 +39,15 @@ int Channel::getUserInfo(std::string nickname, MemberInfo* info) {
   return 1;
 }
 
-const std::unordered_map<std::string, MemberInfo>& Channel::getUsers() const {
+const std::map<std::string, MemberInfo>& Channel::getUsers() const {
   return users;
 }
 
 int Channel::promoteToOp(User user, std::string target) {
-  MemberInfo* info;
-  if (getUserInfo(user.nickname, info) == -1) return -1;
+  MemberInfo info;
+  if (getUserInfo(user.nickname, &info) == -1) return -1;
 
-  if (info->op == false) {
+  if (info.op == false) {
 #ifdef DEBUG
     std::cerr << "User " << prompter << " is not channel operator."
               << std::endl;
@@ -55,9 +55,9 @@ int Channel::promoteToOp(User user, std::string target) {
     return -2;
   }
 
-  if (getUserInfo(target, info)) return -1;
+  if (getUserInfo(target, &info)) return -1;
 
-  info->op = true;
+  info.op = true;
   return 1;
 }
 
@@ -71,18 +71,19 @@ int Channel::setInvite(User user, bool value) {
 bool Channel::getInvite() const { return inviteOnly; }
 
 int Channel::inviteUser(User user, std::string target) {
-  MemberInfo* info;
+  MemberInfo info;
 
   (void)user;  // TODO: check fd is operator
-  if (getUserInfo(target, info) == -1) return -1;
+  if (getUserInfo(target, &info) == -1) return -1;
 
-  if (info->op == false) {
+  if (info.op == false) {
 #ifdef DEBUG
     std::cerr << "User " << opNick << " is not operator." << std::endl;
 #endif
     return -2;
   }
   invitedUsers.insert(target);
+  return 1;
 }
 
 void Channel::setTopicMode(User user, bool value) {  // not implemented
