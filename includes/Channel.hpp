@@ -1,11 +1,11 @@
 #ifndef CHANNEL_HPP
 #define CHANNEL_HPP
 
+#include <iostream>
+#include <map>
 #include <set>
 #include <string>
-#include <map>
 #include <vector>
-#include <iostream>
 
 #define DEBUG
 
@@ -22,8 +22,10 @@ struct User {
   // purely descriptive metadata that apperars in WHOIS output.
   std::string realname;
 
+  std::vector<std::string> joinedChannels;
+
   User(std::string nickname, std::string username, std::string realname)
-    : nickname(nickname), username(username), realname(realname) {}
+      : nickname(nickname), username(username), realname(realname) {}
 };
 
 struct MemberInfo {
@@ -33,7 +35,8 @@ struct MemberInfo {
   bool op;
 
   MemberInfo() : user(NULL) {}
-  MemberInfo(int fd, User* user, bool op) : fd(fd), user(user), voice(false), op(op) {}
+  MemberInfo(int fd, User* user, bool op)
+      : fd(fd), user(user), voice(false), op(op) {}
 };
 
 typedef std::map<std::string, MemberInfo>::iterator mIter;
