@@ -9,24 +9,24 @@ Channel::Channel() {
 
 Channel::~Channel() {}
 
-int Channel::addUser(int fd, User* user, bool isCreator) {
-  if (getUserInfo(user->nickname) == 1) {
+int Channel::addUser(int fd, Client* client, bool isCreator) {
+  if (getUserInfo(client->getNickname()) == 1) {
 #ifdef DEBUG
-    std::cerr << "User " << user->nickname << " already exists." << std::endl;
+    std::cerr << "User " << client->getNickname() << " already exists." << std::endl;
 #endif
     return -1;
   }
-  users.insert(std::pair<std::string, MemberInfo>(user->nickname, MemberInfo(fd, user, isCreator)));
+  users.insert(std::pair<std::string, MemberInfo>(client->getNickname(), MemberInfo(fd, client, isCreator)));
 #ifdef DEBUG
-    std::cerr << "User " << user->nickname << " joined to the channel." << std::endl;
+    std::cerr << "User " << client->getNickname() << " joined to the channel." << std::endl;
 #endif
   return 1;
 }
 
-int Channel::delUser(User user) {
-  if (getUserInfo(user.nickname) == -1) return -1;
+int Channel::delUser(Client* client) {
+  if (getUserInfo(client->getNickname()) == -1) return -1;
 
-  users.erase(user.nickname);
+  users.erase(client->getNickname());
   return 1;
 }
 
@@ -47,13 +47,13 @@ const std::map<std::string, MemberInfo>& Channel::getUsers() const {
   return users;
 }
 
-int Channel::promoteToOp(User user, std::string target) {
+int Channel::promoteToOp(Client* client, std::string target) {
   MemberInfo info;
-  if (getUserInfo(user.nickname, &info) == -1) return -1;
+  if (getUserInfo(client->getNickname(), &info) == -1) return -1;
 
   if (info.op == false) {
 #ifdef DEBUG
-    std::cerr << "User " << user.nickname << " is not channel operator."
+    std::cerr << "User " << client->getNickname() << " is not channel operator."
               << std::endl;
 #endif
     return -2;
@@ -65,8 +65,8 @@ int Channel::promoteToOp(User user, std::string target) {
   return 1;
 }
 
-int Channel::setInvite(User user, bool value) {
-  (void)user;                         // TODO: check fd is operator
+int Channel::setInvite(Client* client, bool value) {
+  (void)client;                         // TODO: check fd is operator
   if (value == inviteOnly) return 0;  // do nothing
 
   inviteOnly = value;
@@ -74,15 +74,15 @@ int Channel::setInvite(User user, bool value) {
 }
 bool Channel::getInvite() const { return inviteOnly; }
 
-int Channel::inviteUser(User user, std::string target) {
+int Channel::inviteUser(Client* client, std::string target) {
   MemberInfo info;
 
-  (void)user;  // TODO: check fd is operator
+  (void)client;  // TODO: check fd is operator
   if (getUserInfo(target, &info) == -1) return -1;
 
   if (info.op == false) {
 #ifdef DEBUG
-    std::cerr << "User " << user.nickname << " is not operator." << std::endl;
+    std::cerr << "User " << client->getNickname() << " is not operator." << std::endl;
 #endif
     return -2;
   }
@@ -90,22 +90,22 @@ int Channel::inviteUser(User user, std::string target) {
   return 1;
 }
 
-void Channel::setTopicMode(User user, bool value) {  // not implemented
-  (void)user;
+void Channel::setTopicMode(Client* client, bool value) {  // not implemented
+  (void)client;
   (void)value;
 }
 
 bool Channel::getTopicMode() const { return restrictTopic; }
 
-void Channel::setTopic(User user, std::string topic) {  // not implemented
-  (void)user;
+void Channel::setTopic(Client* client, std::string topic) {  // not implemented
+  (void)client;
   (void)topic;
 }
 
 std::string Channel::getTopic() const { return topic; }
 
-void Channel::setKey(User user, std::string newKey) {  // not implemented
-  (void)user;
+void Channel::setKey(Client* client, std::string newKey) {  // not implemented
+  (void)client;
   (void)newKey;
 }
 
