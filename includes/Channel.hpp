@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include "numeric.hpp"
+
 #define DEBUG
 
 struct User {
