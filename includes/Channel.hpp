@@ -62,7 +62,7 @@ class Channel {
   Channel();
   ~Channel();
 
-  int addUser(int fd, User* user, bool isCreator = false);
+  int addUser(int fd, User* user, bool isCreator = false, std::string key = "");
   int delUser(User user);
   int getUserInfo(std::string nickname, MemberInfo* info = NULL);
   const std::map<std::string, MemberInfo>& getUsers() const;
@@ -81,7 +81,7 @@ class Channel {
   void setTopic(User user, std::string topic);
   std::string getTopic() const;
 
-  void setKey(User user, std::string newKey);
+  int setKey(User user, std::string newKey);
   std::string getKey() const;
 
   // in rfc 2812 section 3.2.3 `MODE #42 -k oulu` is the
