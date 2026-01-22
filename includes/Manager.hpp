@@ -16,7 +16,7 @@ class Manager {
 
  private:
   std::map<int, User> users;
-  std::map<int, User> unregistered;
+  std::map<int, std::string> unregistered;
   std::map<std::string, Channel> channels;
 
   std::string pass;

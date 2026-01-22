@@ -32,11 +32,48 @@ int Manager::doRequest(std::string request, int fd) {
 
   std::string cmd = strToLower(getCommand(tokVec));
 
+  // refactor to switch-case later
   if (cmd == "nick") {
     std::cout << "nick" << std::endl;
+
+    for (std::map<int, std::string>::iterator iter = unregistered.begin();
+         iter != unregistered.end(); iter++) {
+      if (iter->second == tokVec[1]) {
+#ifdef DEBUG
+        std::cerr << "The nickname " << tokVec[1] << " is already exist."
+                  << std::endl;
+#endif
+
+        return -1;
+      }
+    }
+
+    for (std::map<int, User>::iterator iter = users.begin();
+         iter != users.end(); iter++) {
+      if (iter->second.nickname == tokVec[1]) {
+#ifdef DEBUG
+        std::cerr << "The nickname " << tokVec[1] << " is already exist."
+                  << std::endl;
+#endif
+
+        return -1;
+      }
+    }
+
+    unregistered.insert(std::pair<int, std::string>(fd, tokVec[1]));
   } else if (cmd == "user") {
     std::cout << "user" << std::endl;
-    users.insert(std::pair<int, User>(fd, User(tokVec[1], tokVec[1], tokVec[4])));
+    if (unregistered.find(fd) == unregistered.end()) {
+#ifdef DEBUG
+      std::cerr << "The client " << fd << " does not send user request."
+                << std::endl;
+#endif
+      return -1;
+    }
+
+    users.insert(
+        std::pair<int, User>(fd, User(unregistered[fd], tokVec[1], tokVec[4])));
+    unregistered.erase(fd);
   } else if (cmd == "pass") {
     std::cout << "pass" << std::endl;
   } else if (cmd == "join") {
@@ -45,9 +82,10 @@ int Manager::doRequest(std::string request, int fd) {
       channels.insert(std::pair<std::string, Channel>(tokVec[1], Channel()));
     }
 
-    Channel &channel = channels.find(tokVec[1])->second;
+    Channel& channel = channels.find(tokVec[1])->second;
 
     channel.addUser(fd, &(users.find(fd)->second));
   }
+
   return 1;
 }
