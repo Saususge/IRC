@@ -67,8 +67,6 @@ class Channel {
   int getUserInfo(std::string nickname, MemberInfo* info = NULL);
   const std::map<std::string, MemberInfo>& getUsers() const;
 
-  // OPER <name> <password>
-  int promoteToOp(User user);
   // MODE <chan> +o <nick>
   int promoteToOp(User user, std::string targetNick);
 
