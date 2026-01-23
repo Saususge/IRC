@@ -54,7 +54,7 @@ class Channel {
   std::string topic;
 
   std::string key;
-  int userLimit;
+  size_t userLimit;
 
   std::map<std::string, MemberInfo> users;
 
@@ -82,7 +82,7 @@ class Channel {
   int setKey(User user, std::string newKey);
   std::string getKey() const;
 
-  int setUserLimit(User user, int newLimit);
+  int setUserLimit(User user, size_t newLimit);
   int getUserLimit() const;
 
   // in rfc 2812 section 3.2.3 `MODE #42 -k oulu` is the
