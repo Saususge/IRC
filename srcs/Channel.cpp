@@ -5,6 +5,7 @@ Channel::Channel() {
   restrictTopic = false;
   topic = "";
   key = "";
+  userLimit = -1;
 }
 
 Channel::~Channel() {}
@@ -34,8 +35,6 @@ int Channel::addUser(int fd, User* user, bool isCreator, std::string key) {
     return 0;  // DO NOTHING
   }
 
-  if (this->key != "" && this->key != key) return -1;  // ERR_BADCHANNELKEY
-
   if (inviteOnly == true) {
     if (invitedUsers.find(user->nickname) == invitedUsers.end()) {
 #ifdef DEBUG
@@ -43,6 +42,21 @@ int Channel::addUser(int fd, User* user, bool isCreator, std::string key) {
 #endif
       return -1;  // ERR_INVITEONLYCHAN
     }
+  }
+
+  if (this->key != "" && this->key != key) {
+#ifdef DEBUG
+    std::cerr << "The channel key " << key << " is wrong." << std::endl;
+#endif
+    return -1;  // ERR_BADCHANNELKEY
+  }
+
+  if (userLimit != -1 && users.size() >= userLimit) {
+#ifdef DEBUG
+    std::cerr << "The channel is full. Channel limit: " << userLimit
+              << std::endl;
+#endif
+    return -1;  // ERR_CHANNELISFULL
   }
 
   users.insert(std::pair<std::string, MemberInfo>(
