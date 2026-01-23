@@ -105,9 +105,27 @@ int Channel::inviteUser(User user, std::string target) {
   return 1;
 }
 
-void Channel::setTopicMode(User user, bool value) {  // not implemented
-  (void)user;
-  (void)value;
+int Channel::setTopicMode(User user, bool value) {  // not implemented
+  MemberInfo info;
+
+  if (getUserInfo(user.nickname, &info) == -1) {
+#ifdef DEBUG
+    std::cerr << "the user " << user.nickname << " is not in channel."
+              << std::endl;
+#endif
+    return -1;  // ERR_NOTONCHANNEL
+  }
+
+  if (info.op == false) {
+#ifdef DEBUG
+    std::cerr << "the user " << user.nickname << " is not a channel operator."
+              << std::endl;
+#endif
+    return -1;  // ERR_CHANOPRIVSNEEDED
+  }
+
+  restrictTopic = value;
+  return 1;  // prefix MODE <channel> <param>
 }
 
 bool Channel::getTopicMode() const { return restrictTopic; }

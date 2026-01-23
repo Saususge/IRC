@@ -74,7 +74,7 @@ class Channel {
   bool getInvite() const;
   int inviteUser(User user, std::string targetNick);
 
-  void setTopicMode(User user, bool value);
+  int setTopicMode(User user, bool value);
   bool getTopicMode() const;
   int setTopic(User user, std::string topic);
   std::string getTopic() const;
