@@ -91,7 +91,15 @@ int Manager::doRequest(std::string request, int fd) {
 
     Channel& channel = channels.find(tokVec[1])->second;
 
-    channel.addUser(fd, &(users.find(fd)->second));
+    return channel.addUser(fd, &(users.find(fd)->second));
+
+  } else if (cmd == "part") {
+    std::cout << "part" << std::endl;
+    std::map<std::string, Channel>::iterator iter = channels.find(tokVec[1]);
+    if (iter == channels.end()) return -1; // ERR_NOSUCHCHANNEL
+
+    return iter->second.delUser(&(users.find(fd)->second));
+
   }
 
   return 1;

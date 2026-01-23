@@ -5,30 +5,10 @@ Channel::Channel() {
   restrictTopic = false;
   topic = "";
   key = "";
+  userLimit = 0;
 }
 
 Channel::~Channel() {}
-
-int Channel::addUser(int fd, Client* client, bool isCreator) {
-  if (getUserInfo(client->getNickname()) == 1) {
-#ifdef DEBUG
-    std::cerr << "User " << client->getNickname() << " already exists." << std::endl;
-#endif
-    return -1;
-  }
-  users.insert(std::pair<std::string, MemberInfo>(client->getNickname(), MemberInfo(fd, client, isCreator)));
-#ifdef DEBUG
-    std::cerr << "User " << client->getNickname() << " joined to the channel." << std::endl;
-#endif
-  return 1;
-}
-
-int Channel::delUser(Client* client) {
-  if (getUserInfo(client->getNickname()) == -1) return -1;
-
-  users.erase(client->getNickname());
-  return 1;
-}
 
 int Channel::getUserInfo(std::string nickname, MemberInfo* info) {
   mIter memberIter = users.find(nickname);
@@ -47,6 +27,59 @@ const std::map<std::string, MemberInfo>& Channel::getUsers() const {
   return users;
 }
 
+int Channel::addUser(int fd, Client* client, bool isCreator, std::string key) {
+  if (getUserInfo(client->getNickname()) == 1) {
+#ifdef DEBUG
+    std::cerr << "User " << client->getNickname() << " already exists."
+              << std::endl;
+#endif
+    return 0;  // DO NOTHING
+  }
+
+  if (inviteOnly == true) {
+    if (invitedUsers.find(client->getNickname()) == invitedUsers.end()) {
+#ifdef DEBUG
+      std::cerr << "User " << client->getNickname() << " wasn't invited."
+                << std::endl;
+#endif
+      return -1;  // ERR_INVITEONLYCHAN
+    }
+  }
+
+  if (this->key != "" && this->key != key) {
+#ifdef DEBUG
+    std::cerr << "The channel key " << key << " is wrong." << std::endl;
+#endif
+    return -1;  // ERR_BADCHANNELKEY
+  }
+
+  if (userLimit != 0 && users.size() >= userLimit) {
+#ifdef DEBUG
+    std::cerr << "The channel is full. Channel limit: " << userLimit
+              << std::endl;
+#endif
+    return -1;  // ERR_CHANNELISFULL
+  }
+
+  if (invitedUsers.find(client->getNickname()) != invitedUsers.end())
+    invitedUsers.erase(client->getNickname());
+
+  users.insert(std::pair<std::string, MemberInfo>(
+      client->getNickname(), MemberInfo(fd, client, isCreator)));
+#ifdef DEBUG
+  std::cerr << "User " << client->getNickname() << " joined to the channel."
+            << std::endl;
+#endif
+  return 1;  // RPL_TOPIC
+}
+
+int Channel::delUser(Client* client) {
+  if (getUserInfo(client->getNickname()) == -1) return -1;  // ERR_NOTONCHANNEL
+
+  users.erase(client->getNickname());
+  return 1;  // send PART #<channel> [:part message]
+}
+
 int Channel::promoteToOp(Client* client, std::string target) {
   MemberInfo info;
   if (getUserInfo(client->getNickname(), &info) == -1) return -1;
@@ -59,54 +92,206 @@ int Channel::promoteToOp(Client* client, std::string target) {
     return -2;
   }
 
-  if (getUserInfo(target, &info) == -1) return -1;
+  if (getUserInfo(target, &info) == -1) {
+#ifdef DEBUG
+    std::cerr << "User " << target << " is not on channel." << std::endl;
+#endif
+    return -1;  // ERR_NOTONCHANNEL
+  }
 
-  info.op = true;
+  users.find(target)->second.op = true;
   return 1;
 }
 
 int Channel::setInvite(Client* client, bool value) {
-  (void)client;                         // TODO: check fd is operator
+  MemberInfo info;
+
+  if (getUserInfo(client->getNickname(), &info) == -1) {
+#ifdef DEBUG
+    std::cerr << "the user " << client->getNickname() << " is not in channel."
+              << std::endl;
+#endif
+    return -1;  // ERR_NOTONCHANNEL
+  }
+
+  if (info.op == false) {
+#ifdef DEBUG
+    std::cerr << "the user " << client->getNickname()
+              << " is not a channel operator." << std::endl;
+#endif
+    return -1;  // ERR_CHANOPRIVSNEEDED
+  }
+
   if (value == inviteOnly) return 0;  // do nothing
 
   inviteOnly = value;
   return 1;
 }
+
 bool Channel::getInvite() const { return inviteOnly; }
 
+// verify the target is on server before calling
 int Channel::inviteUser(Client* client, std::string target) {
   MemberInfo info;
 
-  (void)client;  // TODO: check fd is operator
-  if (getUserInfo(target, &info) == -1) return -1;
+  if (getUserInfo(client->getNickname(), &info) == -1) {
+#ifdef DEBUG
+    std::cerr << "the user " << client->getNickname() << " is not in channel."
+              << std::endl;
+#endif
+    return -1;  // ERR_NOTONCHANNEL
+  }
 
   if (info.op == false) {
 #ifdef DEBUG
-    std::cerr << "User " << client->getNickname() << " is not operator." << std::endl;
+    std::cerr << "the user " << client->getNickname()
+              << " is not a channel operator." << std::endl;
 #endif
-    return -2;
+    return -1;  // ERR_CHANOPRIVSNEEDED
   }
+
+  if (getUserInfo(target) == 1) {
+#ifdef DEBUG
+    std::cerr << "the target user " << target << " is already on channel."
+              << std::endl;
+#endif
+    return 0;  // do nothing
+  }
+
   invitedUsers.insert(target);
   return 1;
 }
 
-void Channel::setTopicMode(Client* client, bool value) {  // not implemented
-  (void)client;
-  (void)value;
+int Channel::setTopicMode(Client* client, bool value) {
+  MemberInfo info;
+
+  if (getUserInfo(client->getNickname(), &info) == -1) {
+#ifdef DEBUG
+    std::cerr << "the user " << client->getNickname() << " is not in channel."
+              << std::endl;
+#endif
+    return -1;  // ERR_NOTONCHANNEL
+  }
+
+  if (info.op == false) {
+#ifdef DEBUG
+    std::cerr << "the user " << client->getNickname()
+              << " is not a channel operator." << std::endl;
+#endif
+    return -1;  // ERR_CHANOPRIVSNEEDED
+  }
+
+  restrictTopic = value;
+  return 1;  // prefix MODE <channel> <param>
 }
 
 bool Channel::getTopicMode() const { return restrictTopic; }
 
-void Channel::setTopic(Client* client, std::string topic) {  // not implemented
-  (void)client;
-  (void)topic;
+int Channel::setTopic(Client* client, std::string topic) {
+  MemberInfo info;
+
+  if (getUserInfo(client->getNickname(), &info) == -1) {
+#ifdef DEBUG
+    std::cerr << "The user " << client->getNickname() << " is not in channel."
+              << std::endl;
+#endif
+    return -1;  // ERR_NOTONCHANNEL
+  }
+
+  if (restrictTopic == true && info.op == false) {
+#ifdef DEBUG
+    std::cerr << "The user " << client->getNickname()
+              << " is not a channel operator." << std::endl;
+#endif
+    return -1;  // ERR_CHANOPRIVSNEEDED
+  }
+
+  this->topic = topic;
+  if (topic == "") return 1;  // RPL_NOTOPIC
+  return 1;                   // RPL_TOPIC
 }
 
 std::string Channel::getTopic() const { return topic; }
 
-void Channel::setKey(Client* client, std::string newKey) {  // not implemented
-  (void)client;
-  (void)newKey;
+int Channel::setKey(Client* client, std::string newKey) {
+  MemberInfo info;
+  if (getUserInfo(client->getNickname(), &info) == -1) {
+#ifdef DEBUG
+    std::cerr << "The user " << client->getNickname() << " is not on channel"
+              << std::endl;
+#endif
+
+    return -1;  // ERR_NOTONCHANNEL
+  }
+
+  if (info.op == false) {
+#ifdef DEBUG
+    std::cerr << "The user " << client->getNickname()
+              << " is not a channel operator" << std::endl;
+#endif
+    return -1;  // ERR_CHANOPRIVSNEEDED
+  }
+  key = newKey;
+  return 1;  // :prefix MODE <channel> <param>
 }
 
 std::string Channel::getKey() const { return key; }
+
+int Channel::setUserLimit(Client* client, size_t newLimit) {
+  MemberInfo info;
+
+  if (getUserInfo(client->getNickname(), &info) == -1) {
+#ifdef DEBUG
+    std::cerr << "The user " << client->getNickname() << " is not on channel"
+              << std::endl;
+#endif
+
+    return -1;  // ERR_NOTONCHANNEL
+  }
+
+  if (info.op == false) {
+#ifdef DEBUG
+    std::cerr << "The user " << client->getNickname()
+              << " is not a channel operator" << std::endl;
+#endif
+    return -1;  // ERR_CHANOPRIVSNEEDED
+  }
+
+  if (newLimit < users.size() || (newLimit == 0 || 65535 <= newLimit)) {
+#ifdef DEBUG
+    std::cerr << "New limit is lower than current number of channel users or "
+                 "invalid value"
+              << newLimit << std::endl;
+#endif
+    return -1;  // <prefix> 696 <nickname> <channel> l * :Invalid mode parameter
+  }
+
+  userLimit = newLimit;
+  return 1;  // prefix MODE <channle> +l <newLimit>
+}
+
+int Channel::unlimitUser(Client* client) {
+  MemberInfo info;
+
+  if (getUserInfo(client->getNickname(), &info) == -1) {
+#ifdef DEBUG
+    std::cerr << "The user " << client->getNickname() << " is not on channel"
+              << std::endl;
+#endif
+
+    return -1;  // ERR_NOTONCHANNEL
+  }
+
+  if (info.op == false) {
+#ifdef DEBUG
+    std::cerr << "The user " << client->getNickname()
+              << " is not a channel operator" << std::endl;
+#endif
+    return -1;  // ERR_CHANOPRIVSNEEDED
+  }
+
+  userLimit = 0;
+  return 0;
+}
+
+int Channel::getUserLimit() const { return userLimit; }

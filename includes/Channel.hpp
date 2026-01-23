@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "Client.hpp"
+#include "numeric.hpp"
 
 #define DEBUG
 
@@ -37,7 +38,7 @@ class Channel {
   std::string topic;
 
   std::string key;
-  int userLimit;
+  size_t userLimit;
 
   std::map<std::string, MemberInfo> users;
 
@@ -45,13 +46,12 @@ class Channel {
   Channel();
   ~Channel();
 
-  int addUser(int fd, Client* client, bool isCreator = false);
+  int addUser(int fd, Client* client, bool isCreator = false,
+              std::string key = "");
   int delUser(Client* client);
   int getUserInfo(std::string nickname, MemberInfo* info = NULL);
   const std::map<std::string, MemberInfo>& getUsers() const;
 
-  // OPER <name> <password>
-  int promoteToOp(Client* client);
   // MODE <chan> +o <nick>
   int promoteToOp(Client* client, std::string targetNick);
 
@@ -59,13 +59,17 @@ class Channel {
   bool getInvite() const;
   int inviteUser(Client* client, std::string targetNick);
 
-  void setTopicMode(Client* client, bool value);
+  int setTopicMode(Client* client, bool value);
   bool getTopicMode() const;
-  void setTopic(Client* client, std::string topic);
+  int setTopic(Client* client, std::string topic);
   std::string getTopic() const;
 
-  void setKey(Client* client, std::string newKey);
+  int setKey(Client* client, std::string newKey);
   std::string getKey() const;
+
+  int setUserLimit(Client* client, size_t newLimit);
+  int unlimitUser(Client* client);
+  int getUserLimit() const;
 
   // in rfc 2812 section 3.2.3 `MODE #42 -k oulu` is the
   // command to remove the "oulu" channel key on channel #42
