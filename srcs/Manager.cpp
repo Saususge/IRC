@@ -98,7 +98,7 @@ int Manager::doRequest(std::string request, int fd) {
     std::map<std::string, Channel>::iterator iter = channels.find(tokVec[1]);
     if (iter == channels.end()) return -1; // ERR_NOSUCHCHANNEL
 
-    return iter->second.delUser(users.find(fd)->second);
+    return iter->second.delUser(&(users.find(fd)->second));
 
   }
 
