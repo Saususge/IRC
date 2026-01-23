@@ -46,8 +46,9 @@ class Channel {
   Channel();
   ~Channel();
 
-  int addUser(int fd, User* user, bool isCreator = false, std::string key = "");
-  int delUser(User user);
+  int addUser(int fd, Client* client, bool isCreator = false,
+              std::string key = "");
+  int delUser(Client* client);
   int getUserInfo(std::string nickname, MemberInfo* info = NULL);
   const std::map<std::string, MemberInfo>& getUsers() const;
 
@@ -58,15 +59,16 @@ class Channel {
   bool getInvite() const;
   int inviteUser(Client* client, std::string targetNick);
 
-  int setTopicMode(User user, bool value);
+  int setTopicMode(Client* client, bool value);
   bool getTopicMode() const;
-  int setTopic(User user, std::string topic);
+  int setTopic(Client* client, std::string topic);
   std::string getTopic() const;
 
-  int setKey(User user, std::string newKey);
+  int setKey(Client* client, std::string newKey);
   std::string getKey() const;
 
-  int setUserLimit(User user, size_t newLimit);
+  int setUserLimit(Client* client, size_t newLimit);
+  int unlimitUser(Client* client);
   int getUserLimit() const;
 
   // in rfc 2812 section 3.2.3 `MODE #42 -k oulu` is the
