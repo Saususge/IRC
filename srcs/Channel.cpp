@@ -270,4 +270,28 @@ int Channel::setUserLimit(Client* client, size_t newLimit) {
   return 1;  // prefix MODE <channle> +l <newLimit>
 }
 
+int Channel::unlimitUser(Client* client) {
+  MemberInfo info;
+
+  if (getUserInfo(client->getNickname(), &info) == -1) {
+#ifdef DEBUG
+    std::cerr << "The user " << client->getNickname() << " is not on channel"
+              << std::endl;
+#endif
+
+    return -1;  // ERR_NOTONCHANNEL
+  }
+
+  if (info.op == false) {
+#ifdef DEBUG
+    std::cerr << "The user " << client->getNickname()
+              << " is not a channel operator" << std::endl;
+#endif
+    return -1;  // ERR_CHANOPRIVSNEEDED
+  }
+
+  userLimit = 0;
+  return 0;
+}
+
 int Channel::getUserLimit() const { return userLimit; }
