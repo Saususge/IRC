@@ -8,12 +8,15 @@
 #include "Channel.hpp"
 #include "Client.hpp"
 
+class Server;
+
 class Manager {
  public:
   Manager();
   ~Manager();
 
-  int doRequest(std::string request, int fd);
+  int doRequest(Server& server, int fd, std::string request);
+  void removeClient(int fd);
 
  private:
   std::map<int, Client> users;

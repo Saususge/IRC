@@ -12,6 +12,7 @@ const std::string RPL_CHANNELMODEIS = "324";
 const std::string RPL_UNIQOPIS = "325";
 const std::string RPL_NOTOPIC = "331";
 const std::string RPL_TOPIC = "332";
+const std::string RPL_INVITING = "341";
 const std::string RPL_INVITELIST = "346";
 const std::string RPL_ENDOFINVITELIST = "347";
 const std::string RPL_EXCEPTLIST = "348";
@@ -50,7 +51,8 @@ const std::string ERR_RESTRICTED = "484";
 const std::string ERR_NOOPERHOST = "491";
 const std::string ERR_UMODEUNKNOWNFLAG = "501";
 const std::string ERR_USERSDONTMATCH = "502";
-
+const std::string ERR_USERNOTINCHANNEL = "441";
+const std::string ERR_USERONCHANNEL = "443";
 const std::string ERR_TOOMANYMATCHES = "00000";  // Does not exist on RFC 2812
 }  // namespace IRC
 

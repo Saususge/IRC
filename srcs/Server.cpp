@@ -138,6 +138,10 @@ void Server::acceptClients() {
 
 void Server::closeClient(size_t pollIndex) {
   int fd = _pollFds[pollIndex].fd;
+  
+  // Notify Manager to cleanup user data
+  manager.removeClient(fd);
+
   close(fd);
 
   _pollFds.erase(_pollFds.begin() + pollIndex);
@@ -174,7 +178,7 @@ void Server::handleClientReadable(size_t pollIndex) {
 
 void Server::onLine(int fd, const std::string& line) {
   std::cout << "Received from " << fd << ": " << line << std::endl;
-  manager.doRequest(line, fd);
+  manager.doRequest(*this, fd, line);
 }
 
 void Server::queueMessage(int fd, const std::string& msg) {
