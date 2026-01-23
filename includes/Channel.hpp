@@ -7,38 +7,22 @@
 #include <string>
 #include <vector>
 
+#include "Client.hpp"
 #include "numeric.hpp"
 
 #define DEBUG
 
-struct User {
-  // other users see in channels. unique on the network, can change while
-  // connected.
-  std::string nickname;
-
-  // idnet. comes from the client's connection/login; servers use it to identify
-  // the account or system user behind the session and is part of the prefix
-  // nick!username@host
-  std::string username;
-
-  // purely descriptive metadata that apperars in WHOIS output.
-  std::string realname;
-
-  std::vector<std::string> joinedChannels;
-
-  User(std::string nickname, std::string username, std::string realname)
-      : nickname(nickname), username(username), realname(realname) {}
-};
+// User struct removed, replaced by Client class in Client.hpp
 
 struct MemberInfo {
   int fd;
-  User* user;
+  Client* client;
   bool voice;  // unnessary variable for ft-irc
   bool op;
 
-  MemberInfo() : user(NULL) {}
-  MemberInfo(int fd, User* user, bool op)
-      : fd(fd), user(user), voice(false), op(op) {}
+  MemberInfo() : client(NULL) {}
+  MemberInfo(int fd, Client* client, bool op)
+      : fd(fd), client(client), voice(false), op(op) {}
 };
 
 typedef std::map<std::string, MemberInfo>::iterator mIter;
@@ -68,11 +52,11 @@ class Channel {
   const std::map<std::string, MemberInfo>& getUsers() const;
 
   // MODE <chan> +o <nick>
-  int promoteToOp(User user, std::string targetNick);
+  int promoteToOp(Client* client, std::string targetNick);
 
-  int setInvite(User user, bool value);
+  int setInvite(Client* client, bool value);
   bool getInvite() const;
-  int inviteUser(User user, std::string targetNick);
+  int inviteUser(Client* client, std::string targetNick);
 
   int setTopicMode(User user, bool value);
   bool getTopicMode() const;

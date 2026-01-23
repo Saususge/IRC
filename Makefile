@@ -8,6 +8,7 @@ INCLUDES := -Iincludes
 SRCS := \
 	main.cpp \
 	srcs/Server.cpp \
+	srcs/Client.cpp \
 	srcs/utils.cpp \
 	srcs/Channel.cpp \
 	srcs/Manager.cpp

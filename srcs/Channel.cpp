@@ -78,13 +78,13 @@ int Channel::delUser(User user) {
   return 1;  // send PART #<channel> [:part message]
 }
 
-int Channel::promoteToOp(User user, std::string target) {
+int Channel::promoteToOp(Client* client, std::string target) {
   MemberInfo info;
-  if (getUserInfo(user.nickname, &info) == -1) return -1;
+  if (getUserInfo(client->getNickname(), &info) == -1) return -1;
 
   if (info.op == false) {
 #ifdef DEBUG
-    std::cerr << "User " << user.nickname << " is not channel operator."
+    std::cerr << "User " << client->getNickname() << " is not channel operator."
               << std::endl;
 #endif
     return -2;
@@ -123,7 +123,7 @@ int Channel::setInvite(User user, bool value) {
 
 bool Channel::getInvite() const { return inviteOnly; }
 
-int Channel::inviteUser(User user, std::string target) {
+int Channel::inviteUser(Client* client, std::string target) {
   MemberInfo info;
 
   if (getUserInfo(user.nickname, &info) == -1) {

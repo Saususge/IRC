@@ -24,10 +24,17 @@ int Manager::doRequest(std::string request, int fd) {
   std::vector<std::string> tokVec;
 
   while (ss >> tok) {
-    if (tok[0] == ':') std::getline(ss, tok);
-
-    std::cout << "doRequest token: " << tok << "$" << std::endl;
-    tokVec.push_back(tok);
+    if (tok[0] == ':') {
+      std::string trailing;
+      std::getline(ss, trailing);
+      tok = tok.substr(1) + trailing;  // ':' 제거하고 나머지 이어붙임
+      tokVec.push_back(tok);
+      std::cout << "doRequest token: " << tok << "$" << std::endl;
+      break;  // trailing parameter는 항상 마지막이므로 루프 종료
+    } else {
+      tokVec.push_back(tok);
+      std::cout << "doRequest token: " << tok << "$" << std::endl;
+    }
   }
 
   std::string cmd = strToLower(getCommand(tokVec));
@@ -48,9 +55,9 @@ int Manager::doRequest(std::string request, int fd) {
       }
     }
 
-    for (std::map<int, User>::iterator iter = users.begin();
+    for (std::map<int, Client>::iterator iter = users.begin();
          iter != users.end(); iter++) {
-      if (iter->second.nickname == tokVec[1]) {
+      if (iter->second.getNickname() == tokVec[1]) {
 #ifdef DEBUG
         std::cerr << "The nickname " << tokVec[1] << " is already exist."
                   << std::endl;
@@ -72,7 +79,7 @@ int Manager::doRequest(std::string request, int fd) {
     }
 
     users.insert(
-        std::pair<int, User>(fd, User(unregistered[fd], tokVec[1], tokVec[4])));
+        std::pair<int, Client>(fd, Client(unregistered[fd], tokVec[1], tokVec[4])));
     unregistered.erase(fd);
   } else if (cmd == "pass") {
     std::cout << "pass" << std::endl;

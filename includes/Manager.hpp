@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include "Channel.hpp"
+#include "Client.hpp"
 
 class Manager {
  public:
@@ -15,7 +16,7 @@ class Manager {
   int doRequest(std::string request, int fd);
 
  private:
-  std::map<int, User> users;
+  std::map<int, Client> users;
   std::map<int, std::string> unregistered;
   std::map<std::string, Channel> channels;
 
