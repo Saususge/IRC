@@ -192,3 +192,38 @@ int Channel::setKey(User user, std::string newKey) {
 }
 
 std::string Channel::getKey() const { return key; }
+
+int Channel::setUserLimit(User user, int newLimit) {
+  MemberInfo info;
+
+  if (getUserInfo(user.nickname, &info) == -1) {
+#ifdef DEBUG
+    std::cerr << "The user " << user.nickname << " is not on channel"
+              << std::endl;
+#endif
+
+    return -1;  // ERR_NOTONCHANNEL
+  }
+
+  if (info.op == false) {
+#ifdef DEBUG
+    std::cerr << "The user " << user.nickname << " is not a channel operator"
+              << std::endl;
+#endif
+    return -1;  // ERR_CHANOPRIVSNEEDED
+  }
+
+  if (newLimit < users.size() || (newLimit < 0 || 65535 <= newLimit)) {
+#ifdef DEBUG
+    std::cerr << "New limit is lower than current number of channel users or "
+                 "invalid value"
+              << newLimit << std::endl;
+#endif
+    return -1;  // <prefix> 696 <nickname> <channel> l * :Invalid mode parameter
+  }
+
+  userLimit = newLimit;
+  return 1;  // prefix MODE <channle> +l <newLimit>
+}
+
+int Channel::getUserLimit() const { return userLimit; }

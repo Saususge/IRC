@@ -82,6 +82,9 @@ class Channel {
   int setKey(User user, std::string newKey);
   std::string getKey() const;
 
+  int setUserLimit(User user, int newLimit);
+  int getUserLimit() const;
+
   // in rfc 2812 section 3.2.3 `MODE #42 -k oulu` is the
   // command to remove the "oulu" channel key on channel #42
   // but in ngircd it does not need to remove key.
