@@ -78,7 +78,7 @@ class Channel {
 
   void setTopicMode(User user, bool value);
   bool getTopicMode() const;
-  void setTopic(User user, std::string topic);
+  int setTopic(User user, std::string topic);
   std::string getTopic() const;
 
   int setKey(User user, std::string newKey);

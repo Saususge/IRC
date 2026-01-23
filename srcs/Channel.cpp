@@ -31,33 +31,34 @@ int Channel::addUser(int fd, User* user, bool isCreator, std::string key) {
 #ifdef DEBUG
     std::cerr << "User " << user->nickname << " already exists." << std::endl;
 #endif
-    return 0; // DO NOTHING
+    return 0;  // DO NOTHING
   }
 
-  if (this->key != "" && this->key != key)
-    return -1; // ERR_BADCHANNELKEY
+  if (this->key != "" && this->key != key) return -1;  // ERR_BADCHANNELKEY
 
   if (inviteOnly == true) {
     if (invitedUsers.find(user->nickname) == invitedUsers.end()) {
 #ifdef DEBUG
       std::cerr << "User " << user->nickname << " wasn't invited." << std::endl;
 #endif
-      return -1; // ERR_INVITEONLYCHAN
+      return -1;  // ERR_INVITEONLYCHAN
     }
   }
 
-  users.insert(std::pair<std::string, MemberInfo>(user->nickname, MemberInfo(fd, user, isCreator)));
+  users.insert(std::pair<std::string, MemberInfo>(
+      user->nickname, MemberInfo(fd, user, isCreator)));
 #ifdef DEBUG
-    std::cerr << "User " << user->nickname << " joined to the channel." << std::endl;
+  std::cerr << "User " << user->nickname << " joined to the channel."
+            << std::endl;
 #endif
-  return 1; // RPL_TOPIC
+  return 1;  // RPL_TOPIC
 }
 
 int Channel::delUser(User user) {
-  if (getUserInfo(user.nickname) == -1) return -1; // ERR_NOTONCHANNEL
+  if (getUserInfo(user.nickname) == -1) return -1;  // ERR_NOTONCHANNEL
 
   users.erase(user.nickname);
-  return 1; // send PART #<channel> [:part message]
+  return 1;  // send PART #<channel> [:part message]
 }
 
 int Channel::promoteToOp(User user, std::string target) {
@@ -111,31 +112,51 @@ void Channel::setTopicMode(User user, bool value) {  // not implemented
 
 bool Channel::getTopicMode() const { return restrictTopic; }
 
-void Channel::setTopic(User user, std::string topic) {  // not implemented
-  (void)user;
-  (void)topic;
+int Channel::setTopic(User user, std::string topic) {  // not implemented
+  MemberInfo info;
+
+  if (getUserInfo(user.nickname, &info) == -1) {
+#ifdef DEBUG
+    std::cerr << "The user " << user.nickname << " is not in channel."
+              << std::endl;
+#endif
+    return -1;  // ERR_NOTONCHANNEL
+  }
+
+  if (info.op == false) {
+#ifdef DEBUG
+    std::cerr << "The user " << user.nickname << " is not a channel operator."
+              << std::endl;
+#endif
+    return -1;  // ERR_CHANOPRIVSNEEDED
+  }
+
+  if (topic == "") return 1;  // RPL_NOTOPIC
+  return 1;                   // RPL_TOPIC
 }
 
 std::string Channel::getTopic() const { return topic; }
 
-int Channel::setKey(User user, std::string newKey) {  // not implemented
+int Channel::setKey(User user, std::string newKey) {
   MemberInfo info;
   if (getUserInfo(user.nickname, &info) == -1) {
-    #ifdef DEBUG
-      std::cerr << "The user " << user.nickname << " is not on channel" << std::endl;
-    #endif
+#ifdef DEBUG
+    std::cerr << "The user " << user.nickname << " is not on channel"
+              << std::endl;
+#endif
 
-    return -1; // ERR_NOTONCHANNEL
+    return -1;  // ERR_NOTONCHANNEL
   }
 
   if (info.op == false) {
-    #ifdef DEBUG
-      std::cerr << "The user " << user.nickname << " is not a channel operator" << std::endl;
-    #endif
-    return -1; // ERR_CHANOPRIVSNEEDED
+#ifdef DEBUG
+    std::cerr << "The user " << user.nickname << " is not a channel operator"
+              << std::endl;
+#endif
+    return -1;  // ERR_CHANOPRIVSNEEDED
   }
   key = newKey;
-  return 1; // :prefix MODE <channel> <param>
+  return 1;  // :prefix MODE <channel> <param>
 }
 
 std::string Channel::getKey() const { return key; }
