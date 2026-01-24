@@ -48,7 +48,7 @@ class Channel {
 
   const std::string addUser(int fd, Client* client, bool isCreator = false,
               std::string key = "");
-  int delUser(Client* client);
+  const std::string delUser(Client* client);
   int getUserInfo(std::string nickname, MemberInfo* info = NULL);
   const std::map<std::string, MemberInfo>& getUsers() const;
 

@@ -233,7 +233,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     // Check if on channel (Channel::delUser also checks this but we need to broadcast before deleting for simplicity, 
     // or broadcast to remaining members + self after)
     // Using Channel logic:
-    if (channel.delUser(&client) == 1) {
+    if (channel.delUser(&client) == "PART") {
          std::string partMsg = ":" + nickname + "!" + client.getUsername() + "@127.0.0.1 PART " + channelName + " " + reason + "\r\n";
          
          // Send to self

@@ -74,11 +74,11 @@ const std::string Channel::addUser(int fd, Client* client, bool isCreator, std::
   return IRC::RPL_TOPIC;  // RPL_TOPIC
 }
 
-int Channel::delUser(Client* client) {
-  if (getUserInfo(client->getNickname()) == -1) return -1;  // ERR_NOTONCHANNEL
+const std::string Channel::delUser(Client* client) {
+  if (getUserInfo(client->getNickname()) == -1) return IRC::ERR_NOTONCHANNEL;  // ERR_NOTONCHANNEL
 
   users.erase(client->getNickname());
-  return 1;  // send PART #<channel> [:part message]
+  return "PART";  // send PART #<channel> [:part message]
 }
 
 int Channel::promoteToOp(Client* client, std::string target) {
