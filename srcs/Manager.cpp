@@ -396,9 +396,9 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
       Channel& channel = chIt->second;
 
       // Partner's inviteUser checks: Sender on channel? Sender Op? Target already on channel?
-      int res = channel.inviteUser(&sender, targetNick);
+      const std::string res = channel.inviteUser(&sender, targetNick);
       
-      if (res == 1) {
+      if (res == IRC::RPL_INVITING) {
           // Success
           // 1. Send RPL_INVITING to sender
           server.queueMessage(fd, Response::build(IRC::RPL_INVITING, sender.getNickname(), targetNick + " " + channelName));

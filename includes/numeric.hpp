@@ -43,6 +43,7 @@ const std::string ERR_NOTREGISTERED = "451";
 const std::string ERR_NEEDMOREPARAMS = "461";
 const std::string ERR_ALREADYREGISTRED = "462";
 const std::string ERR_PASSWDMISMATCH = "464";
+const std::string ERR_KEYSET = "467";
 const std::string ERR_CHANNELISFULL = "471";
 const std::string ERR_INVITEONLYCHAN = "473";
 const std::string ERR_BANNEDFROMCHAN = "474";

@@ -47,28 +47,27 @@ class Channel {
   ~Channel();
 
   const std::string addUser(int fd, Client* client, bool isCreator = false,
-              std::string key = "");
+                            std::string key = "");
   const std::string delUser(Client* client);
   int getUserInfo(std::string nickname, MemberInfo* info = NULL);
   const std::map<std::string, MemberInfo>& getUsers() const;
 
-  // MODE <chan> +o <nick>
-  int promoteToOp(Client* client, std::string targetNick);
+  const std::string promoteToOp(Client* client, std::string targetNick);
 
-  int setInvite(Client* client, bool value);
+  const std::string setInvite(Client* client, bool value);
   bool getInvite() const;
-  int inviteUser(Client* client, std::string targetNick);
+  const std::string inviteUser(Client* client, std::string targetNick);
 
-  int setTopicMode(Client* client, bool value);
+  const std::string setTopicMode(Client* client, bool value);
   bool getTopicMode() const;
-  int setTopic(Client* client, std::string topic);
+  const std::string setTopic(Client* client, std::string topic);
   std::string getTopic() const;
 
-  int setKey(Client* client, std::string newKey);
+  const std::string setKey(Client* client, std::string newKey);
   std::string getKey() const;
 
-  int setUserLimit(Client* client, size_t newLimit);
-  int unlimitUser(Client* client);
+  const std::string setUserLimit(Client* client, size_t newLimit);
+  const std::string unlimitUser(Client* client);
   int getUserLimit() const;
 
   // in rfc 2812 section 3.2.3 `MODE #42 -k oulu` is the
