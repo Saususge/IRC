@@ -2,6 +2,9 @@
 #define NUMERIC_HPP
 #include <iostream>
 namespace IRC {
+// NOT OFFICIAL IRC NUMERIC REPLY BUT TO INDICATE DO NOT SEND ANY MESSAGE
+const std::string DO_NOTHING = "-01";
+
 // Success replies
 const std::string RPL_WELCOME = "001";
 const std::string RPL_YOURHOST = "002";
