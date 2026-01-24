@@ -351,6 +351,12 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
            return 0;
       }
 
+      // Prevent kicking yourself
+      if (sender.getNickname() == targetNick) {
+           server.queueMessage(fd, Response::error(IRC::ERR_USERNOTINCHANNEL, sender.getNickname(), targetNick + " " + channelName + " :Cannot kick yourself"));
+           return 0;
+      }
+
       // Check target existence in channel
       MemberInfo targetInfo;
       if (channel.getUserInfo(targetNick, &targetInfo) == -1) {
