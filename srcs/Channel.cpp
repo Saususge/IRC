@@ -27,7 +27,8 @@ const std::map<std::string, MemberInfo>& Channel::getUsers() const {
   return users;
 }
 
-const std::string Channel::addUser(int fd, Client* client, bool isCreator, std::string key) {
+const std::string Channel::addUser(int fd, Client* client, bool isCreator,
+                                   std::string key) {
   if (getUserInfo(client->getNickname()) == 1) {
 #ifdef DEBUG
     std::cerr << "User " << client->getNickname() << " already exists."
@@ -70,12 +71,13 @@ const std::string Channel::addUser(int fd, Client* client, bool isCreator, std::
   std::cerr << "User " << client->getNickname() << " joined to the channel."
             << std::endl;
 #endif
-  if (topic == "")  return IRC::RPL_NOTOPIC;
+  if (topic == "") return IRC::RPL_NOTOPIC;
   return IRC::RPL_TOPIC;  // RPL_TOPIC
 }
 
 const std::string Channel::delUser(Client* client) {
-  if (getUserInfo(client->getNickname()) == -1) return IRC::ERR_NOTONCHANNEL;  // ERR_NOTONCHANNEL
+  if (getUserInfo(client->getNickname()) == -1)
+    return IRC::ERR_NOTONCHANNEL;  // ERR_NOTONCHANNEL
 
   users.erase(client->getNickname());
   return "PART";  // send PART #<channel> [:part message]
@@ -88,7 +90,7 @@ const std::string Channel::promoteToOp(Client* client, std::string target) {
     std::cerr << "the user " << client->getNickname() << " is not in channel."
               << std::endl;
 #endif
-  return IRC::ERR_NOTONCHANNEL;
+    return IRC::ERR_NOTONCHANNEL;
   }
 
   if (info.op == false) {
@@ -107,7 +109,7 @@ const std::string Channel::promoteToOp(Client* client, std::string target) {
   }
 
   users.find(target)->second.op = true;
-  return "MODE"; // prefix MODE <channel> +o nickname
+  return "MODE";  // prefix MODE <channel> +o nickname
 }
 
 const std::string Channel::setInvite(Client* client, bool value) {
@@ -132,7 +134,7 @@ const std::string Channel::setInvite(Client* client, bool value) {
   if (value == inviteOnly) return 0;  // do nothing
 
   inviteOnly = value;
-  return "MODE"; // prefix MODE <channel> +i 
+  return "MODE";  // prefix MODE <channel> +i
 }
 
 bool Channel::getInvite() const { return inviteOnly; }
@@ -166,7 +168,7 @@ const std::string Channel::inviteUser(Client* client, std::string target) {
   }
 
   invitedUsers.insert(target);
-  return IRC::RPL_INVITING;
+  return IRC::RPL_INVITING;  // RPL_INVITING
 }
 
 const std::string Channel::setTopicMode(Client* client, bool value) {
@@ -214,8 +216,7 @@ const std::string Channel::setTopic(Client* client, std::string topic) {
   }
 
   this->topic = topic;
-  if (topic == "") return IRC::RPL_NOTOPIC;  // RPL_NOTOPIC
-  return IRC::RPL_TOPIC;                   // RPL_TOPIC
+  return "TOPIC"; // :prefix TOPIC <channel> <args>
 }
 
 std::string Channel::getTopic() const { return topic; }
@@ -241,8 +242,7 @@ const std::string Channel::setKey(Client* client, std::string newKey) {
 
   if (!(key.empty())) {
 #ifdef DEBUG
-    std::cerr << "The key " << key
-              << " is already set." << std::endl;
+    std::cerr << "The key " << key << " is already set." << std::endl;
 #endif
     return IRC::ERR_KEYSET;
   }
@@ -278,8 +278,10 @@ const std::string Channel::setUserLimit(Client* client, size_t newLimit) {
                  "invalid value"
               << newLimit << std::endl;
 #endif
-    // Some servers return 696 ERR_INVALIDMODEPARAM, which is not written in the RFC.
-    return IRC::DO_NOTHING;  // <prefix> 696 <nickname> <channel> l * :Invalid mode parameter
+    // Some servers return 696 ERR_INVALIDMODEPARAM, which is not written in the
+    // RFC.
+    return IRC::DO_NOTHING;  // <prefix> 696 <nickname> <channel> l * :Invalid
+                             // mode parameter
   }
 
   userLimit = newLimit;
