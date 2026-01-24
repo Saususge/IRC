@@ -2,6 +2,9 @@
 #define NUMERIC_HPP
 #include <iostream>
 namespace IRC {
+// NOT OFFICIAL IRC NUMERIC REPLY BUT TO INDICATE DO NOT SEND ANY MESSAGE
+const std::string DO_NOTHING = "-01";
+
 // Success replies
 const std::string RPL_WELCOME = "001";
 const std::string RPL_YOURHOST = "002";
@@ -40,6 +43,7 @@ const std::string ERR_NOTREGISTERED = "451";
 const std::string ERR_NEEDMOREPARAMS = "461";
 const std::string ERR_ALREADYREGISTRED = "462";
 const std::string ERR_PASSWDMISMATCH = "464";
+const std::string ERR_KEYSET = "467";
 const std::string ERR_CHANNELISFULL = "471";
 const std::string ERR_INVITEONLYCHAN = "473";
 const std::string ERR_BANNEDFROMCHAN = "474";

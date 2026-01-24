@@ -163,9 +163,9 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     Client& client = users.find(fd)->second;
 
     // Pass isCreator=true if the channel was just created
-    int res = channel.addUser(fd, &client, isNewChannel);
+    const std::string res = channel.addUser(fd, &client, isNewChannel);
     
-    if (res == 1) { // JOIN SUCCESS
+    if (res == IRC::RPL_TOPIC || res == IRC::RPL_NOTOPIC) { // JOIN SUCCESS
         // 1. Notify all members in channel that user joined
         std::string joinMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@127.0.0.1 JOIN :" + channelName + "\r\n";
         
@@ -175,7 +175,9 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
         }
 
         // 2. Send Topic (if any) - 332
-        // TODO: Get Topic from Channel
+        std::string topic = channel.getTopic();
+        topic = topic.empty() ? "No topic is set" : topic;
+        server.queueMessage(fd, Response::build(res, client.getNickname(), channelName + " :" + topic));
 
         // 3. Send Name List - 353, 366
         std::string namesList;
@@ -191,13 +193,20 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
         server.queueMessage(fd, Response::build(IRC::RPL_NAMREPLY, client.getNickname(), "= " + channelName + " :" + namesList));
         server.queueMessage(fd, Response::build(IRC::RPL_ENDOFNAMES, client.getNickname(), channelName + " :End of /NAMES list."));
         
+    } else if (res == IRC::ERR_INVITEONLYCHAN) {
+        server.queueMessage(fd, Response::error(IRC::ERR_INVITEONLYCHAN, client.getNickname(), channelName + " :Cannot join channel (+i)"));
+    } else if (res == IRC::ERR_BADCHANNELKEY) {
+        server.queueMessage(fd, Response::error(IRC::ERR_BADCHANNELKEY, client.getNickname(), channelName + " :Cannot join channel (+k)"));
+    } else if (res == IRC::ERR_CHANNELISFULL) {
+        server.queueMessage(fd, Response::error(IRC::ERR_CHANNELISFULL, client.getNickname(), channelName + " :Cannot join channel (+l)"));
     } else {
-        // Handle Errors (Full, InviteOnly, etc)
-        // For now generic error
-        server.queueMessage(fd, Response::error(IRC::ERR_CHANNELISFULL, client.getNickname(), channelName + " :Cannot join channel"));
+        /* do nothing */
+        return 0;
     }
+    // above else if statements are fucking messy. generalize later.
+    // TODO: test error cases after implement MODE command
     
-    return res;
+    return 1; // yeonjuki: REPLACE TO res AFTER CHANGE RETURN TYPE.
 
   } else if (cmd == "part") {
     if (users.find(fd) == users.end()) {
@@ -224,7 +233,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     // Check if on channel (Channel::delUser also checks this but we need to broadcast before deleting for simplicity, 
     // or broadcast to remaining members + self after)
     // Using Channel logic:
-    if (channel.delUser(&client) == 1) {
+    if (channel.delUser(&client) == "PART") {
          std::string partMsg = ":" + nickname + "!" + client.getUsername() + "@127.0.0.1 PART " + channelName + " " + reason + "\r\n";
          
          // Send to self
@@ -310,7 +319,6 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
           server.queueMessage(destFd, fullMsg);
       }
       return 0;
-      return 0;
   } else if (cmd == "kick") {
       // Syntax: KICK <channel> <user> [<comment>]
       if (users.find(fd) == users.end()) return 0;
@@ -368,6 +376,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
 
   } else if (cmd == "invite") {
       // Syntax: INVITE <nickname> <channel>
+      // TODO: test invite command after impelment mode command
       if (users.find(fd) == users.end()) return 0;
       if (tokVec.size() < 3) {
           server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), "INVITE :Not enough parameters"));
@@ -387,9 +396,9 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
       Channel& channel = chIt->second;
 
       // Partner's inviteUser checks: Sender on channel? Sender Op? Target already on channel?
-      int res = channel.inviteUser(&sender, targetNick);
+      const std::string res = channel.inviteUser(&sender, targetNick);
       
-      if (res == 1) {
+      if (res == IRC::RPL_INVITING) {
           // Success
           // 1. Send RPL_INVITING to sender
           server.queueMessage(fd, Response::build(IRC::RPL_INVITING, sender.getNickname(), targetNick + " " + channelName));
@@ -408,17 +417,11 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
               std::string inviteMsg = ":" + sender.getNickname() + "!" + sender.getUsername() + "@127.0.0.1 INVITE " + targetNick + " :" + channelName + "\r\n";
               server.queueMessage(targetFd, inviteMsg);
           }
-      } else if (res == -1) {
-          // Either not on channel or not Op. Checking which specific error is hard with just -1.
-          // Let's assume ERR_CHANOPRIVSNEEDED if sender IS on channel.
-          MemberInfo senderInfo;
-          if (channel.getUserInfo(sender.getNickname(), &senderInfo) == -1) {
-               server.queueMessage(fd, Response::error(IRC::ERR_NOTONCHANNEL, sender.getNickname(), channelName + " :You're not on that channel"));
-          } else {
-               server.queueMessage(fd, Response::error(IRC::ERR_CHANOPRIVSNEEDED, sender.getNickname(), channelName + " :You're not channel operator"));
-          }
-      } else {
-           // res == 0: Target already on channel
+      } else if (res == IRC::ERR_NOTONCHANNEL) {
+        server.queueMessage(fd, Response::error(IRC::ERR_NOTONCHANNEL, sender.getNickname(), channelName + " :You're not on that channel"));
+      } else if (res == IRC::ERR_CHANOPRIVSNEEDED) {
+            server.queueMessage(fd, Response::error(IRC::ERR_CHANOPRIVSNEEDED, sender.getNickname(), channelName + " :You're not channel operator"));
+      } else if (res == IRC::ERR_USERONCHANNEL) {
            server.queueMessage(fd, Response::error(IRC::ERR_USERONCHANNEL, sender.getNickname(), targetNick + " " + channelName + " :is already on channel"));
       }
       return 0;
@@ -455,8 +458,8 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
            // Wait, doRequest logic: puts trailing as last token. If TOPIC #chan :My new topic
            // tokVec[0]=TOPIC, tokVec[1]=#chan, tokVec[2]=My new topic
            
-           int res = channel.setTopic(&sender, newTopic);
-           if (res == 1) {
+           const std::string res = channel.setTopic(&sender, newTopic);
+           if (res == "TOPIC") {
                 // Success: Broadcast TOPIC change
                 // :Sender TOPIC #chan :New Topic
                 std::string topicMsg = ":" + sender.getNickname() + "!" + sender.getUsername() + "@127.0.0.1 TOPIC " + channelName + " :" + newTopic + "\r\n";
