@@ -46,7 +46,7 @@ class Channel {
   Channel();
   ~Channel();
 
-  int addUser(int fd, Client* client, bool isCreator = false,
+  const std::string addUser(int fd, Client* client, bool isCreator = false,
               std::string key = "");
   int delUser(Client* client);
   int getUserInfo(std::string nickname, MemberInfo* info = NULL);

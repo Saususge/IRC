@@ -27,13 +27,13 @@ const std::map<std::string, MemberInfo>& Channel::getUsers() const {
   return users;
 }
 
-int Channel::addUser(int fd, Client* client, bool isCreator, std::string key) {
+const std::string Channel::addUser(int fd, Client* client, bool isCreator, std::string key) {
   if (getUserInfo(client->getNickname()) == 1) {
 #ifdef DEBUG
     std::cerr << "User " << client->getNickname() << " already exists."
               << std::endl;
 #endif
-    return 0;  // DO NOTHING
+    return IRC::DO_NOTHING;  // DO NOTHING
   }
 
   if (inviteOnly == true) {
@@ -42,7 +42,7 @@ int Channel::addUser(int fd, Client* client, bool isCreator, std::string key) {
       std::cerr << "User " << client->getNickname() << " wasn't invited."
                 << std::endl;
 #endif
-      return -1;  // ERR_INVITEONLYCHAN
+      return IRC::ERR_INVITEONLYCHAN;  // ERR_INVITEONLYCHAN
     }
   }
 
@@ -50,7 +50,7 @@ int Channel::addUser(int fd, Client* client, bool isCreator, std::string key) {
 #ifdef DEBUG
     std::cerr << "The channel key " << key << " is wrong." << std::endl;
 #endif
-    return -1;  // ERR_BADCHANNELKEY
+    return IRC::ERR_BADCHANNELKEY;  // ERR_BADCHANNELKEY
   }
 
   if (userLimit != 0 && users.size() >= userLimit) {
@@ -58,7 +58,7 @@ int Channel::addUser(int fd, Client* client, bool isCreator, std::string key) {
     std::cerr << "The channel is full. Channel limit: " << userLimit
               << std::endl;
 #endif
-    return -1;  // ERR_CHANNELISFULL
+    return IRC::ERR_CHANNELISFULL;  // ERR_CHANNELISFULL
   }
 
   if (invitedUsers.find(client->getNickname()) != invitedUsers.end())
@@ -70,7 +70,8 @@ int Channel::addUser(int fd, Client* client, bool isCreator, std::string key) {
   std::cerr << "User " << client->getNickname() << " joined to the channel."
             << std::endl;
 #endif
-  return 1;  // RPL_TOPIC
+  if (topic == "")  return IRC::RPL_NOTOPIC;
+  return IRC::RPL_TOPIC;  // RPL_TOPIC
 }
 
 int Channel::delUser(Client* client) {

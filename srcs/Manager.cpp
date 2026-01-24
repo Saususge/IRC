@@ -163,9 +163,9 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     Client& client = users.find(fd)->second;
 
     // Pass isCreator=true if the channel was just created
-    int res = channel.addUser(fd, &client, isNewChannel);
+    const std::string res = channel.addUser(fd, &client, isNewChannel);
     
-    if (res == 1) { // JOIN SUCCESS
+    if (res == IRC::RPL_TOPIC || res == IRC::RPL_NOTOPIC) { // JOIN SUCCESS
         // 1. Notify all members in channel that user joined
         std::string joinMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@127.0.0.1 JOIN :" + channelName + "\r\n";
         
@@ -175,7 +175,9 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
         }
 
         // 2. Send Topic (if any) - 332
-        // TODO: Get Topic from Channel
+        std::string topic = channel.getTopic();
+        topic = topic.empty() ? "No topic is set" : topic;
+        server.queueMessage(fd, Response::build(res, client.getNickname(), channelName + " :" + topic));
 
         // 3. Send Name List - 353, 366
         std::string namesList;
@@ -191,13 +193,20 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
         server.queueMessage(fd, Response::build(IRC::RPL_NAMREPLY, client.getNickname(), "= " + channelName + " :" + namesList));
         server.queueMessage(fd, Response::build(IRC::RPL_ENDOFNAMES, client.getNickname(), channelName + " :End of /NAMES list."));
         
+    } else if (res == IRC::ERR_INVITEONLYCHAN) {
+        server.queueMessage(fd, Response::error(IRC::ERR_INVITEONLYCHAN, client.getNickname(), channelName + " :Cannot join channel (+i)"));
+    } else if (res == IRC::ERR_BADCHANNELKEY) {
+        server.queueMessage(fd, Response::error(IRC::ERR_BADCHANNELKEY, client.getNickname(), channelName + " :Cannot join channel (+k)"));
+    } else if (res == IRC::ERR_CHANNELISFULL) {
+        server.queueMessage(fd, Response::error(IRC::ERR_CHANNELISFULL, client.getNickname(), channelName + " :Cannot join channel (+l)"));
     } else {
-        // Handle Errors (Full, InviteOnly, etc)
-        // For now generic error
-        server.queueMessage(fd, Response::error(IRC::ERR_CHANNELISFULL, client.getNickname(), channelName + " :Cannot join channel"));
+        /* do nothing */
+        return 0;
     }
+    // above else if statements are fucking messy. generalize later.
+    // TODO: test error cases after implement MODE command
     
-    return res;
+    return 1; // yeonjuki: REPLACE TO res AFTER CHANGE RETURN TYPE.
 
   } else if (cmd == "part") {
     if (users.find(fd) == users.end()) {
