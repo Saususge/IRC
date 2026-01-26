@@ -16,7 +16,7 @@ class Manager {
   ~Manager();
 
   int doRequest(Server& server, int fd, std::string request);
-  void addClient(int fd);
+  void addClient(int fd, bool isPassAvaliable=true);
   void removeClient(int fd);
 
  private:

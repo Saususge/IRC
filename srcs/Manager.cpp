@@ -21,13 +21,16 @@ Manager::Manager() {}
 
 Manager::~Manager() {}
 
-void Manager::addClient(int fd) {
+void Manager::addClient(int fd, bool isEmptyPass) {
     if (users.find(fd) != users.end()) {
         std::cerr << "[ERROR] Manager: Fd=" << fd << " found in users." << std::endl;
         return ; // do nothing
     }
 
     users[fd] = Client();
+    if (isEmptyPass)
+        (&users[fd])->onPass();
+    
     std::cout << "Manager: Client(fd=" << fd << ") added." << std::endl;
 }
 

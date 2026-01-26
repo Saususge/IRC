@@ -133,7 +133,7 @@ void Server::acceptClients() {
 
   _inbuf[clientFd] = "";
   _outbuf[clientFd] = "";
-  manager.addClient(clientFd);
+  manager.addClient(clientFd, _password == "");
   std::cout << "New client connected: " << clientFd << std::endl;
 }
 
