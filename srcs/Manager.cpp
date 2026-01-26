@@ -100,16 +100,20 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     }
 
     std::map<int, Client>::iterator iter = users.find(fd);
-    // change nickname if exists
-    if (iter != users.end() && iter->second.getRegisterd()) {
-        std::string oldNick = iter->second.getNickname();
-        iter->second.setNickname(newNick);
-        server.queueMessage(fd, ":" + oldNick + " NICK :" + newNick + "\r\n");
-        return 0;
-    } else if (iter == users.end()) {
+
+    if (iter!= users.end()) {
+        if (iter->second.getRegisterd()) {
+            std::string oldNick = iter->second.getNickname();
+            iter->second.setNickname(newNick);
+            server.queueMessage(fd, ":" + oldNick + " NICK :" + newNick + "\r\n");
+            return 0;
+        } else
+            iter->second.setNickname(newNick);
+    } else {
         std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
         return -1;
     }
+
     iter->second.onNick();
 
     if (iter->second.isRegistrable()) {
