@@ -21,6 +21,16 @@ Manager::Manager() {}
 
 Manager::~Manager() {}
 
+void Manager::addClient(int fd) {
+    if (users.find(fd) != users.end()) {
+        std::cerr << "[ERROR] Manager: Fd=" << fd << " found in users." << std::endl;
+        return ; // do nothing
+    }
+
+    users[fd] = Client();
+    std::cout << "Manager: Client(fd=" << fd << ") added." << std::endl;
+}
+
 void Manager::removeClient(int fd) {
   if (users.find(fd) != users.end()) {
       Client& client = users.find(fd)->second;
