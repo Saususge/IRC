@@ -201,3 +201,7 @@ void Server::handleClientWritable(size_t pollIndex) {
   }
   out.erase(0, n);
 }
+
+const std::string& Server::getPassword() const {
+  return this->_password;
+}
