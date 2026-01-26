@@ -21,7 +21,6 @@ class Manager {
 
  private:
   std::map<int, Client> users;
-  std::map<int, std::string> unregistered;
   std::map<std::string, Channel> channels;
 
   std::string pass;
