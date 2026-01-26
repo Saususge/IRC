@@ -2,3 +2,6 @@ vscode/
 *.o
 *.d
 ircserv
+.cache
+compile_commands.json
+en.subject.*
