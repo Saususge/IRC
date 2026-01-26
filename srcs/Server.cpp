@@ -133,6 +133,7 @@ void Server::acceptClients() {
 
   _inbuf[clientFd] = "";
   _outbuf[clientFd] = "";
+  manager.addClient(clientFd, _password == "");
   std::cout << "New client connected: " << clientFd << std::endl;
 }
 
@@ -145,6 +146,26 @@ void Server::closeClient(size_t pollIndex) {
   close(fd);
 
   _pollFds.erase(_pollFds.begin() + pollIndex);
+  _inbuf.erase(fd);
+  _outbuf.erase(fd);
+  std::cout << "Client disconnected: " << fd << std::endl;
+}
+
+void Server::closeClientByFd(size_t fd) {
+  size_t idx;
+
+  for (idx=0; idx < _pollFds.size(); idx++) {
+    if (_pollFds[idx].fd == (int) fd) {
+      break;
+    }
+  }
+
+  // Notify Manager to cleanup user data
+  manager.removeClient(fd);
+
+  close(fd);
+
+  _pollFds.erase(_pollFds.begin() + idx);
   _inbuf.erase(fd);
   _outbuf.erase(fd);
   std::cout << "Client disconnected: " << fd << std::endl;
@@ -200,4 +221,8 @@ void Server::handleClientWritable(size_t pollIndex) {
     return;
   }
   out.erase(0, n);
+}
+
+const std::string& Server::getPassword() const {
+  return this->_password;
 }

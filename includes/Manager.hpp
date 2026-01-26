@@ -16,11 +16,11 @@ class Manager {
   ~Manager();
 
   int doRequest(Server& server, int fd, std::string request);
+  void addClient(int fd, bool isPassAvaliable=true);
   void removeClient(int fd);
 
  private:
   std::map<int, Client> users;
-  std::map<int, std::string> unregistered;
   std::map<std::string, Channel> channels;
 
   std::string pass;

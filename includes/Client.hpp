@@ -6,6 +6,7 @@
 
 class Client {
  public:
+  Client();
   Client(std::string nickname, std::string username, std::string realname);
   ~Client();
 
@@ -16,6 +17,20 @@ class Client {
   
   std::string getRealname() const;
 
+  void onPass();
+  void onNick();
+  void onUser();
+
+  bool getPass() const;
+  bool getNick() const;
+  bool getUser() const;
+  short getLoginFlags() const;
+
+  bool isRegistrable() const;
+
+  bool getRegisterd() const;
+  void setRegisterd(bool value);
+
   // 채널 관련 메서드는 필요시 추가
   void joinChannel(std::string channelName);
   void leaveChannel(std::string channelName);
@@ -24,6 +39,9 @@ class Client {
   std::string _nickname;
   std::string _username;
   std::string _realname;
+
+  short loginFlags;
+  bool registerd;
   
   std::vector<std::string> _joinedChannels;
 };

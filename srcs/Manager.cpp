@@ -21,6 +21,19 @@ Manager::Manager() {}
 
 Manager::~Manager() {}
 
+void Manager::addClient(int fd, bool isEmptyPass) {
+    if (users.find(fd) != users.end()) {
+        std::cerr << "[ERROR] Manager: Fd=" << fd << " found in users." << std::endl;
+        return ; // do nothing
+    }
+
+    users[fd] = Client();
+    if (isEmptyPass)
+        (&users[fd])->onPass();
+    
+    std::cout << "Manager: Client(fd=" << fd << ") added." << std::endl;
+}
+
 void Manager::removeClient(int fd) {
   if (users.find(fd) != users.end()) {
       Client& client = users.find(fd)->second;
@@ -45,15 +58,11 @@ void Manager::removeClient(int fd) {
       }
       users.erase(fd);
   }
-  
-  if (unregistered.find(fd) != unregistered.end()) {
-      unregistered.erase(fd);
-  }
+
   std::cout << "Manager: Client " << fd << " removed." << std::endl;
 }
 
 int Manager::doRequest(Server& server, int fd, std::string request) {
-  (void)server;
   std::stringstream ss(request);
   std::string tok;
   std::vector<std::string> tokVec;
@@ -90,59 +99,110 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
       }
     }
 
-    // If user is already registered (in users map), change nickname
-    if (users.find(fd) != users.end()) {
-        std::string oldNick = users.find(fd)->second.getNickname();
-        users.find(fd)->second.setNickname(newNick);
-        server.queueMessage(fd, ":" + oldNick + " NICK :" + newNick + "\r\n");
-        return 0;
+    std::map<int, Client>::iterator iter = users.find(fd);
+
+    if (iter!= users.end()) {
+        if (iter->second.getRegisterd()) {
+            std::string oldNick = iter->second.getNickname();
+            iter->second.setNickname(newNick);
+            server.queueMessage(fd, ":" + oldNick + " NICK :" + newNick + "\r\n");
+            return 0;
+        } else
+            iter->second.setNickname(newNick);
+    } else {
+        std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
+        return -1;
     }
 
-    // Not registered yet, store in unregistered
-    unregistered[fd] = newNick;
+    iter->second.onNick();
+
+    if (iter->second.isRegistrable()) {
+        iter->second.setRegisterd(true);
+
+        // SEND WELCOME MESSAGES
+        server.queueMessage(fd, Response::build(IRC::RPL_WELCOME, newNick, ":Welcome to the ft_irc Network " + newNick));
+        server.queueMessage(fd, Response::build(IRC::RPL_YOURHOST, newNick, ":Your host is irc.local, running version 1.0"));
+        server.queueMessage(fd, Response::build(IRC::RPL_CREATED, newNick, ":This server was created today"));
+        server.queueMessage(fd, Response::build(IRC::RPL_MYINFO, newNick, "irc.local 1.0 o o"));
+        return 1;
+
+    } else if (iter->second.getLoginFlags() == 0b110) {
+        server.queueMessage(fd, Response::error(IRC::ERR_PASSWDMISMATCH, newNick, ":Password incorrect"));
+        server.queueMessage(fd, "ERROR :Closing Link: " + newNick + " (Bad Password)\r\n");
+        // TODO: wait for sending message
+        server.closeClientByFd(fd);
+    }
+
   } else if (cmd == "user") {
     if (tokVec.size() < 5) {
         server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, "*", "USER :Not enough parameters"));
         return 0;
     }
 
-    if (users.find(fd) != users.end()) {
+    std::map<int, Client>::iterator iter = users.find(fd);
+    if (iter != users.end() && iter->second.getRegisterd()) {
         server.queueMessage(fd, Response::error(IRC::ERR_ALREADYREGISTRED, users.find(fd)->second.getNickname(), ":You may not reregister"));
-        return 0;
+        users.erase(fd);
+        return -1;
+    } else if (iter == users.end()) {
+        std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
+        return -1;
     }
 
-    // For simplicity, we assume NICK command was sent before USER. 
-    // In a real IRC server, these can come in any order.
-    // Here we check if we have a nickname waiting for this fd.
-    if (unregistered.find(fd) == unregistered.end()) {
-        // No nickname yet, just store it? Or require NICK first?
-        // Let's assume we wait for NICK.
-        server.queueMessage(fd, Response::error(IRC::ERR_NOTREGISTERED, "*", ":You have not registered"));
-        return 0;
-    }
-
-    std::string nickname = unregistered[fd];
+    std::string nickname = iter->second.getNickname();
     std::string username = tokVec[1];
     std::string realname = tokVec[4];
 
-    // CREATE CLIENT
-    users.insert(
-        std::pair<int, Client>(fd, Client(nickname, username, realname)));
-    unregistered.erase(fd);
+    iter->second.onUser();
 
-    // SEND WELCOME MESSAGES
-    server.queueMessage(fd, Response::build(IRC::RPL_WELCOME, nickname, ":Welcome to the ft_irc Network " + nickname));
-    server.queueMessage(fd, Response::build(IRC::RPL_YOURHOST, nickname, ":Your host is irc.local, running version 1.0"));
-    server.queueMessage(fd, Response::build(IRC::RPL_CREATED, nickname, ":This server was created today"));
-    server.queueMessage(fd, Response::build(IRC::RPL_MYINFO, nickname, "irc.local 1.0 o o"));
+    if (iter->second.isRegistrable()) {
+        iter->second.setRegisterd(true);
+
+        // SEND WELCOME MESSAGES
+        server.queueMessage(fd, Response::build(IRC::RPL_WELCOME, nickname, ":Welcome to the ft_irc Network " + nickname));
+        server.queueMessage(fd, Response::build(IRC::RPL_YOURHOST, nickname, ":Your host is irc.local, running version 1.0"));
+        server.queueMessage(fd, Response::build(IRC::RPL_CREATED, nickname, ":This server was created today"));
+        server.queueMessage(fd, Response::build(IRC::RPL_MYINFO, nickname, "irc.local 1.0 o o"));
+        return 1;
+
+    } else if (iter->second.getLoginFlags() == 0b110) {
+        server.queueMessage(fd, Response::error(IRC::ERR_PASSWDMISMATCH, nickname, ":Password incorrect"));
+        server.queueMessage(fd, "ERROR :Closing Link: " + nickname + " (Bad Password)\r\n");
+        // TODO: wait for sending message
+        server.closeClientByFd(fd);
+    }
 
   } else if (cmd == "pass") {
     std::cout << "pass" << std::endl;
+
+    if (tokVec.size() < 2) {
+        server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), "JOIN :Not enough parameters"));
+        return 1;
+    }
+
+    std::map<int, Client>::iterator iter = users.find(fd);
+    if (iter != users.end() && iter->second.getRegisterd()) {
+        server.queueMessage(fd, Response::error(IRC::ERR_ALREADYREGISTRED, users.find(fd)->second.getNickname(), "JOIN :Not enough parameters"));
+        return 1;
+    } else if (iter == users.end()) {
+        std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
+        return -1;
+    }
+
+    if (tokVec[1] == server.getPassword()) {
+        iter->second.onPass();
+        return 1;
+    }
+
   } else if (cmd == "join") {
     // Check registration
-    if (users.find(fd) == users.end()) {
+    std::map<int, Client>::iterator iter = users.find(fd);
+    if (iter != users.end() && iter->second.getRegisterd() == false) {
         server.queueMessage(fd, Response::error(IRC::ERR_NOTREGISTERED, "*", ":You have not registered"));
         return 0;
+    } else if (iter == users.end()) {
+        std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
+        return -1;
     }
     
     if (tokVec.size() < 2) {
@@ -209,9 +269,13 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     return 1; // yeonjuki: REPLACE TO res AFTER CHANGE RETURN TYPE.
 
   } else if (cmd == "part") {
-    if (users.find(fd) == users.end()) {
+    std::map<int, Client>::iterator userIter = users.find(fd);
+    if (userIter != users.end() && userIter->second.getRegisterd() == false) {
         server.queueMessage(fd, Response::error(IRC::ERR_NOTREGISTERED, "*", ":You have not registered"));
         return 0;
+    } else if (userIter == users.end()) {
+        std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
+        return -1;
     }
     if (tokVec.size() < 2) {
        server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), "PART :Not enough parameters"));
@@ -256,10 +320,14 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     return 0;
 
   } else if (cmd == "privmsg") {
-      if (users.find(fd) == users.end()) {
+    std::map<int, Client>::iterator iter = users.find(fd);
+    if (iter != users.end() && iter->second.getRegisterd() == false) {
         server.queueMessage(fd, Response::error(IRC::ERR_NOTREGISTERED, "*", ":You have not registered"));
         return 0;
-      }
+    } else if (iter == users.end()) {
+        std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
+        return -1;
+    }
       
       if (tokVec.size() < 3) {
           server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), "PRIVMSG :Not enough parameters"));
