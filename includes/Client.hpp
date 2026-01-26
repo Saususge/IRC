@@ -28,8 +28,8 @@ class Client {
 
   bool isRegistrable() const;
 
-  bool getAuthorized() const;
-  void setAuthorized(bool value);
+  bool getRegisterd() const;
+  void setRegisterd(bool value);
 
   // 채널 관련 메서드는 필요시 추가
   void joinChannel(std::string channelName);
@@ -41,7 +41,7 @@ class Client {
   std::string _realname;
 
   short loginFlags;
-  bool authorized;
+  bool registerd;
   
   std::vector<std::string> _joinedChannels;
 };

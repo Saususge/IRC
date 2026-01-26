@@ -1,10 +1,10 @@
 #include "Client.hpp"
 
 Client::Client()
-    : _nickname(""), _username(""), _realname(""), loginFlags(0), authorized(false) {}
+    : _nickname(""), _username(""), _realname(""), loginFlags(0), registerd(false) {}
 
 Client::Client(std::string nickname, std::string username, std::string realname)
-    : _nickname(nickname), _username(username), _realname(realname), loginFlags(0), authorized(false) {}
+    : _nickname(nickname), _username(username), _realname(realname), loginFlags(0), registerd(false) {}
 
 Client::~Client() {}
 
@@ -28,8 +28,8 @@ short Client::getLoginFlags() const { return loginFlags; }
 
 bool Client::isRegistrable() const { return loginFlags == 0b111; }
 
-void Client::setAuthorized(bool value) { authorized = value; }
-bool Client::getAuthorized() const { return authorized; }
+void Client::setRegisterd(bool value) { registerd = value; }
+bool Client::getRegisterd() const { return registerd; }
 
 void Client::joinChannel(std::string channelName) {
   _joinedChannels.push_back(channelName);
