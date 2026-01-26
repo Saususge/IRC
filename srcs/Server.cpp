@@ -150,6 +150,26 @@ void Server::closeClient(size_t pollIndex) {
   std::cout << "Client disconnected: " << fd << std::endl;
 }
 
+void Server::closeClientByFd(size_t fd) {
+  size_t idx;
+
+  for (idx=0; idx < _pollFds.size(); idx++) {
+    if (_pollFds[idx].fd == (int) fd) {
+      break;
+    }
+  }
+
+  // Notify Manager to cleanup user data
+  manager.removeClient(fd);
+
+  close(fd);
+
+  _pollFds.erase(_pollFds.begin() + idx);
+  _inbuf.erase(fd);
+  _outbuf.erase(fd);
+  std::cout << "Client disconnected: " << fd << std::endl;
+}
+
 void Server::handleClientReadable(size_t pollIndex) {
   int fd = _pollFds[pollIndex].fd;
   char buf[512];

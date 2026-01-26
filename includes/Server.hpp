@@ -19,6 +19,8 @@ class Server {
 
   const std::string& getPassword() const;
 
+  void closeClientByFd(size_t fd);
+
  private:
   Server(const Server&);
   Server& operator=(const Server&);
