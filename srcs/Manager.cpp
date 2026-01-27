@@ -118,14 +118,9 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
 
     if (iter->second.isRegistrable()) {
         iter->second.setRegisterd(true);
-
-        // SEND WELCOME MESSAGES
-        server.queueMessage(fd, Response::build(IRC::RPL_WELCOME, newNick, ":Welcome to the ft_irc Network " + newNick));
-        server.queueMessage(fd, Response::build(IRC::RPL_YOURHOST, newNick, ":Your host is irc.local, running version 1.0"));
-        server.queueMessage(fd, Response::build(IRC::RPL_CREATED, newNick, ":This server was created today"));
-        server.queueMessage(fd, Response::build(IRC::RPL_MYINFO, newNick, "irc.local 1.0 o o"));
+        sendWelcomeMsg(server, fd, newNick);
         return 1;
-
+    // TODO: replace queueMessage to sendPassMismatch()
     } else if (iter->second.getLoginFlags() == 0b110) {
         server.queueMessage(fd, Response::error(IRC::ERR_PASSWDMISMATCH, newNick, ":Password incorrect"));
         server.queueMessage(fd, "ERROR :Closing Link: " + newNick + " (Bad Password)\r\n");
@@ -134,10 +129,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     }
 
   } else if (cmd == "user") {
-    if (tokVec.size() < 5) {
-        server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, "*", "USER :Not enough parameters"));
-        return 0;
-    }
+    if (isValidParam(server, fd, 5, tokVec) == false) return 0;
 
     std::map<int, Client>::iterator iter = users.find(fd);
     if (iter != users.end() && iter->second.getRegisterd()) {
@@ -157,14 +149,9 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
 
     if (iter->second.isRegistrable()) {
         iter->second.setRegisterd(true);
-
-        // SEND WELCOME MESSAGES
-        server.queueMessage(fd, Response::build(IRC::RPL_WELCOME, nickname, ":Welcome to the ft_irc Network " + nickname));
-        server.queueMessage(fd, Response::build(IRC::RPL_YOURHOST, nickname, ":Your host is irc.local, running version 1.0"));
-        server.queueMessage(fd, Response::build(IRC::RPL_CREATED, nickname, ":This server was created today"));
-        server.queueMessage(fd, Response::build(IRC::RPL_MYINFO, nickname, "irc.local 1.0 o o"));
+        sendWelcomeMsg(server, fd, nickname);
         return 1;
-
+    // TODO: replace queueMessage to sendPassMismatch()
     } else if (iter->second.getLoginFlags() == 0b110) {
         server.queueMessage(fd, Response::error(IRC::ERR_PASSWDMISMATCH, nickname, ":Password incorrect"));
         server.queueMessage(fd, "ERROR :Closing Link: " + nickname + " (Bad Password)\r\n");
@@ -174,15 +161,11 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
 
   } else if (cmd == "pass") {
     std::cout << "pass" << std::endl;
-
-    if (tokVec.size() < 2) {
-        server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), "JOIN :Not enough parameters"));
-        return 1;
-    }
+    if (isValidParam(server, fd, 5, tokVec) == false) return 0;
 
     std::map<int, Client>::iterator iter = users.find(fd);
     if (iter != users.end() && iter->second.getRegisterd()) {
-        server.queueMessage(fd, Response::error(IRC::ERR_ALREADYREGISTRED, users.find(fd)->second.getNickname(), "JOIN :Not enough parameters"));
+        server.queueMessage(fd, Response::error(IRC::ERR_ALREADYREGISTRED, users.find(fd)->second.getNickname(), " :Connection already registered"));
         return 1;
     } else if (iter == users.end()) {
         std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
@@ -204,11 +187,8 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
         std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
         return -1;
     }
-    
-    if (tokVec.size() < 2) {
-        server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), "JOIN :Not enough parameters"));
-        return 0;
-    }
+
+    if (isValidParam(server, fd, 2, tokVec) == false) return 0;
 
     std::string channelName = tokVec[1];
     
@@ -277,10 +257,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
         std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
         return -1;
     }
-    if (tokVec.size() < 2) {
-       server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), "PART :Not enough parameters"));
-       return 0;
-    }
+    if (isValidParam(server, fd, 2, tokVec) == false) return 0;
     std::string channelName = tokVec[1];
     std::string reason = (tokVec.size() > 2) ? tokVec[2] : ":Leaving";
 
@@ -329,10 +306,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
         return -1;
     }
       
-      if (tokVec.size() < 3) {
-          server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), "PRIVMSG :Not enough parameters"));
-          return 0;
-      }
+      if (isValidParam(server, fd, 3, tokVec) == false) return 0;
 
       std::string target = tokVec[1];
       std::string text = tokVec[2];
@@ -390,10 +364,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
   } else if (cmd == "kick") {
       // Syntax: KICK <channel> <user> [<comment>]
       if (users.find(fd) == users.end()) return 0;
-      if (tokVec.size() < 3) {
-          server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), "KICK :Not enough parameters"));
-          return 0;
-      }
+      if (isValidParam(server, fd, 3, tokVec) == false) return 0;
 
       std::string channelName = tokVec[1];
       std::string targetNick = tokVec[2];
@@ -452,10 +423,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
       // Syntax: INVITE <nickname> <channel>
       // TODO: test invite command after impelment mode command
       if (users.find(fd) == users.end()) return 0;
-      if (tokVec.size() < 3) {
-          server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), "INVITE :Not enough parameters"));
-          return 0;
-      }
+      if (isValidParam(server, fd, 3, tokVec) == false) return 0;
       
       std::string targetNick = tokVec[1];
       std::string channelName = tokVec[2];
@@ -503,10 +471,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
   } else if (cmd == "topic") {
       // Syntax: TOPIC <channel> [<topic>]
        if (users.find(fd) == users.end()) return 0;
-      if (tokVec.size() < 2) {
-          server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), "TOPIC :Not enough parameters"));
-          return 0;
-      }
+      if (isValidParam(server, fd, 2, tokVec) == false) return 0;
       
       std::string channelName = tokVec[1];
       Client& sender = users.find(fd)->second;
@@ -611,4 +576,24 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
   }
 
   return 1;
+}
+
+void Manager::sendWelcomeMsg(Server& server, int fd, std::string nickname) {
+  server.queueMessage(fd, Response::build(IRC::RPL_WELCOME, nickname, ":Welcome to the ft_irc Network " + nickname));
+  server.queueMessage(fd, Response::build(IRC::RPL_YOURHOST, nickname, ":Your host is irc.local, running version 1.0"));
+  server.queueMessage(fd, Response::build(IRC::RPL_CREATED, nickname, ":This server was created today"));
+  server.queueMessage(fd, Response::build(IRC::RPL_MYINFO, nickname, "irc.local 1.0 o o"));
+}
+
+void Manager::sendPassMismatch(Server& server, int fd, std::string nickname) {
+  server.queueMessage(fd, Response::error(IRC::ERR_PASSWDMISMATCH, nickname, ":Password incorrect"));
+  server.queueMessage(fd, "ERROR :Closing Link: " + nickname + " (Bad Password)\r\n");
+}
+
+bool Manager::isValidParam(Server& server, int fd, size_t paramNum, std::vector<std::string>& tokVec) {
+  if (tokVec.size() < paramNum) {
+    server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), "PRIVMSG :Not enough parameters"));
+    return false;
+  }
+  return true;
 }
