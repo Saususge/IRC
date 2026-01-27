@@ -1,10 +1,10 @@
 #include "Client.hpp"
 
 Client::Client()
-    : _nickname(""), _username(""), _realname(""), loginFlags(0), registerd(false) {}
+    : _nickname(""), _username(""), _realname(""), loginFlags(0), registerd(false), _refCount(0) {}
 
 Client::Client(std::string nickname, std::string username, std::string realname)
-    : _nickname(nickname), _username(username), _realname(realname), loginFlags(0), registerd(false) {}
+    : _nickname(nickname), _username(username), _realname(realname), loginFlags(0), registerd(false), _refCount(0) {}
 
 Client::~Client() {}
 
@@ -38,4 +38,13 @@ void Client::joinChannel(std::string channelName) {
 // TODO: leaveChannel 구현
 void Client::leaveChannel(std::string channelName) {
   (void)channelName;
+}
+
+void Client::addRef() {++_refCount;}
+void Client::release() {
+  if (_refCount == 0) {
+    delete this;
+    return;
+  }
+  --_refCount;
 }
