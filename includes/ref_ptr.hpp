@@ -33,6 +33,7 @@ class ref_ptr {
   }
   T* operator->() const { return _ptr; }
   T& operator*() const { return *_ptr; }
+  T* get() const { return _ptr; }
 
  private:
   T* _ptr;
