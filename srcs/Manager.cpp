@@ -129,8 +129,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     } else if (iter->second.getLoginFlags() == 0b110) {
         server.queueMessage(fd, Response::error(IRC::ERR_PASSWDMISMATCH, newNick, ":Password incorrect"));
         server.queueMessage(fd, "ERROR :Closing Link: " + newNick + " (Bad Password)\r\n");
-        // TODO: wait for sending message
-        server.closeClientByFd(fd);
+        server.requestCloseAfterFlush(fd);
     }
 
   } else if (cmd == "user") {
@@ -168,8 +167,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     } else if (iter->second.getLoginFlags() == 0b110) {
         server.queueMessage(fd, Response::error(IRC::ERR_PASSWDMISMATCH, nickname, ":Password incorrect"));
         server.queueMessage(fd, "ERROR :Closing Link: " + nickname + " (Bad Password)\r\n");
-        // TODO: wait for sending message
-        server.closeClientByFd(fd);
+        server.requestCloseAfterFlush(fd);
     }
 
   } else if (cmd == "pass") {

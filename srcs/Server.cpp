@@ -13,7 +13,7 @@
 #include <cerrno>
 
 Server::Server(int port, const std::string& password)
-    : _port(port), _password(password), _serverFd(-1), _pollFds(), _inbuf(), _outbuf(), manager() {
+    : _port(port), _password(password), _serverFd(-1), _pollFds(), _inbuf(), _outbuf(), _closeAfterFlush(), manager() {
   initSocketOrDie();
 }
 
@@ -151,26 +151,6 @@ void Server::closeClient(size_t pollIndex) {
   std::cout << "Client disconnected: " << fd << std::endl;
 }
 
-void Server::closeClientByFd(size_t fd) {
-  size_t idx;
-
-  for (idx=0; idx < _pollFds.size(); idx++) {
-    if (_pollFds[idx].fd == (int) fd) {
-      break;
-    }
-  }
-
-  // Notify Manager to cleanup user data
-  manager.removeClient(fd);
-
-  close(fd);
-
-  _pollFds.erase(_pollFds.begin() + idx);
-  _inbuf.erase(fd);
-  _outbuf.erase(fd);
-  std::cout << "Client disconnected: " << fd << std::endl;
-}
-
 void Server::handleClientReadable(size_t pollIndex) {
   int fd = _pollFds[pollIndex].fd;
   char buf[512];
@@ -221,8 +201,16 @@ void Server::handleClientWritable(size_t pollIndex) {
     return;
   }
   out.erase(0, n);
+
+  if (out.empty() && (_closeAfterFlush.find(fd) != _closeAfterFlush.end())) {
+    closeClient(pollIndex);
+  }
 }
 
 const std::string& Server::getPassword() const {
   return this->_password;
+}
+
+void Server::requestCloseAfterFlush(int fd) {
+  this->_closeAfterFlush.insert(fd);
 }

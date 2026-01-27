@@ -16,6 +16,7 @@ class Server {
 
   void run();
   void queueMessage(int fd, const std::string& msg);
+  void requestCloseAfterFlush(int fd);
 
   const std::string& getPassword() const;
 
@@ -39,6 +40,7 @@ class Server {
   std::vector<struct pollfd> _pollFds;
   std::map<int, std::string> _inbuf;
   std::map<int, std::string> _outbuf;
+  std::set<int> _closeAfterFlush;
   void handleClientWritable(size_t pollIndex);
   void updatePollEvents(int fd);
 
