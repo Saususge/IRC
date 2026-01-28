@@ -308,19 +308,8 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
       } 
       // 2. Private Message (User to User)
       else {
-          int destFd = -1;
-          // Find user by nickname
-          for (std::map<int, Client>::iterator it = users.begin(); it != users.end(); ++it) {
-              if (it->second.getNickname() == target) {
-                  destFd = it->first;
-                  break;
-              }
-          }
-
-          if (destFd == -1) {
-              server.queueMessage(fd, Response::error(IRC::ERR_NOSUCHNICK, sender.getNickname(), target + " :No such nick/channel"));
-              return 0;
-          }
+          int destFd = getFdByNick(server, fd, sender.getNickname(), target);
+          if (destFd == -1) return 0;
 
           std::string fullMsg = senderPrefix + " PRIVMSG " + target + " :" + text + "\r\n";
           server.queueMessage(destFd, fullMsg);
@@ -412,18 +401,11 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
           
           // 2. Send INVITE message to target
           // Find target FD
-          int targetFd = -1;
-           for (std::map<int, Client>::iterator it = users.begin(); it != users.end(); ++it) {
-              if (it->second.getNickname() == targetNick) {
-                  targetFd = it->first;
-                  break;
-              }
-          }
-          if (targetFd != -1) {
-              // :Sender INVITE Target :#chan
+          int targetFd = getFdByNick(server, fd, sender.getNickname(), targetNick);
+          if (targetFd == -1) return 0;
+
               std::string inviteMsg = ":" + sender.getNickname() + "!" + sender.getUsername() + "@127.0.0.1 INVITE " + targetNick + " :" + channelName + "\r\n";
               server.queueMessage(targetFd, inviteMsg);
-          }
       } else if (res == IRC::ERR_NOTONCHANNEL) {
         server.queueMessage(fd, Response::error(IRC::ERR_NOTONCHANNEL, sender.getNickname(), channelName + " :You're not on that channel"));
       } else if (res == IRC::ERR_CHANOPRIVSNEEDED) {
@@ -587,4 +569,13 @@ bool Manager::isNotRegisterd(Server& server, int fd) {
       return true;
   }
   return false;
+}
+
+int Manager::getFdByNick(Server& server, int fd, std::string sender, std::string target) {
+  for (std::map<int, Client>::iterator it = users.begin(); it != users.end(); ++it) {
+      if (it->second.getNickname() == target)
+          return it->first;
+  }
+  server.queueMessage(fd, Response::error(IRC::ERR_NOSUCHNICK, sender, target + " :No such nick/channel"));
+  return -1;
 }

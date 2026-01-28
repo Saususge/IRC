@@ -29,6 +29,8 @@ class Manager {
   bool isValidParam(Server& server, int fd, size_t paramNum, std::vector<std::string>& tokVec);
   bool isAlreadyRegisterd(Server& server, int fd);
   bool isNotRegisterd(Server& server, int fd);
+
+  int getFdByNick(Server& server, int fd, std::string sender, std::string target);
 };
 
 #endif
