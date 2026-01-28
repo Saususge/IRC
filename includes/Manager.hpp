@@ -23,7 +23,18 @@ class Manager {
   std::map<int, Client> users;
   std::map<std::string, Channel> channels;
 
-  std::string pass;
+  void sendWelcomeMsg(Server& server, int fd, std::string nickname);
+  void sendPassMismatch(Server& server, int fd, std::string nickname);
+
+  bool isValidParam(Server& server, int fd, size_t paramNum, std::vector<std::string>& tokVec);
+  bool isAlreadyRegisterd(Server& server, int fd);
+  bool isNotRegisterd(Server& server, int fd);
+
+  int getFdByNick(Server& server, int fd, std::string callerNick, std::string target);
+
+  std::map<std::string, Channel>::iterator getChannel(Server& server, int fd, std::string channelName, std::string callerNick);
+
+  void broadcastMsg(Server& server, Channel& channel, std::string msg, int self=-1);
 };
 
 #endif
