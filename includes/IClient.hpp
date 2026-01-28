@@ -21,6 +21,8 @@ class IClient {
 
   virtual int send(const std::string& msg) = 0;
 
+  virtual int joinChannel(const std::string& channelName) = 0;
+  virtual int partChannel(const std::string& channelName) = 0;
   virtual std::vector<const std::string&> getJoinedChannels() = 0;
 };
 #endif  // ICLIENT_HPP
