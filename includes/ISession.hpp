@@ -8,10 +8,10 @@ class ISession {
   virtual ~ISession() {};
 
   virtual int send(const std::string& msg) = 0;
-
-  virtual int disconnect() = 0;  // Deferred Close
-
-  virtual int getSocketFD() const = 0;  // Needed for deferred close
+  // Deferred Close
+  virtual int disconnect() = 0;
+  // Needed for deferred close pollFDs in AServer
+  virtual int getSocketFD() const = 0;
 };
 
 #endif
