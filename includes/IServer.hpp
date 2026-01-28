@@ -16,7 +16,9 @@ class IServer {
   virtual int acceptSession() = 0;
   // Defererd disconnection
   virtual int disconnectSession(ISession* session) = 0;
-
+  // TODO:
+  // IServer may need IDisconnector for IContext
+  // Add more behavior that Server can do
   virtual int run() = 0;
 };
 #endif
