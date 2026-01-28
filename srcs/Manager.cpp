@@ -154,7 +154,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
 
   } else if (cmd == "pass") {
     std::cout << "pass" << std::endl;
-    if (isValidParam(server, fd, 5, tokVec) == false) return 0;
+    if (isValidParam(server, fd, 2, tokVec) == false) return 0;
 
     if (isAlreadyRegisterd(server, fd)) return 0;
 
@@ -188,10 +188,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
         // 1. Notify all members in channel that user joined
         std::string joinMsg = ":" + client.getNickname() + "!" + client.getUsername() + "@127.0.0.1 JOIN :" + channelName + "\r\n";
         
-        const std::map<std::string, MemberInfo>& members = channel.getUsers();
-        for (std::map<std::string, MemberInfo>::const_iterator it = members.begin(); it != members.end(); ++it) {
-            server.queueMessage(it->second.fd, joinMsg);
-        }
+        broadcastMsg(server, channel, joinMsg);
 
         // 2. Send Topic (if any) - 332
         std::string topic = channel.getTopic();
@@ -199,6 +196,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
         server.queueMessage(fd, Response::build(res, client.getNickname(), channelName + " :" + topic));
 
         // 3. Send Name List - 353, 366
+        const std::map<std::string, MemberInfo>& members = channel.getUsers();
         std::string namesList;
         for (std::map<std::string, MemberInfo>::const_iterator it = members.begin(); it != members.end(); ++it) {
            // If operator, prefix with @
@@ -247,14 +245,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     if (channel.delUser(&client) == "PART") {
          std::string partMsg = ":" + nickname + "!" + client.getUsername() + "@127.0.0.1 PART " + channelName + " " + reason + "\r\n";
          
-         // Send to self
-         server.queueMessage(fd, partMsg);
-
-         // Send to remaining members
-         const std::map<std::string, MemberInfo>& members = channel.getUsers();
-         for (std::map<std::string, MemberInfo>::const_iterator it = members.begin(); it != members.end(); ++it) {
-            server.queueMessage(it->second.fd, partMsg);
-         }
+         broadcastMsg(server, channel, partMsg, fd);
     } else {
          server.queueMessage(fd, Response::error(IRC::ERR_NOTONCHANNEL, nickname, channelName + " :You're not on that channel"));
     }
@@ -293,12 +284,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
           }
 
           std::string fullMsg = senderPrefix + " PRIVMSG " + target + " :" + text + "\r\n";
-          const std::map<std::string, MemberInfo>& members = channel.getUsers();
-          for (std::map<std::string, MemberInfo>::const_iterator it = members.begin(); it != members.end(); ++it) {
-                if (it->second.fd != fd) {
-                    server.queueMessage(it->second.fd, fullMsg);
-                }
-          }
+          broadcastMsg(server, channel, fullMsg);
       
       } 
       // 2. Private Message (User to User)
@@ -355,10 +341,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
       std::string kickMsg = ":" + sender.getNickname() + "!" + sender.getUsername() + "@127.0.0.1 KICK " + channelName + " " + targetNick + " :" + comment + "\r\n";
       
       // Send to everyone including target
-      const std::map<std::string, MemberInfo>& members = channel.getUsers();
-      for (std::map<std::string, MemberInfo>::const_iterator it = members.begin(); it != members.end(); ++it) {
-          server.queueMessage(it->second.fd, kickMsg);
-      }
+      broadcastMsg(server, channel, kickMsg);
       
       // 2. Actually remove user
       channel.delUser(targetInfo.client);
@@ -438,10 +421,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
                 // Success: Broadcast TOPIC change
                 // :Sender TOPIC #chan :New Topic
                 std::string topicMsg = ":" + sender.getNickname() + "!" + sender.getUsername() + "@127.0.0.1 TOPIC " + channelName + " :" + newTopic + "\r\n";
-                 const std::map<std::string, MemberInfo>& members = channel.getUsers();
-                 for (std::map<std::string, MemberInfo>::const_iterator it = members.begin(); it != members.end(); ++it) {
-                    server.queueMessage(it->second.fd, topicMsg);
-                 }
+                 broadcastMsg(server, channel, topicMsg);
            } else {
                 // Not op or not on channel
                 MemberInfo senderInfo;
@@ -492,10 +472,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
            Channel& channel = chIt->second;
            if (channel.getUserInfo(nickname) == 1) { // User is in this channel
                channel.delUser(&client);
-               const std::map<std::string, MemberInfo>& members = channel.getUsers();
-               for (std::map<std::string, MemberInfo>::const_iterator mit = members.begin(); mit != members.end(); ++mit) {
-                    server.queueMessage(mit->second.fd, quitMsg);
-               }
+               broadcastMsg(server, channel, quitMsg);
            }
       }
 
@@ -528,7 +505,7 @@ void Manager::sendPassMismatch(Server& server, int fd, std::string nickname) {
 
 bool Manager::isValidParam(Server& server, int fd, size_t paramNum, std::vector<std::string>& tokVec) {
   if (tokVec.size() < paramNum) {
-    server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), "PRIVMSG :Not enough parameters"));
+    server.queueMessage(fd, Response::error(IRC::ERR_NEEDMOREPARAMS, users.find(fd)->second.getNickname(), tokVec[0] + " :Not enough parameters"));
     return false;
   }
   return true;
@@ -574,4 +551,13 @@ std::map<std::string, Channel>::iterator Manager::getChannel(Server& server, int
     if (iter == channels.end())
         server.queueMessage(fd, Response::error(IRC::ERR_NOSUCHCHANNEL, callerNick, channelName + " :No such channel"));
     return iter;
+}
+
+void Manager::broadcastMsg(Server& server, Channel& channel, std::string msg, int self) {
+  const std::map<std::string, MemberInfo>& members = channel.getUsers();
+
+  if (self > -1) server.queueMessage(self, msg);
+  for (std::map<std::string, MemberInfo>::const_iterator it = members.begin(); it != members.end(); ++it) {
+      server.queueMessage(it->second.fd, msg);
+  }
 }
