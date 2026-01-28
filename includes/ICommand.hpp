@@ -16,11 +16,18 @@ class ICommandContext {
   virtual const std::string& getCommandType() const = 0;
   virtual const std::vector<const std::string> args() const = 0;
   // Use for disconnecting or replying to user
-  virtual const ISession& requester() const = 0;
+  virtual ISession& requester() = 0;
 
-  virtual const IClientRegistry& clients() const = 0;
-  virtual const IChannelResistry& channels() const = 0;
+  virtual IClientRegistry& clients() = 0;
+  virtual IChannelResistry& channels() = 0;
   virtual const IServerConfig& serverConfig() const = 0;
+};
+
+class ICommand {
+ public:
+  virtual ~ICommand();
+
+  virtual int excute(ICommandContext& ctx) const;
 };
 
 #endif
