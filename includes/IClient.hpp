@@ -22,7 +22,8 @@ class IClient {
   virtual const std::string& getUser() = 0;
   virtual const std::string& getRealName() = 0;
 
-  virtual int send(const std::string& msg) = 0;
+  // ClientResistry or equivalent has to send.
+  // virtual int send(const std::string& msg) = 0;
 
   virtual int joinChannel(const std::string& channelName) = 0;
   virtual int partChannel(const std::string& channelName) = 0;
