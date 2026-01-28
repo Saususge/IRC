@@ -18,6 +18,9 @@ class IClient {
   virtual bool hasUserInfo() = 0;
   virtual bool setUserInfo(const std::string& user,
                            const std::string& realName) = 0;
+  virtual const std::string& getNick() = 0;
+  virtual const std::string& getUser() = 0;
+  virtual const std::string& getRealName() = 0;
 
   virtual int send(const std::string& msg) = 0;
 
