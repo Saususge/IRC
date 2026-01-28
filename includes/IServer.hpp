@@ -11,7 +11,7 @@ class IServer {
 
   virtual IClientRegistry& clients() = 0;
 
-  virtual IChannelResistry channels() = 0;
+  virtual IChannelResistry& channels() = 0;
 
   virtual int acceptSession() = 0;
   // Defererd disconnection
