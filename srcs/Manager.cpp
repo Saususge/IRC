@@ -383,6 +383,9 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
       std::string channelName = tokVec[2];
       Client& sender = users.find(fd)->second;
 
+      // TODO: REMOVE LATER
+      // RFC 2812 states that the server doesn't care whether the channel exists.
+      // So, the invitation ticker should be stored in the Client object.
       // Check if channel exists
       std::map<std::string, Channel>::iterator chIt = channels.find(channelName);
       if (chIt == channels.end()) {
@@ -404,8 +407,8 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
           int targetFd = getFdByNick(server, fd, sender.getNickname(), targetNick);
           if (targetFd == -1) return 0;
 
-              std::string inviteMsg = ":" + sender.getNickname() + "!" + sender.getUsername() + "@127.0.0.1 INVITE " + targetNick + " :" + channelName + "\r\n";
-              server.queueMessage(targetFd, inviteMsg);
+          std::string inviteMsg = ":" + sender.getNickname() + "!" + sender.getUsername() + "@127.0.0.1 INVITE " + targetNick + " :" + channelName + "\r\n";
+          server.queueMessage(targetFd, inviteMsg);
       } else if (res == IRC::ERR_NOTONCHANNEL) {
         server.queueMessage(fd, Response::error(IRC::ERR_NOTONCHANNEL, sender.getNickname(), channelName + " :You're not on that channel"));
       } else if (res == IRC::ERR_CHANOPRIVSNEEDED) {
