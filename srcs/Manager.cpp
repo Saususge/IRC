@@ -574,11 +574,11 @@ bool Manager::isNotRegisterd(Server& server, int fd) {
   return false;
 }
 
-int Manager::getFdByNick(Server& server, int fd, std::string sender, std::string target) {
+int Manager::getFdByNick(Server& server, int fd, std::string callerNick, std::string target) {
   for (std::map<int, Client>::iterator it = users.begin(); it != users.end(); ++it) {
       if (it->second.getNickname() == target)
           return it->first;
   }
-  server.queueMessage(fd, Response::error(IRC::ERR_NOSUCHNICK, sender, target + " :No such nick/channel"));
+  server.queueMessage(fd, Response::error(IRC::ERR_NOSUCHNICK, callerNick, target + " :No such nick/channel"));
   return -1;
 }

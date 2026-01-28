@@ -30,7 +30,8 @@ class Manager {
   bool isAlreadyRegisterd(Server& server, int fd);
   bool isNotRegisterd(Server& server, int fd);
 
-  int getFdByNick(Server& server, int fd, std::string sender, std::string target);
+  int getFdByNick(Server& server, int fd, std::string callerNick, std::string target);
+
 };
 
 #endif
