@@ -22,7 +22,7 @@ class IChannel {
   virtual bool hasClient(const std::string& nick) const = 0;
   virtual int setClientOp(const std::string& nick) = 0;
   virtual int unsetClientOp(const std::string& nick) = 0;
-  virtual std::vector<const std::string&> getAllClients() = 0;
+  virtual std::vector<const std::string&> getClients() = 0;
 
   virtual int getClientNumber() const = 0;
 

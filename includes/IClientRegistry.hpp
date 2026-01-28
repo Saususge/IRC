@@ -4,17 +4,16 @@
 #include <string>
 #include <vector>
 
-#include "IClient.hpp"
-
 class IClientRegistry {
  public:
   virtual ~IClientRegistry() {};
 
   // May need shared ptr for parameter
-  virtual int registerClient(IClient* client);
+  // registerClient will be done by ISession or equivalent
+  // virtual int registerClient(IClient* client);
   virtual bool isNickInUse(const std::string& nick) const = 0;
   virtual bool hasClient(const std::string& nick) const = 0;
-  virtual std::vector<const std::string&> getAllClients() const = 0;
+  virtual std::vector<const std::string&> getClients() const = 0;
 
   virtual int send(const std::string& nick, const std::string& msg) = 0;
 };
