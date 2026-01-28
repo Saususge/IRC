@@ -15,7 +15,7 @@ class AServer {
  public:
   virtual IClientRegistry& clients() = 0;
   virtual IChannelResistry& channels() = 0;
-  virtual IServerConfig& serverConfig() = 0;
+  virtual const IServerConfig& serverConfig() const = 0;
 
   int acceptSession();
   // Defererd disconnection
