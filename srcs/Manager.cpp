@@ -233,15 +233,13 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     std::string channelName = tokVec[1];
     std::string reason = (tokVec.size() > 2) ? tokVec[2] : ":Leaving";
 
-    std::map<std::string, Channel>::iterator iter = channels.find(channelName);
-    if (iter == channels.end()) {
-        server.queueMessage(fd, Response::error(IRC::ERR_NOSUCHCHANNEL, users.find(fd)->second.getNickname(), channelName + " :No such channel"));
-        return 0;
-    }
-
-    Channel& channel = iter->second;
     Client& client = users.find(fd)->second;
     std::string nickname = client.getNickname();
+
+    std::map<std::string, Channel>::iterator iter = getChannel(server, fd, channelName, nickname);
+    if (iter == channels.end()) return 0;
+
+    Channel& channel = iter->second;
 
     // Check if on channel (Channel::delUser also checks this but we need to broadcast before deleting for simplicity, 
     // or broadcast to remaining members + self after)
@@ -280,11 +278,8 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
 
       // 1. Channel Message
       if (target[0] == '#') {
-          std::map<std::string, Channel>::iterator chIter = channels.find(target);
-          if (chIter == channels.end()) {
-               server.queueMessage(fd, Response::error(IRC::ERR_NOSUCHCHANNEL, sender.getNickname(), target + " :No such channel"));
-               return 0;
-          }
+          std::map<std::string, Channel>::iterator chIter = getChannel(server, fd, target, sender.getNickname());
+          if (chIter == channels.end()) return 0;
           
           Channel& channel = chIter->second;
           // Check if user is in channel? (Depending on mode 'n', but standard IRC usually enforces external msg block by default or checks membership)
@@ -325,11 +320,8 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
       std::string comment = (tokVec.size() > 3) ? tokVec[3] : "Kicked";
       Client& sender = users.find(fd)->second;
 
-      std::map<std::string, Channel>::iterator chIt = channels.find(channelName);
-      if (chIt == channels.end()) {
-          server.queueMessage(fd, Response::error(IRC::ERR_NOSUCHCHANNEL, sender.getNickname(), channelName + " :No such channel"));
-          return 0;
-      }
+      std::map<std::string, Channel>::iterator chIt = getChannel(server, fd, channelName, sender.getNickname());
+      if (chIt == channels.end()) return 0;
       Channel& channel = chIt->second;
 
       // Check permissions of sender
@@ -387,11 +379,8 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
       // RFC 2812 states that the server doesn't care whether the channel exists.
       // So, the invitation ticker should be stored in the Client object.
       // Check if channel exists
-      std::map<std::string, Channel>::iterator chIt = channels.find(channelName);
-      if (chIt == channels.end()) {
-          server.queueMessage(fd, Response::error(IRC::ERR_NOSUCHCHANNEL, sender.getNickname(), channelName + " :No such channel"));
-          return 0;
-      }
+      std::map<std::string, Channel>::iterator chIt = getChannel(server ,fd, channelName, sender.getNickname());
+      if (chIt == channels.end()) return 0;
       Channel& channel = chIt->second;
 
       // Partner's inviteUser checks: Sender on channel? Sender Op? Target already on channel?
@@ -426,11 +415,8 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
       std::string channelName = tokVec[1];
       Client& sender = users.find(fd)->second;
        
-      std::map<std::string, Channel>::iterator chIt = channels.find(channelName);
-      if (chIt == channels.end()) {
-          server.queueMessage(fd, Response::error(IRC::ERR_NOSUCHCHANNEL, sender.getNickname(), channelName + " :No such channel"));
-          return 0;
-      }
+      std::map<std::string, Channel>::iterator chIt = getChannel(server ,fd, channelName, sender.getNickname());
+      if (chIt == channels.end()) return 0;
       Channel& channel = chIt->second;
 
       if (tokVec.size() == 2) {
@@ -581,4 +567,11 @@ int Manager::getFdByNick(Server& server, int fd, std::string callerNick, std::st
   }
   server.queueMessage(fd, Response::error(IRC::ERR_NOSUCHNICK, callerNick, target + " :No such nick/channel"));
   return -1;
+}
+
+std::map<std::string, Channel>::iterator Manager::getChannel(Server& server, int fd, std::string channelName, std::string callerNick) {
+    std::map<std::string, Channel>::iterator iter = channels.find(channelName);
+    if (iter == channels.end())
+        server.queueMessage(fd, Response::error(IRC::ERR_NOSUCHCHANNEL, callerNick, channelName + " :No such channel"));
+    return iter;
 }

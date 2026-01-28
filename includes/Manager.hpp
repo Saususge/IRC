@@ -32,6 +32,7 @@ class Manager {
 
   int getFdByNick(Server& server, int fd, std::string callerNick, std::string target);
 
+  std::map<std::string, Channel>::iterator getChannel(Server& server, int fd, std::string channelName, std::string callerNick);
 };
 
 #endif
