@@ -14,6 +14,7 @@ class Client {
   void setNickname(std::string nickname);
 
   std::string getUsername() const;
+  
   std::string getRealname() const;
 
   void onPass();
@@ -34,9 +35,6 @@ class Client {
   void joinChannel(std::string channelName);
   void leaveChannel(std::string channelName);
 
-  void addRef();
-  void release();
-
  private:
   std::string _nickname;
   std::string _username;
@@ -44,9 +42,7 @@ class Client {
 
   short loginFlags;
   bool registerd;
-
-  int _refCount;
-
+  
   std::vector<std::string> _joinedChannels;
 };
 
