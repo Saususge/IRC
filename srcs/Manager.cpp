@@ -132,14 +132,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     if (isValidParam(server, fd, 5, tokVec) == false) return 0;
 
     std::map<int, Client>::iterator iter = users.find(fd);
-    if (iter != users.end() && iter->second.getRegisterd()) {
-        server.queueMessage(fd, Response::error(IRC::ERR_ALREADYREGISTRED, users.find(fd)->second.getNickname(), ":You may not reregister"));
-        users.erase(fd);
-        return -1;
-    } else if (iter == users.end()) {
-        std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
-        return -1;
-    }
+    if (isAlreadyRegisterd(server, fd)) return 0;
 
     std::string nickname = iter->second.getNickname();
     std::string username = tokVec[1];
@@ -163,30 +156,16 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     std::cout << "pass" << std::endl;
     if (isValidParam(server, fd, 5, tokVec) == false) return 0;
 
-    std::map<int, Client>::iterator iter = users.find(fd);
-    if (iter != users.end() && iter->second.getRegisterd()) {
-        server.queueMessage(fd, Response::error(IRC::ERR_ALREADYREGISTRED, users.find(fd)->second.getNickname(), " :Connection already registered"));
-        return 1;
-    } else if (iter == users.end()) {
-        std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
-        return -1;
-    }
+    if (isAlreadyRegisterd(server, fd)) return 0;
 
+    std::map<int, Client>::iterator iter = users.find(fd);
     if (tokVec[1] == server.getPassword()) {
         iter->second.onPass();
         return 1;
     }
 
   } else if (cmd == "join") {
-    // Check registration
-    std::map<int, Client>::iterator iter = users.find(fd);
-    if (iter != users.end() && iter->second.getRegisterd() == false) {
-        server.queueMessage(fd, Response::error(IRC::ERR_NOTREGISTERED, "*", ":You have not registered"));
-        return 0;
-    } else if (iter == users.end()) {
-        std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
-        return -1;
-    }
+    if (isNotRegisterd(server, fd)) return 0;
 
     if (isValidParam(server, fd, 2, tokVec) == false) return 0;
 
@@ -249,14 +228,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     return 1; // yeonjuki: REPLACE TO res AFTER CHANGE RETURN TYPE.
 
   } else if (cmd == "part") {
-    std::map<int, Client>::iterator userIter = users.find(fd);
-    if (userIter != users.end() && userIter->second.getRegisterd() == false) {
-        server.queueMessage(fd, Response::error(IRC::ERR_NOTREGISTERED, "*", ":You have not registered"));
-        return 0;
-    } else if (userIter == users.end()) {
-        std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
-        return -1;
-    }
+    if (isNotRegisterd(server, fd)) return 0;
     if (isValidParam(server, fd, 2, tokVec) == false) return 0;
     std::string channelName = tokVec[1];
     std::string reason = (tokVec.size() > 2) ? tokVec[2] : ":Leaving";
@@ -297,14 +269,7 @@ int Manager::doRequest(Server& server, int fd, std::string request) {
     return 0;
 
   } else if (cmd == "privmsg") {
-    std::map<int, Client>::iterator iter = users.find(fd);
-    if (iter != users.end() && iter->second.getRegisterd() == false) {
-        server.queueMessage(fd, Response::error(IRC::ERR_NOTREGISTERED, "*", ":You have not registered"));
-        return 0;
-    } else if (iter == users.end()) {
-        std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
-        return -1;
-    }
+    if (isNotRegisterd(server, fd)) return 0;
       
       if (isValidParam(server, fd, 3, tokVec) == false) return 0;
 
@@ -596,4 +561,30 @@ bool Manager::isValidParam(Server& server, int fd, size_t paramNum, std::vector<
     return false;
   }
   return true;
+}
+
+bool Manager::isAlreadyRegisterd(Server& server, int fd) {
+  std::map<int, Client>::iterator iter = users.find(fd);
+  if (iter == users.end()) {
+      std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
+      return true;
+  }
+  else if (iter->second.getRegisterd()) {
+      server.queueMessage(fd, Response::error(IRC::ERR_ALREADYREGISTRED, users.find(fd)->second.getNickname(), ":You may not reregister"));
+      users.erase(fd);
+      return true;
+  }
+  return false;
+}
+
+bool Manager::isNotRegisterd(Server& server, int fd) {
+  std::map<int, Client>::iterator iter = users.find(fd);
+  if (iter == users.end()) {
+      std::cerr << "[Error] Manager: fd=" << fd << " not found." << std::endl;
+      return true;
+  } else if (iter->second.getRegisterd() == false) {
+      server.queueMessage(fd, Response::error(IRC::ERR_NOTREGISTERED, "*", ":You have not registered"));
+      return true;
+  }
+  return false;
 }
