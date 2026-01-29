@@ -7,13 +7,18 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "Client.hpp"
+
 namespace SessionManager {
 std::vector<int> deletionQueue;
 void scheduleForDeletion(int socketFD) { deletionQueue.push_back(socketFD); }
 }  // namespace SessionManager
 
-Session::Session(int socketFD) : _socketFD(socketFD) {}
-Session::~Session() { close(_socketFD); }
+Session::Session(int socketFD) : _client(new Client()), _socketFD(socketFD) {}
+Session::~Session() {
+  close(_socketFD);
+  delete _client;
+}
 
 std::string Session::read() {
   char buf[BUFFER_SIZE];

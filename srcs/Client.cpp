@@ -1,41 +1,70 @@
 #include "Client.hpp"
 
-Client::Client()
-    : _nickname(""), _username(""), _realname(""), loginFlags(0), registerd(false) {}
+#include <string>
 
-Client::Client(std::string nickname, std::string username, std::string realname)
-    : _nickname(nickname), _username(username), _realname(realname), loginFlags(0), registerd(false) {}
+#include "IChannelRegistry.hpp"
+#include "Validator.hpp"
+#include "numeric.hpp"
 
-Client::~Client() {}
-
-std::string Client::getNickname() const { return _nickname; }
-
-void Client::setNickname(std::string nickname) { _nickname = nickname; }
-
-std::string Client::getUsername() const { return _username; }
-
-std::string Client::getRealname() const { return _realname; }
-
-
-void Client::onPass() { loginFlags |= 0b001; }
-void Client::onNick() { loginFlags |= 0b010; }
-void Client::onUser() { loginFlags |= 0b100; }
-
-bool Client::getPass() const { return loginFlags & 0b001; }
-bool Client::getNick() const { return loginFlags & 0b010; }
-bool Client::getUser() const { return loginFlags & 0b100; }
-short Client::getLoginFlags() const { return loginFlags; }
-
-bool Client::isRegistrable() const { return loginFlags == 0b111; }
-
-void Client::setRegisterd(bool value) { registerd = value; }
-bool Client::getRegisterd() const { return registerd; }
-
-void Client::joinChannel(std::string channelName) {
-  _joinedChannels.push_back(channelName);
+// Pass
+IRC::Numeric Client::Authenticate(IServerConfig& serverConfig,
+                                  const std::string& password) {
+  if (password.empty()) {
+    return IRC::ERR_NEEDMOREPARAMS;
+  }
+  if (isAuthenticated()) {
+    return IRC::ERR_ALREADYREGISTRED;
+  }
+  if (serverConfig.getPassword() == password) {
+    _loginFlags |= 0b001;
+  }
+  return IRC::DO_NOTHING;
+}
+// NICK
+IRC::Numeric Client::setNick(IClientRegistry& registry,
+                             const std::string& nick) {
+  if (nick.empty()) {
+    return IRC::ERR_NONICKNAMEGIVEN;
+  }
+  if (!Validator::isNickValid(nick)) {
+    return IRC::ERR_ERRONEUSNICKNAME;
+  }
+  if (registry.isNickInUse(nick)) {
+    return IRC::ERR_NICKNAMEINUSE;
+  }
+  // Omit ERR_NICKCOLLISION, ERR_UNAVAILRESOURCE, ERR_RESTRICTED
+  _nickname = nick;
+  _loginFlags |= 0b010;
+  return IRC::DO_NOTHING;
+}
+// USER
+IRC::Numeric Client::setUserInfo(const std::string& user,
+                                 const std::string& realName) {
+  if (user.empty() || realName.empty()) {
+    return IRC::ERR_NEEDMOREPARAMS;
+  }
+  if (_loginFlags & 0b100) {
+    return IRC::ERR_ALREADYREGISTRED;
+  }
+  return IRC::DO_NOTHING;
 }
 
-// TODO: leaveChannel 구현
-void Client::leaveChannel(std::string channelName) {
-  (void)channelName;
+IRC::Numeric Client::joinChannel(IChannelRegistry& registry,
+                                 const std::string& channelName) {
+  IRC::Numeric ret = registry.joinChannel(channelName, _nickname);
+  if (ret == IRC::DO_NOTHING) {
+    // Success
+    _joinedChannels.insert(channelName);
+  }
+  return ret;
+}
+
+IRC::Numeric Client::partChannel(IChannelRegistry& registry,
+                                 const std::string& channelName) {
+  IRC::Numeric ret = registry.partChannel(channelName, _nickname);
+  if (ret == IRC::DO_NOTHING) {
+    // Success
+    _joinedChannels.erase(channelName);
+  }
+  return ret;
 }

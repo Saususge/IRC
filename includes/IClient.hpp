@@ -1,8 +1,8 @@
 #ifndef ICLIENT_HPP
 #define ICLIENT_HPP
 
+#include <set>
 #include <string>
-#include <vector>
 
 #include "IChannelRegistry.hpp"
 #include "IClientRegistry.hpp"
@@ -35,6 +35,6 @@ class IClient {
                                    const std::string& channelName) = 0;
   virtual IRC::Numeric partChannel(IChannelRegistry& registry,
                                    const std::string& channelName) = 0;
-  virtual const std::vector<std::string>& getJoinedChannels() = 0;
+  virtual const std::set<std::string>& getJoinedChannels() = 0;
 };
 #endif  // ICLIENT_HPP

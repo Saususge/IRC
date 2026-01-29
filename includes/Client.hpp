@@ -1,49 +1,50 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
+#include <set>
 #include <string>
-#include <vector>
 
-class Client {
+#include "IChannelRegistry.hpp"
+#include "IClient.hpp"
+#include "numeric.hpp"
+
+class Client : public IClient {
  public:
-  Client();
-  Client(std::string nickname, std::string username, std::string realname);
-  ~Client();
+  Client() : _loginFlags(0) {}
+  ~Client() {}
 
-  std::string getNickname() const;
-  void setNickname(std::string nickname);
+  // Pass
+  IRC::Numeric Authenticate(IServerConfig& serverConfig,
+                            const std::string& password);
+  // NICK
+  IRC::Numeric setNick(IClientRegistry& registry, const std::string& nick);
+  // USER
+  IRC::Numeric setUserInfo(const std::string& user,
+                           const std::string& realName);
 
-  std::string getUsername() const;
-  
-  std::string getRealname() const;
+  inline const std::string& getNick() { return _nickname; }
+  inline const std::string& getUser() { return _username; }
+  inline const std::string& getRealName() { return _realname; }
 
-  void onPass();
-  void onNick();
-  void onUser();
+  bool isRegisterable() { return _loginFlags & 0b111; }
 
-  bool getPass() const;
-  bool getNick() const;
-  bool getUser() const;
-  short getLoginFlags() const;
-
-  bool isRegistrable() const;
-
-  bool getRegisterd() const;
-  void setRegisterd(bool value);
-
-  // 채널 관련 메서드는 필요시 추가
-  void joinChannel(std::string channelName);
-  void leaveChannel(std::string channelName);
+  IRC::Numeric joinChannel(IChannelRegistry& registry,
+                           const std::string& channelName);
+  IRC::Numeric partChannel(IChannelRegistry& registry,
+                           const std::string& channelName);
+  const std::set<std::string>& getJoinedChannels() { return _joinedChannels; }
 
  private:
   std::string _nickname;
   std::string _username;
   std::string _realname;
 
-  short loginFlags;
-  bool registerd;
-  
-  std::vector<std::string> _joinedChannels;
+  // PASS NICK USER <- Least significant bit
+  int _loginFlags;
+
+  std::set<std::string> _joinedChannels;
+
+  inline bool isAuthenticated() { return _loginFlags & 0b001; }
 };
 
 #endif

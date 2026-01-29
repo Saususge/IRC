@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "IClient.hpp"
 #include "ISession.hpp"
 
 namespace SessionManager {
@@ -31,6 +32,8 @@ class Session : public ISession {
   static const int BUFFER_SIZE = 512;
 
  private:
+  IClient* _client;
+
   const int _socketFD;
 
   std::string _inBuf;

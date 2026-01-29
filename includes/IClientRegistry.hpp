@@ -16,8 +16,9 @@ class IClientRegistry {
   virtual const std::vector<const std::string>& getClients() const = 0;
 
   virtual bool isRegistered(const std::string& nick) = 0;
-  // May need Register
+  // Register implicitly when session is connected
   // virtual int Register(const std::string& nick) = 0;
+  virtual int removeClient(const std::string& nick) = 0;
 
   virtual int send(const std::string& nick, const std::string& msg) = 0;
 };
