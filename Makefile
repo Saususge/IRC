@@ -11,7 +11,8 @@ SRCS := \
 	srcs/Client.cpp \
 	srcs/utils.cpp \
 	srcs/Channel.cpp \
-	srcs/Manager.cpp
+	srcs/Manager.cpp \
+	srcs/Session.cpp
 
 
 OBJS := $(SRCS:.cpp=.o)
