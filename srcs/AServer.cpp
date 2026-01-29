@@ -127,5 +127,12 @@ void AServer::onClientDisconnect(int fd) {
         delete _sessions[fd];
         _sessions.erase(fd);
     }
+    for (std::vector<struct pollfd>::iterator it = _pollfds.begin(); it != _pollfds.end(); ++it) {
+        if (it->fd == fd) {
+            _pollfds.erase(it);
+            break;
+        }
+    }
+    std::cout << "Client disconnected: " << fd << std::endl;
 
 }
