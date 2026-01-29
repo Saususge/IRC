@@ -8,6 +8,7 @@
 #include "IClientRegistry.hpp"
 #include "IServerConfig.hpp"
 #include "ISession.hpp"
+#include "numeric.hpp"
 
 class ICommandContext {
  public:
@@ -27,7 +28,7 @@ class ICommand {
  public:
   virtual ~ICommand();
 
-  virtual int excute(ICommandContext& ctx) const;
+  virtual IRC::Numeric excute(ICommandContext& ctx) const;
 };
 
 #endif
