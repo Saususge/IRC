@@ -27,9 +27,9 @@ class IChannel {
 
   virtual int getClientNumber() const = 0;
 
-  virtual int setMode(const std::string& reqeusterNcik, IChannelMode mode) = 0;
-  virtual int addMode(const std::string& reqeusterNcik, IChannelMode mode) = 0;
-  virtual int removeMode(const std::string& reqeusterNcik,
+  virtual int setMode(const std::string& reqeusterNick, IChannelMode mode) = 0;
+  virtual int addMode(const std::string& reqeusterNick, IChannelMode mode) = 0;
+  virtual int removeMode(const std::string& reqeusterNick,
                          IChannelMode mode) = 0;
   virtual IChannelMode getMode() const = 0;
 

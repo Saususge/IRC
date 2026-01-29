@@ -6,7 +6,7 @@
 
 #include <vector>
 
-#include "IChannelResistry.hpp"
+#include "IChannelRegistry.hpp"
 #include "IClientRegistry.hpp"
 #include "IServerConfig.hpp"
 #include "ISession.hpp"
@@ -14,7 +14,7 @@
 class AServer {
  public:
   virtual IClientRegistry& clients() = 0;
-  virtual IChannelResistry& channels() = 0;
+  virtual IChannelRegistry& channels() = 0;
   virtual const IServerConfig& serverConfig() const = 0;
 
   int acceptSession();
