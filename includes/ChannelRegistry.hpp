@@ -5,48 +5,61 @@
 
 class ChannelRegistry : private IChannelRegistry {
  public:
-  int createChannel(const std::string& channelName);
-  int deleteChannel(const std::string& channelName);
+  IRC::Numeric joinChannel(const std::string& channelName,
+                                   const std::string& nick);
+  IRC::Numeric partChannel(const std::string& channelName,
+                                   const std::string& nick);
   bool hasChannel(const std::string& channelName);
   const std::vector<const std::string>& getChannels();
-  int setClientOp(const std::string& channelName, const std::string& nick);
-  int unsetClientOp(const std::string& channelName, const std::string& nick);
-  int setMode(const std::string& channelName, const std::string requesterNick,
-              IChannel::IChannelMode mode);
-  int addMode(const std::string& channelName, const std::string requesterNick,
-              IChannel::IChannelMode mode);
-  int removeMode(const std::string& channelName,
-                 const std::string requesterNick, IChannel::IChannelMode mode);
+  IRC::Numeric setClientOp(const std::string& channelName,
+                                   const std::string& requesterNick,
+                                   const std::string& targetNick);
+  IRC::Numeric unsetClientOp(const std::string& channelName,
+                                     const std::string& requesterNick,
+                                     const std::string& targetNick);
+  IRC::Numeric setMode(const std::string& channelName,
+                               const std::string requesterNick,
+                               IChannel::IChannelMode mode);
+  IRC::Numeric addMode(const std::string& channelName,
+                               const std::string requesterNick,
+                               IChannel::IChannelMode mode);
+  IRC::Numeric removeMode(const std::string& channelName,
+                                  const std::string requesterNick,
+                                  IChannel::IChannelMode mode);
 
-  int removeClient(const std::string& channelName, const std::string& nick);
-  bool hasClient(const std::string& channelName, const std::string& nick) const;
-  int isClientOp(const std::string& channelName, const std::string& nick) const;
+  IRC::Numeric removeClient(const std::string& channelName,
+                                    const std::string& nick);
+  bool hasClient(const std::string& channelName,
+                         const std::string& nick) const;
+  bool isClientOp(const std::string& channelName,
+                          const std::string& nick) const;
   const std::vector<const std::string>& getClients();
 
   int getClientNumber(const std::string& channelName) const;
 
-  int setMode(const std::string& channelName, const std::string& reqeusterNick,
-              IChannel::IChannelMode mode);
-  int addMode(const std::string& channelName, const std::string& reqeusterNick,
-              IChannel::IChannelMode mode);
-  int removeMode(const std::string& channelName,
-                 const std::string& reqeusterNick, IChannel::IChannelMode mode);
-  // Use negative value to return error
-  IChannel::IChannelMode getMode(const std::string& channelName) const;
+  IRC::Numeric setMode(const std::string& channelName,
+                               const std::string& requesterNick,
+                               IChannel::IChannelMode mode);
+  IRC::Numeric addMode(const std::string& channelName,
+                               const std::string& requesterNick,
+                               IChannel::IChannelMode mode);
+  IRC::Numeric removeMode(const std::string& channelName,
+                                  const std::string& requesterNick,
+                                  IChannel::IChannelMode mode);
 
-  int addToInviteList(const std::string& channelName,
-                      const std::string& requesterNick,
-                      const std::string& targetNick);
-  int removeFromInviteList(const std::string& channelName,
-                           const std::string& requesterNick,
-                           const std::string& targetNick);
+  IRC::Numeric addToInviteList(const std::string& channelName,
+                                       const std::string& requesterNick,
+                                       const std::string& targetNick);
+  IRC::Numeric removeFromInviteList(const std::string& channelName,
+                                            const std::string& requesterNick,
+                                            const std::string& targetNick);
   bool isInInviteList(const std::string& channelName,
-                      const std::string& nick) const;
+                              const std::string& nick) const;
 
   // Use `except` only if excluding sender.
-  int broadcast(const std::string& channelName, const std::string& msg,
-                const std::string& except = "");
-
+  IRC::Numeric broadcast(const std::string& channelName,
+                                 const std::string& msg,
+                                 const std::string& except = "");
  private:
 };
 
