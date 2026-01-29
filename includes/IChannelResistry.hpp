@@ -47,6 +47,9 @@ class IChannelResistry {
   virtual int removeMode(const std::string& channelName,
                          const std::string& reqeusterNcik,
                          IChannel::IChannelMode mode) = 0;
+  // Use negative value to return error
+  virtual IChannel::IChannelMode getMode(
+      const std::string& channelName) const = 0;
 
   virtual int addToInviteList(const std::string& channelName,
                               const std::string& requesterNcik,
