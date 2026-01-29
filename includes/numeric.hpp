@@ -1,63 +1,70 @@
 #ifndef NUMERIC_HPP
 #define NUMERIC_HPP
-#include <iostream>
+
 namespace IRC {
-// NOT OFFICIAL IRC NUMERIC REPLY BUT TO INDICATE DO NOT SEND ANY MESSAGE
-const std::string DO_NOTHING = "-01";
 
-// Success replies
-const std::string RPL_WELCOME = "001";
-const std::string RPL_YOURHOST = "002";
-const std::string RPL_CREATED = "003";
-const std::string RPL_MYINFO = "004";
-const std::string RPL_UMODEIS = "221";
-const std::string RPL_CHANNELMODEIS = "324";
-const std::string RPL_UNIQOPIS = "325";
-const std::string RPL_NOTOPIC = "331";
-const std::string RPL_TOPIC = "332";
-const std::string RPL_INVITING = "341";
-const std::string RPL_INVITELIST = "346";
-const std::string RPL_ENDOFINVITELIST = "347";
-const std::string RPL_EXCEPTLIST = "348";
-const std::string RPL_ENDOFEXCEPTLIST = "349";
-const std::string RPL_NAMREPLY = "353";
-const std::string RPL_ENDOFNAMES = "366";
-const std::string RPL_BANLIST = "367";
-const std::string RPL_ENDOFBANLIST = "368";
-const std::string RPL_YOUREOPER = "381";
-const std::string RPL_YOURESERVICE = "383";
+enum Numeric {
+  // NOT OFFICIAL IRC NUMERIC REPLY BUT TO INDICATE DO NOT SEND ANY MESSAGE
+  DO_NOTHING = -1,
 
-// Error replies
-const std::string ERR_NOSUCHNICK = "401";
-const std::string ERR_NOSUCHCHANNEL = "403";
-const std::string ERR_TOOMANYCHANNELS = "405";
-const std::string ERR_TOOMANYTARGETS = "407";
-const std::string ERR_UNKNOWNCOMMAND = "421";
-const std::string ERR_NONICKNAMEGIVEN = "431";
-const std::string ERR_ERRONEUSNICKNAME = "432";
-const std::string ERR_NICKNAMEINUSE = "433";
-const std::string ERR_NICKCOLLISION = "436";
-const std::string ERR_UNAVAILRESOURCE = "437";
-const std::string ERR_NOTONCHANNEL = "442";
-const std::string ERR_NOTREGISTERED = "451";
-const std::string ERR_NEEDMOREPARAMS = "461";
-const std::string ERR_ALREADYREGISTRED = "462";
-const std::string ERR_PASSWDMISMATCH = "464";
-const std::string ERR_KEYSET = "467";
-const std::string ERR_CHANNELISFULL = "471";
-const std::string ERR_INVITEONLYCHAN = "473";
-const std::string ERR_BANNEDFROMCHAN = "474";
-const std::string ERR_BADCHANNELKEY = "475";
-const std::string ERR_BADCHANMASK = "476";
-const std::string ERR_NOCHANMODES = "477";
-const std::string ERR_CHANOPRIVSNEEDED = "482";
-const std::string ERR_RESTRICTED = "484";
-const std::string ERR_NOOPERHOST = "491";
-const std::string ERR_UMODEUNKNOWNFLAG = "501";
-const std::string ERR_USERSDONTMATCH = "502";
-const std::string ERR_USERNOTINCHANNEL = "441";
-const std::string ERR_USERONCHANNEL = "443";
-const std::string ERR_TOOMANYMATCHES = "00000";  // Does not exist on RFC 2812
+  // Success replies
+  RPL_WELCOME = 1,
+  RPL_YOURHOST = 2,
+  RPL_CREATED = 3,
+  RPL_MYINFO = 4,
+  RPL_UMODEIS = 221,
+  RPL_CHANNELMODEIS = 324,
+  RPL_UNIQOPIS = 325,
+  RPL_NOTOPIC = 331,
+  RPL_TOPIC = 332,
+  RPL_INVITING = 341,
+  RPL_INVITELIST = 346,
+  RPL_ENDOFINVITELIST = 347,
+  RPL_EXCEPTLIST = 348,
+  RPL_ENDOFEXCEPTLIST = 349,
+  RPL_NAMREPLY = 353,
+  RPL_ENDOFNAMES = 366,
+  RPL_BANLIST = 367,
+  RPL_ENDOFBANLIST = 368,
+  RPL_YOUREOPER = 381,
+  RPL_YOURESERVICE = 383,
+
+  // Error replies
+  ERR_NOSUCHNICK = 401,
+  ERR_NOSUCHCHANNEL = 403,
+  ERR_TOOMANYCHANNELS = 405,
+  ERR_TOOMANYTARGETS = 407,
+  ERR_UNKNOWNCOMMAND = 421,
+  ERR_NONICKNAMEGIVEN = 431,
+  ERR_ERRONEUSNICKNAME = 432,
+  ERR_NICKNAMEINUSE = 433,
+  ERR_NICKCOLLISION = 436,
+  ERR_UNAVAILRESOURCE = 437,
+  ERR_USERNOTINCHANNEL = 441,
+  ERR_NOTONCHANNEL = 442,
+  ERR_USERONCHANNEL = 443,
+  ERR_NOTREGISTERED = 451,
+  ERR_NEEDMOREPARAMS = 461,
+  ERR_ALREADYREGISTRED = 462,
+  ERR_PASSWDMISMATCH = 464,
+  ERR_KEYSET = 467,
+  ERR_CHANNELISFULL = 471,
+  ERR_INVITEONLYCHAN = 473,
+  ERR_BANNEDFROMCHAN = 474,
+  ERR_BADCHANNELKEY = 475,
+  ERR_BADCHANMASK = 476,
+  ERR_NOCHANMODES = 477,
+  ERR_CHANOPRIVSNEEDED = 482,
+  ERR_RESTRICTED = 484,
+  ERR_NOOPERHOST = 491,
+  ERR_UMODEUNKNOWNFLAG = 501,
+  ERR_USERSDONTMATCH = 502,
+
+  // Placeholder for non-standard or unassigned error
+  ERR_TOOMANYMATCHES =
+      999  // Does not exist on RFC 2812, assigned a high number
+};
+
 }  // namespace IRC
 
 #endif
