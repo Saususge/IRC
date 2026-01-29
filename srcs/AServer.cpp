@@ -1,17 +1,16 @@
 #include "AServer.hpp"
-#include "Session.hpp" // SessionManager 접근 및 Session 생성용
+#include "Session.hpp"
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdexcept>
+#include <algorithm>
+#include <cerrno>
 
 AServer::~AServer() {
-    // 모든 세션 정리
-    for (std::map<int, ISession*>::iterator it = _sessions.begin(); it != _sessions.end(); ++it) {
-        delete it->second;
-    }
+    for (std::map<int, ISession*>::iterator it = _sessions.begin(); it != _sessions.end(); ++it) { delete it->second;}
     _sessions.clear();
     if (_listeningSocketFD != -1) ::close(_listeningSocketFD);
 }
@@ -21,8 +20,11 @@ void AServer::initSocket(int port) {
     if (_listeningSocketFD < 0) throw std::runtime_error("Socket creation failed");
 
     int opt = 1;
-    setsockopt(_listeningSocketFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-    fcntl(_listeningSocketFD, F_SETFL, O_NONBLOCK);
+    if (setsockopt(_listeningSocketFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+        throw std::runtime_error("Setsockopt failed");
+
+    if (fcntl(_listeningSocketFD, F_SETFL, O_NONBLOCK) < 0)
+        throw std::runtime_error("Fcntl failed");
 
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
@@ -41,7 +43,7 @@ void AServer::initSocket(int port) {
     pfd.revents = 0;
     _pollfds.push_back(pfd);
 
-    std::cout << "Server listening on port " << port << std::endl;
+    std::cout << "Server listening on port " << port << "..." << std::endl;
 }
 
 void AServer::run() {
@@ -53,23 +55,22 @@ void AServer::run() {
 
         for (size_t i = 0; i < _pollfds.size(); ++i) {
             if (_pollfds[i].revents == 0) continue;
-
             if (_pollfds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) {
                 SessionManager::scheduleForDeletion(_pollfds[i].fd);
                 continue;
             }
 
+            // R/W Events
             if (_pollfds[i].revents & POLLIN) {
                 if (_pollfds[i].fd == _listeningSocketFD)
                     acceptClient();
                 else
                     handlePollIn(i);
             }
-
-            // POLLOUT 로직은 Session 내부 버퍼링 정책에 따라 필요 시 구현
-            // if (i < _pollfds.size() && (_pollfds[i].revents & POLLOUT)) handlePollOut(i);
+            if (_pollfds[i].revents & POLLOUT) {
+                handlePollOut(i);
+            }
         }
-
         processDeletionQueue();
     }
 }
@@ -79,13 +80,20 @@ void AServer::acceptClient() {
     socklen_t len = sizeof(clientAddr);
     int clientFd = accept(_listeningSocketFD, (struct sockaddr*)&clientAddr, &len);
 
-    if (clientFd < 0) return;
+    if (clientFd < 0) {
+        if (errno != EAGAIN && errno != EWOULDBLOCK) perror("accept");
+        return;
+    }
 
-    fcntl(clientFd, F_SETFL, O_NONBLOCK);
+    if (fcntl(clientFd, F_SETFL, O_NONBLOCK) < 0) {
+        perror("fcntl");
+        ::close(clientFd);
+        return;
+    }
 
     struct pollfd pfd;
     pfd.fd = clientFd;
-    pfd.events = POLLIN | POLLOUT; // POLLOUT 감시 필요 시 추가
+    pfd.events = POLLIN | POLLOUT;
     pfd.revents = 0;
     _pollfds.push_back(pfd);
 
@@ -96,10 +104,10 @@ void AServer::acceptClient() {
 
 void AServer::handlePollIn(size_t index) {
     int fd = _pollfds[index].fd;
-    if (_sessions.find(fd) == _sessions.end()) return;
+    ISession* session = findSession(fd);
+    if (!session) return;
 
-    // Session::read() 내부에서 EOF 감지 시 scheduleForDeletion 호출됨
-    std::string data = _sessions[fd]->read();
+    std::string data = session->read();
     
     if (!data.empty()) {
         onClientMessage(fd, data);
@@ -107,8 +115,11 @@ void AServer::handlePollIn(size_t index) {
 }
 
 void AServer::handlePollOut(size_t index) {
-    (void)index;
-    // 필요한 경우 구현
+    int fd = _pollfds[index].fd;
+    ISession* session = findSession(fd);
+    if (!session) return;
+
+    session->send(""); 
 }
 
 void AServer::processDeletionQueue() {
@@ -117,10 +128,10 @@ void AServer::processDeletionQueue() {
     for (size_t i = 0; i < SessionManager::deletionQueue.size(); ++i) {
         int fd = SessionManager::deletionQueue[i];
 
-        onClientDisconnected(fd); // 비즈니스 로직 정리
+        onClientDisconnected(fd);
 
         if (_sessions.find(fd) != _sessions.end()) {
-            delete _sessions[fd]; // 소켓 close는 여기서 발생 (Session 소멸자)
+            delete _sessions[fd];
             _sessions.erase(fd);
         }
 
@@ -135,7 +146,6 @@ void AServer::processDeletionQueue() {
 }
 
 ISession* AServer::findSession(int fd) {
-    if (_sessions.find(fd) != _sessions.end())
-        return _sessions[fd];
+    if (_sessions.find(fd) != _sessions.end()) return _sessions[fd];
     return NULL;
 }
