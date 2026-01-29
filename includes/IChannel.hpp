@@ -16,8 +16,8 @@ class IChannel {
   virtual const std::string& getChannelName() const = 0;
 
   // Use `except` only for exclusing the sender
-  virtual IRC::Numeric broadcast(const std::string& msg,
-                                 const std::string& except = "") = 0;
+  virtual int broadcast(const std::string& msg,
+                        const std::string& except = "") = 0;
 
   virtual IRC::Numeric addClient(const std::string& nick) = 0;
   virtual IRC::Numeric removeClient(const std::string& nick) = 0;
