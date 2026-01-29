@@ -27,7 +27,6 @@ class IClient {
   virtual const std::string& getRealName() = 0;
 
   virtual bool isRegisterable() = 0;
-  virtual bool isRegistered(IClientRegistry& registry) = 0;
 
   // ClientResistry or equivalent has to send.
   // virtual int send(const std::string& msg) = 0;

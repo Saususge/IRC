@@ -15,6 +15,10 @@ class IClientRegistry {
   virtual bool hasClient(const std::string& nick) const = 0;
   virtual const std::vector<const std::string>& getClients() const = 0;
 
+  virtual bool isRegistered(const std::string& nick) = 0;
+  // May need Register
+  // virtual int Register(const std::string& nick) = 0;
+
   virtual int send(const std::string& nick, const std::string& msg) = 0;
 };
 #endif  // ICLIENTREGISTRY_HPP
