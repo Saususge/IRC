@@ -1,79 +1,49 @@
 #ifndef CHANNEL_HPP
 #define CHANNEL_HPP
 
-#include <iostream>
-#include <map>
 #include <set>
-#include <string>
-#include <vector>
 
-#include "Client.hpp"
-#include "numeric.hpp"
+#include "IChannel.hpp"
+#include "IClientRegistry.hpp"
 
-#define DEBUG
-
-// User struct removed, replaced by Client class in Client.hpp
-
-struct MemberInfo {
-  int fd;
-  Client* client;
-  bool voice;  // unnessary variable for ft-irc
-  bool op;
-
-  MemberInfo() : client(NULL) {}
-  MemberInfo(int fd, Client* client, bool op)
-      : fd(fd), client(client), voice(false), op(op) {}
-};
-
-typedef std::map<std::string, MemberInfo>::iterator mIter;
-
-class Channel {
- private:
-  // i(invite only), t(restrictions of topic), k(channel key),
-  // o(channel operator), l(user limit)
-  bool inviteOnly;
-  std::set<std::string> invitedUsers;
-
-  bool restrictTopic;
-  std::string topic;
-
-  std::string key;
-  size_t userLimit;
-
-  std::map<std::string, MemberInfo> users;
-
+class Channel : private IChannel {
  public:
-  Channel();
-  ~Channel();
+  const std::string& getChannelName() const;
 
-  const std::string addUser(int fd, Client* client, bool isCreator = false,
-                            std::string key = "");
-  const std::string delUser(Client* client);
-  int getUserInfo(std::string nickname, MemberInfo* info = NULL);
-  const std::map<std::string, MemberInfo>& getUsers() const;
+  // Use `except` only for exclusing the sender
+  int broadcast(const std::string& msg, const std::string& except = "");
 
-  const std::string promoteToOp(Client* client, std::string targetNick);
+  int addClient(const std::string& nick);
+  void removeClient(const std::string& nick);
+  bool hasClient(const std::string& nick) const;
+  int setClientOp(const std::string& nick);
+  int unsetClientOp(const std::string& nick);
+  int isClientOp(const std::string& nick) const;
+  const std::vector<const std::string>& getClients();
 
-  const std::string setInvite(Client* client, bool value);
-  bool getInvite() const;
-  const std::string inviteUser(Client* client, std::string targetNick);
+  int getClientNumber() const;
 
-  const std::string setTopicMode(Client* client, bool value);
-  bool getTopicMode() const;
-  const std::string setTopic(Client* client, std::string topic);
-  std::string getTopic() const;
+  int setMode(const std::string& reqeusterNick, IChannelMode mode);
+  int addMode(const std::string& reqeusterNick, IChannelMode mode);
+  int removeMode(const std::string& reqeusterNick, IChannelMode mode);
+  IChannelMode getMode() const;
 
-  const std::string setKey(Client* client, std::string newKey);
-  std::string getKey() const;
+  int addToInviteList(const std::string& requesterNick,
+                      const std::string& targetNick);
+  int removeFromInviteList(const std::string& requesterNick,
+                           const std::string& targetNick);
+  bool isInInviteList(const std::string& nick) const;
 
-  const std::string setUserLimit(Client* client, size_t newLimit);
-  const std::string unlimitUser(Client* client);
-  int getUserLimit() const;
+ private:
+  std::string channelName;
+  IChannel::IChannelMode mode;
+  size_t limit;
 
-  // in rfc 2812 section 3.2.3 `MODE #42 -k oulu` is the
-  // command to remove the "oulu" channel key on channel #42
-  // but in ngircd it does not need to remove key.
-  void removeKey(std::string currentKey);
+  std::set<std::string> invitedUsers;
+  std::set<std::string> joinedUsers;
+  std::set<std::string> operators;
+
+  IClientRegistry& clientRegistry;
 };
 
 #endif
