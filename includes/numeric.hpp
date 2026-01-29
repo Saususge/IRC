@@ -6,6 +6,7 @@ namespace IRC {
 enum Numeric {
   // NOT OFFICIAL IRC NUMERIC REPLY BUT TO INDICATE DO NOT SEND ANY MESSAGE
   DO_NOTHING = -1,
+  RPL_STRREPLY = -2,
 
   // Success replies
   RPL_WELCOME = 1,
