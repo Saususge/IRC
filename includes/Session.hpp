@@ -17,13 +17,18 @@ class Session : public ISession {
   Session(int socketFD);
   ~Session();
 
+  // Return empty string on failure.
   std::string read();
 
+  // Return 0 on sucess
   int send(const std::string& msg);
 
+  // Return 0 on sucess
   int disconnect();
 
   int getSocketFD() const;
+
+  static const int BUFFER_SIZE = 512;
 
  private:
   const int _socketFD;
