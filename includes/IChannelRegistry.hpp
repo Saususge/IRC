@@ -10,8 +10,10 @@ class IChannelRegistry {
  public:
   virtual ~IChannelRegistry() {};
 
-  virtual int createChannel(const std::string& channelName) = 0;
-  virtual int deleteChannel(const std::string& channelName) = 0;
+  virtual int joinChannel(const std::string& channelName,
+                          const std::string& nick) = 0;
+  virtual int partChannel(const std::string& channelName,
+                          const std::string& nick) = 0;
   virtual bool hasChannel(const std::string& channelName) = 0;
   virtual const std::vector<const std::string>& getChannels() = 0;
   virtual int setClientOp(const std::string& channelName,
