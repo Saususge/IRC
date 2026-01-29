@@ -6,6 +6,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 AServer::AServer(int port) {
     initSocketOrDie(port);
@@ -54,8 +56,7 @@ void AServer::run() {
             if (_pollfds[i].revents == 0) continue;
 
             if (_pollfds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) {
-                onClientDisconnect(_pollfds[i].fd); 
-                // Todo: pollfds and sessions erase
+                SessionManager::scheduleForDeletion(_pollfds[i].fd); 
                 continue; 
             }
 
@@ -65,20 +66,60 @@ void AServer::run() {
                 else
                     handlePollIn(i);
             }
+            if (_pollfds[i].revents & POLLOUT) {
+                handlePollOut(i);
+            }
+        }
+
+        if (!SessionManager::deletionQueue.empty()) {
+            for (std::vector<int>::iterator it = SessionManager::deletionQueue.begin();
+                 it != SessionManager::deletionQueue.end(); ++it) {
+                onClientDisconnect(*it);
+            }
+            SessionManager::deletionQueue.clear();
         }
     }
 }
 
 void AServer::acceptClient() {
-    // Todo: accept
+    struct sockaddr_in client_addr;
+    socklen_t addr_len = sizeof(client_addr);
+    int client_fd = accept(_listeningSocketFD, (struct sockaddr*)&client_addr, &addr_len);
+    
+    if (client_fd < 0) {
+        if (errno != EWOULDBLOCK) std::cerr << "Accept failed" << std::endl;
+        return;
+    }
+
+    fcntl(client_fd, F_SETFL, O_NONBLOCK);
+    
+    _sessions[client_fd] = new Session(client_fd);
+
+    struct pollfd pfd;
+    pfd.fd = client_fd;
+    pfd.events = POLLIN | POLLOUT;
+    pfd.revents = 0;
+    _pollfds.push_back(pfd);
+
+    std::cout << "Client connected: " << client_fd << std::endl;
 }
 
 void AServer::handlePollIn(size_t index) {
     int fd = _pollfds[index].fd;
+    if (_sessions.find(fd) == _sessions.end()) return;
+
     ISession* session = _sessions[fd];
     std::string msg = session->read(); 
     
     if (!msg.empty()) { this->onClientMessage(fd, msg); }
+}
+
+void AServer::handlePollOut(size_t index) {
+    int fd = _pollfds[index].fd;
+    if (_sessions.find(fd) == _sessions.end()) return;
+
+    ISession* session = _sessions[fd];
+    session->send(""); 
 }
 
 void AServer::onClientDisconnect(int fd) {

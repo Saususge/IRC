@@ -3,29 +3,25 @@
 
 #include "AServer.hpp"
 #include "ServerConfig.hpp"
-#include "Client.hpp"
-#include "Channel.hpp"
-
-#include <map>
+#include "ClientRegistry.hpp"
+#include "ChannelRegistry.hpp"
 
 class Server : public AServer {
  public:
   Server(int port, const std::string& password);
   virtual ~Server();
-
+  virtual IClientRegistry& clients();
+  virtual IChannelRegistry& channels();
   virtual const IServerConfig& serverConfig() const;
 
  protected:
-  virtual void onClientConnected(int fd);
-  virtual void onClientDisconnected(int fd);
-  virtual void onClientMessage(int fd, const std::string& message);
+  virtual void onClientMessage(int fd, const std::string& msg);
+  virtual void onClientDisconnect(int fd);
 
  private:
   ServerConfig _config;
-  // Data Management
-  std::map<int, Client> _users;
-  std::map<std::string, Channel> _channels;
-  void dispatchCommand(int fd, const std::string& commandLine);
+  ClientRegistry _clientRegistry;
+  ChannelRegistry _channelRegistry;
 };
 
 #endif
