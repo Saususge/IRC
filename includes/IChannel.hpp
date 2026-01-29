@@ -32,8 +32,10 @@ class IChannel {
   virtual int removeMode(const std::string& reqeusterNcik,
                          IChannelMode mode) = 0;
 
-  virtual int addToInviteList(const std::string& nick) = 0;
-  virtual int removeFromInviteList(const std::string& nick) = 0;
+  virtual int addToInviteList(const std::string& requesterNick,
+                              const std::string& targetNick) = 0;
+  virtual int removeFromInviteList(const std::string& requesterNick,
+                                   const std::string& targetNick) = 0;
   virtual bool isInInviteList(const std::string& nick) const = 0;
 };
 #endif
