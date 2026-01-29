@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include "IChannelRegistry.hpp"
+
 class IClient {
  public:
   virtual ~IClient() {};
@@ -25,8 +27,10 @@ class IClient {
   // ClientResistry or equivalent has to send.
   // virtual int send(const std::string& msg) = 0;
 
-  virtual int joinChannel(const std::string& channelName) = 0;
-  virtual int partChannel(const std::string& channelName) = 0;
+  virtual int joinChannel(IChannelRegistry& registry,
+                          const std::string& channelName) = 0;
+  virtual int partChannel(IChannelRegistry& registry,
+                          const std::string& channelName) = 0;
   virtual const std::vector<std::string>& getJoinedChannels() = 0;
 };
 #endif  // ICLIENT_HPP
