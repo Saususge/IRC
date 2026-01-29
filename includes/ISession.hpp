@@ -7,6 +7,8 @@ class ISession {
  public:
   virtual ~ISession() {};
 
+  virtual std::string read() = 0;
+
   virtual int send(const std::string& msg) = 0;
   // Deferred Close
   virtual int disconnect() = 0;
