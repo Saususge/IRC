@@ -1,4 +1,6 @@
-// this file is implemented by AI for testing purpose only
+// [TEMPORARY] Mock implementation by AI for Server testing. 
+// TODO: Replace with implementation from the Client/Session team later.
+#include "ClientRegistry.hpp"
 #include "ClientRegistry.hpp"
 
 ClientRegistry::ClientRegistry() {}
