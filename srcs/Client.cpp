@@ -2,7 +2,6 @@
 
 #include <string>
 
-#include "IChannelRegistry.hpp"
 #include "Validator.hpp"
 #include "numeric.hpp"
 
@@ -49,22 +48,16 @@ IRC::Numeric Client::setUserInfo(const std::string& user,
   return IRC::DO_NOTHING;
 }
 
-IRC::Numeric Client::joinChannel(IChannelRegistry& registry,
-                                 const std::string& channelName) {
-  IRC::Numeric ret = registry.joinChannel(channelName, _nickname);
-  if (ret == IRC::DO_NOTHING) {
-    // Success
+IRC::Numeric Client::joinChannel(const std::string& channelName) {
+  if (channelName == "0") {
+    _joinedChannels.clear();
+  } else {
     _joinedChannels.insert(channelName);
   }
-  return ret;
+  return IRC::DO_NOTHING;
 }
 
-IRC::Numeric Client::partChannel(IChannelRegistry& registry,
-                                 const std::string& channelName) {
-  IRC::Numeric ret = registry.partChannel(channelName, _nickname);
-  if (ret == IRC::DO_NOTHING) {
-    // Success
-    _joinedChannels.erase(channelName);
-  }
-  return ret;
+IRC::Numeric Client::partChannel(const std::string& channelName) {
+  _joinedChannels.erase(channelName);
+  return IRC::DO_NOTHING;
 }

@@ -4,13 +4,12 @@
 #include <set>
 #include <string>
 
-#include "IChannelRegistry.hpp"
 #include "IClient.hpp"
 #include "numeric.hpp"
 
 class Client : public IClient {
  public:
-  Client() : _loginFlags(0) {}
+  Client() : _nickname(NULL), _loginFlags(0) {}
   ~Client() {}
 
   // Pass
@@ -22,16 +21,15 @@ class Client : public IClient {
   IRC::Numeric setUserInfo(const std::string& user,
                            const std::string& realName);
 
+  // Do not call before NICK
   inline const std::string& getNick() { return _nickname; }
   inline const std::string& getUser() { return _username; }
   inline const std::string& getRealName() { return _realname; }
 
   bool isRegisterable() { return _loginFlags & 0b111; }
 
-  IRC::Numeric joinChannel(IChannelRegistry& registry,
-                           const std::string& channelName);
-  IRC::Numeric partChannel(IChannelRegistry& registry,
-                           const std::string& channelName);
+  IRC::Numeric joinChannel(const std::string& channelName);
+  IRC::Numeric partChannel(const std::string& channelName);
   const std::set<std::string>& getJoinedChannels() { return _joinedChannels; }
 
  private:

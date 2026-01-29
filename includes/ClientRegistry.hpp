@@ -1,13 +1,9 @@
-#ifndef ICLIENTREGISTRY_HPP
-#define ICLIENTREGISTRY_HPP
+#ifndef CLIENTRESISTRY_HPP
+#define CLIENTRESISTRY_HPP
 
-#include <string>
-#include <vector>
+#include "IClientRegistry.hpp"
 
-class IClientRegistry {
- public:
-  virtual ~IClientRegistry() {};
-
+class ClientRegistry : public IClientRegistry {
   // May need shared ptr for parameter
   // registerClient will be done by ISession or equivalent
   // virtual int registerClient(IClient* client);
@@ -23,4 +19,5 @@ class IClientRegistry {
 
   virtual int send(const std::string& nick, const std::string& msg) = 0;
 };
-#endif  // ICLIENTREGISTRY_HPP
+
+#endif

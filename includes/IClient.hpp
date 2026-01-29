@@ -4,7 +4,6 @@
 #include <set>
 #include <string>
 
-#include "IChannelRegistry.hpp"
 #include "IClientRegistry.hpp"
 #include "IServerConfig.hpp"
 #include "numeric.hpp"
@@ -31,10 +30,10 @@ class IClient {
   // ClientResistry or equivalent has to send.
   // virtual int send(const std::string& msg) = 0;
 
-  virtual IRC::Numeric joinChannel(IChannelRegistry& registry,
-                                   const std::string& channelName) = 0;
-  virtual IRC::Numeric partChannel(IChannelRegistry& registry,
-                                   const std::string& channelName) = 0;
+  // Client doesn't know about the existance of the channel
+  virtual IRC::Numeric joinChannel(const std::string& channelName) = 0;
+  // Client doesn't know about the existance of the channel
+  virtual IRC::Numeric partChannel(const std::string& channelName) = 0;
   virtual const std::set<std::string>& getJoinedChannels() = 0;
 };
 #endif  // ICLIENT_HPP
