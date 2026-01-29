@@ -6,8 +6,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <iostream>
-#include <vector>
-#include <algorithm>
 
 AServer::AServer(int port) {
     initSocketOrDie(port);
@@ -27,6 +25,7 @@ void AServer::initSocketOrDie(int port) {
 
     int opt = 1;
     setsockopt(_listeningSocketFD, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    
     fcntl(_listeningSocketFD, F_SETFL, O_NONBLOCK);
 
     struct sockaddr_in addr;
@@ -56,7 +55,8 @@ void AServer::run() {
             if (_pollfds[i].revents == 0) continue;
 
             if (_pollfds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) {
-                SessionManager::scheduleForDeletion(_pollfds[i].fd); 
+                onClientDisconnect(_pollfds[i].fd); 
+                // Todo: fd remove at _pollfds
                 continue; 
             }
 
@@ -66,73 +66,29 @@ void AServer::run() {
                 else
                     handlePollIn(i);
             }
-            if (_pollfds[i].revents & POLLOUT) {
-                handlePollOut(i);
-            }
-        }
-
-        if (!SessionManager::deletionQueue.empty()) {
-            for (std::vector<int>::iterator it = SessionManager::deletionQueue.begin();
-                 it != SessionManager::deletionQueue.end(); ++it) {
-                onClientDisconnect(*it);
-            }
-            SessionManager::deletionQueue.clear();
         }
     }
 }
 
 void AServer::acceptClient() {
-    struct sockaddr_in client_addr;
-    socklen_t addr_len = sizeof(client_addr);
-    int client_fd = accept(_listeningSocketFD, (struct sockaddr*)&client_addr, &addr_len);
-    
-    if (client_fd < 0) {
-        if (errno != EWOULDBLOCK) std::cerr << "Accept failed" << std::endl;
-        return;
-    }
-
-    fcntl(client_fd, F_SETFL, O_NONBLOCK);
-    
-    _sessions[client_fd] = new Session(client_fd);
-
-    struct pollfd pfd;
-    pfd.fd = client_fd;
-    pfd.events = POLLIN | POLLOUT;
-    pfd.revents = 0;
-    _pollfds.push_back(pfd);
-
-    std::cout << "Client connected: " << client_fd << std::endl;
+    // todo: accept logic
 }
 
 void AServer::handlePollIn(size_t index) {
     int fd = _pollfds[index].fd;
-    if (_sessions.find(fd) == _sessions.end()) return;
-
     ISession* session = _sessions[fd];
+    
     std::string msg = session->read(); 
     
-    if (!msg.empty()) { this->onClientMessage(fd, msg); }
-}
-
-void AServer::handlePollOut(size_t index) {
-    int fd = _pollfds[index].fd;
-    if (_sessions.find(fd) == _sessions.end()) return;
-
-    ISession* session = _sessions[fd];
-    session->send(""); 
+    if (!msg.empty()) {
+        this->onClientMessage(fd, msg);
+    }
 }
 
 void AServer::onClientDisconnect(int fd) {
+
     if (_sessions.find(fd) != _sessions.end()) {
         delete _sessions[fd];
         _sessions.erase(fd);
     }
-    for (std::vector<struct pollfd>::iterator it = _pollfds.begin(); it != _pollfds.end(); ++it) {
-        if (it->fd == fd) {
-            _pollfds.erase(it);
-            break;
-        }
-    }
-    std::cout << "Client disconnected: " << fd << std::endl;
-
 }

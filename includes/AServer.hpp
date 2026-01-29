@@ -23,7 +23,9 @@ class AServer {
 
  protected:
   AServer(int port);
+
   virtual void onClientMessage(int fd, const std::string& msg) = 0;
+  
   virtual void onClientDisconnect(int fd);
 
  private:
@@ -31,7 +33,7 @@ class AServer {
   void acceptClient();
   void handlePollIn(size_t index);
   void handlePollOut(size_t index);
-  
+
   std::map<int, ISession*> _sessions;
   std::vector<struct pollfd> _pollfds;
   int _listeningSocketFD;

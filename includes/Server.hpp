@@ -3,13 +3,12 @@
 
 #include "AServer.hpp"
 #include "ServerConfig.hpp"
-#include "ClientRegistry.hpp"
-#include "ChannelRegistry.hpp"
 
 class Server : public AServer {
  public:
   Server(int port, const std::string& password);
   virtual ~Server();
+
   virtual IClientRegistry& clients();
   virtual IChannelRegistry& channels();
   virtual const IServerConfig& serverConfig() const;
@@ -20,8 +19,6 @@ class Server : public AServer {
 
  private:
   ServerConfig _config;
-  ClientRegistry _clientRegistry;
-  ChannelRegistry _channelRegistry;
 };
 
 #endif

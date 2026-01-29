@@ -3,23 +3,19 @@
 
 Server::Server(int port, const std::string& password) 
     : AServer(port), _config(password) {
-    // Todo: Initialize registries if needed
+    // Implementation of registries can be added here
 }
 
 Server::~Server() {}
-
 const IServerConfig& Server::serverConfig() const { return _config; }
-IClientRegistry& Server::clients() { return _clientRegistry; }
-IChannelRegistry& Server::channels() { return _channelRegistry; }
 
 void Server::onClientMessage(int fd, const std::string& msg) {
     std::cout << "[Server] Msg from " << fd << ": " << msg << std::endl;
 
-    // TODO: Command Pattern apply here
+    // TODO: Command Pattern applyation
 }
 
 void Server::onClientDisconnect(int fd) {
-    // Todo: Remove client from registries
-    // _clientRegistry.removeClient(fd);
+  // Todo: client remove at registries
     AServer::onClientDisconnect(fd);
 }
