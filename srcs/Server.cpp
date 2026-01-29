@@ -1,43 +1,23 @@
 #include "Server.hpp"
-#include "Response.hpp" // 응답 생성용
 #include <iostream>
 
 Server::Server(int port, const std::string& password) 
-    : _config(password) {
-    initSocket(port); 
+    : AServer(port), _config(password) {
+    // Todo: Initialize registries if needed
 }
 
 Server::~Server() {}
 
-const IServerConfig& Server::serverConfig() const {
-    return _config;
+const IServerConfig& Server::serverConfig() const { return _config; }
+
+void Server::onClientMessage(int fd, const std::string& msg) {
+    std::cout << "[Server] Msg from " << fd << ": " << msg << std::endl;
+
+    // TODO: Command Pattern apply here
 }
 
-void Server::onClientConnected(int fd) {
-    if (_users.find(fd) == _users.end()) {
-        _users[fd] = Client(); 
-        std::cout << "Client connected: " << fd << std::endl;
-    }
-}
-
-void Server::onClientDisconnected(int fd) {
-    if (_users.find(fd) != _users.end()) {
-        // TODO: leave channels, notify others, etc.
-        _users.erase(fd);
-        std::cout << "Client disconnected: " << fd << std::endl;
-    }
-}
-
-void Server::onClientMessage(int fd, const std::string& message) {
-    std::cout << "Received from " << fd << ": " << message << std::endl;
-        dispatchCommand(fd, message);
-}
-
-void Server::dispatchCommand(int fd, const std::string& commandLine) {
-  // Todo: parsing and executing commands
-  // test echo
-  ISession* session = findSession(fd);
-  if (session) {
-      session->send("Echo: " + commandLine + "\r\n");
-  }
+void Server::onClientDisconnect(int fd) {
+    // Todo: Remove client from registries
+    // _clientRegistry.removeClient(fd);
+    AServer::onClientDisconnect(fd);
 }
