@@ -14,7 +14,7 @@ class IClient {
   virtual ~IClient() {};
 
   // Pass
-  virtual IRC::Numeric Authenticate(IServerConfig serverConfig,
+  virtual IRC::Numeric Authenticate(IServerConfig& serverConfig,
                                     const std::string& password) = 0;
   // NICK
   virtual IRC::Numeric setNick(IClientRegistry& registry,
