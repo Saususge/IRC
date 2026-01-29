@@ -1,48 +1,30 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-#include <poll.h>
-
+#include "AServer.hpp"
+#include "ServerConfig.hpp"
+#include "Client.hpp"
+#include "Channel.hpp"
 #include <map>
-#include <string>
-#include <vector>
 
-#include "Manager.hpp"
-
-class Server {
+class Server : public AServer {
  public:
   Server(int port, const std::string& password);
-  ~Server();
+  virtual ~Server();
+  virtual const IServerConfig& serverConfig() const;
 
-  void run();
-  void queueMessage(int fd, const std::string& msg);
-
-  const std::string& getPassword() const;
-
-  void closeClientByFd(size_t fd);
+ protected:
+  // AServer Hooks
+  virtual void onClientConnected(int fd);
+  virtual void onClientDisconnected(int fd);
+  virtual void onClientMessage(int fd, const std::string& message);
 
  private:
-  Server(const Server&);
-  Server& operator=(const Server&);
+  ServerConfig _config;
+  std::map<int, Client> _users;
+  std::map<std::string, Channel> _channels;
 
-  void initSocketOrDie();
-  void setNonBlockingOrDie(int fd);
-  void closeClient(size_t pollIndex);
-  void acceptClients();
-  void handleClientReadable(size_t pollIndex);
-  void onLine(int fd, const std::string& line);
-
-  int _port;
-  std::string _password;
-  int _serverFd;
-
-  std::vector<struct pollfd> _pollFds;
-  std::map<int, std::string> _inbuf;
-  std::map<int, std::string> _outbuf;
-  void handleClientWritable(size_t pollIndex);
-  void updatePollEvents(int fd);
-
-  Manager manager;
+  void dispatchCommand(int fd, const std::string& commandLine);
 };
 
 #endif

@@ -1,228 +1,51 @@
 #include "Server.hpp"
-
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
-#include <cstring>
+#include "Response.hpp" // 응답 생성용
 #include <iostream>
-#include <cstdio>
-#include <cstdlib>
-#include <cerrno>
+#include <sstream>
 
-Server::Server(int port, const std::string& password)
-    : _port(port), _password(password), _serverFd(-1), _pollFds(), _inbuf(), _outbuf(), manager() {
-  initSocketOrDie();
+Server::Server(int port, const std::string& password) 
+    : _config(password) {
+    initSocket(port); // AServer 초기화
 }
 
-Server::~Server() {
-  for (size_t i = 0; i < _pollFds.size(); ++i) ::close(_pollFds[i].fd);
-  _pollFds.clear();
-  _inbuf.clear();
-  _outbuf.clear();
+Server::~Server() {}
+
+const IServerConfig& Server::serverConfig() const {
+    return _config;
 }
 
-void Server::initSocketOrDie() {
-  _serverFd = socket(AF_INET, SOCK_STREAM, 0);
-  if (_serverFd < 0) {
-    perror("socket");
-    exit(1);
-  }
-
-  int opt = 1;
-  if (setsockopt(_serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-    perror("setsockopt");
-    exit(1);
-  }
-
-  setNonBlockingOrDie(_serverFd);
-
-  struct sockaddr_in addr;
-  std::memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = INADDR_ANY;
-  addr.sin_port = htons(_port);
-
-  if (bind(_serverFd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-    perror("bind");
-    exit(1);
-  }
-
-  if (listen(_serverFd, SOMAXCONN) < 0) {
-    perror("listen");
-    exit(1);
-  }
-
-  struct pollfd pfd;
-  pfd.fd = _serverFd;
-  pfd.events = POLLIN;
-  pfd.revents = 0;
-  _pollFds.push_back(pfd);
-}
-
-void Server::setNonBlockingOrDie(int fd) {
-  int flags = fcntl(fd, F_GETFL, 0);
-  if (flags < 0) {
-    perror("fcntl F_GETFL");
-    exit(1);
-  }
-  if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-    perror("fcntl F_SETFL");
-    exit(1);
-  }
-}
-
-void Server::run() {
-  std::cout << "Server running on port " << _port << "..." << std::endl;
-
-  while (true) {
-    int ret = poll(&_pollFds[0], _pollFds.size(), -1);
-    if (ret < 0) {
-      perror("poll");
-      break;
+void Server::onClientConnected(int fd) {
+    // 새로운 클라이언트 등록 (Manager가 하던 일)
+    if (_users.find(fd) == _users.end()) {
+        _users[fd] = Client(); // 기본 생성
+        std::cout << "Server: Client " << fd << " connected." << std::endl;
     }
+}
 
-    size_t currentSize = _pollFds.size();
-    for (size_t i = 0; i < currentSize; ++i) {
-      if (_pollFds[i].revents == 0) continue;
-
-      if (_pollFds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) {
-        closeClient(i);
-        i--;
-        currentSize--;
-        continue;
-      }
-
-      if (_pollFds[i].revents & POLLIN) {
-        if (_pollFds[i].fd == _serverFd) {
-          acceptClients();
-        } else {
-          handleClientReadable(i);
-        }
-      }
-
-      if (i < _pollFds.size() && (_pollFds[i].revents & POLLOUT)) {
-        handleClientWritable(i);
-      }
+void Server::onClientDisconnected(int fd) {
+    // 클라이언트 제거 및 채널에서 퇴장 처리 (Manager가 하던 일)
+    if (_users.find(fd) != _users.end()) {
+        std::string nick = _users[fd].getNickname();
+        // TODO: _channels 순회하며 해당 유저 제거 로직 필요
+        _users.erase(fd);
+        std::cout << "Server: Client " << fd << " disconnected." << std::endl;
     }
-  }
 }
 
-void Server::acceptClients() {
-  struct sockaddr_in clientAddr;
-  socklen_t clientLen = sizeof(clientAddr);
-  int clientFd =
-      accept(_serverFd, (struct sockaddr*)&clientAddr, &clientLen);
-
-  if (clientFd < 0) {
-    if (errno != EAGAIN && errno != EWOULDBLOCK) {
-      perror("accept");
-    }
-    return;
-  }
-
-  setNonBlockingOrDie(clientFd);
-
-  struct pollfd pfd;
-  pfd.fd = clientFd;
-  pfd.events = POLLIN | POLLOUT;
-  pfd.revents = 0;
-  _pollFds.push_back(pfd);
-
-  _inbuf[clientFd] = "";
-  _outbuf[clientFd] = "";
-  manager.addClient(clientFd, _password == "");
-  std::cout << "New client connected: " << clientFd << std::endl;
+void Server::onClientMessage(int fd, const std::string& message) {
+    std::cout << "Received from " << fd << ": " << message << std::endl;
+    dispatchCommand(fd, message);
 }
 
-void Server::closeClient(size_t pollIndex) {
-  int fd = _pollFds[pollIndex].fd;
-  
-  // Notify Manager to cleanup user data
-  manager.removeClient(fd);
+void Server::dispatchCommand(int fd, const std::string& commandLine) {
+    std::stringstream ss(commandLine);
+    std::string command;
+    ss >> command;
 
-  close(fd);
-
-  _pollFds.erase(_pollFds.begin() + pollIndex);
-  _inbuf.erase(fd);
-  _outbuf.erase(fd);
-  std::cout << "Client disconnected: " << fd << std::endl;
-}
-
-void Server::closeClientByFd(size_t fd) {
-  size_t idx;
-
-  for (idx=0; idx < _pollFds.size(); idx++) {
-    if (_pollFds[idx].fd == (int) fd) {
-      break;
-    }
-  }
-
-  // Notify Manager to cleanup user data
-  manager.removeClient(fd);
-
-  close(fd);
-
-  _pollFds.erase(_pollFds.begin() + idx);
-  _inbuf.erase(fd);
-  _outbuf.erase(fd);
-  std::cout << "Client disconnected: " << fd << std::endl;
-}
-
-void Server::handleClientReadable(size_t pollIndex) {
-  int fd = _pollFds[pollIndex].fd;
-  char buf[512];
-  ssize_t n = recv(fd, buf, sizeof(buf), 0);
-
-  if (n <= 0) {
-    closeClient(pollIndex);
-    return;
-  }
-
-  _inbuf[fd].append(buf, n);
-
-  size_t pos;
-  while ((pos = _inbuf[fd].find("\r\n")) != std::string::npos) {
-    std::string line = _inbuf[fd].substr(0, pos);
-    _inbuf[fd].erase(0, pos + 2);
-    onLine(fd, line);
-  }
-  while ((pos = _inbuf[fd].find("\n")) != std::string::npos) {
-    std::string line = _inbuf[fd].substr(0, pos);
-    if (!line.empty() && line[line.size() - 1] == '\r') line.erase(line.size() - 1);
-    _inbuf[fd].erase(0, pos + 1);
-    onLine(fd, line);
-  }
-}
-
-void Server::onLine(int fd, const std::string& line) {
-  std::cout << "Received from " << fd << ": " << line << std::endl;
-  manager.doRequest(*this, fd, line);
-}
-
-void Server::queueMessage(int fd, const std::string& msg) {
-  if (_outbuf.find(fd) == _outbuf.end()) return;
-  _outbuf[fd] += msg;
-}
-
-void Server::handleClientWritable(size_t pollIndex) {
-  int fd = _pollFds[pollIndex].fd;
-  std::string& out = _outbuf[fd];
-
-  if (out.empty()) return;
-
-  ssize_t n = send(fd, out.c_str(), out.size(), 0);
-  if (n < 0) {
-    if (errno != EAGAIN && errno != EWOULDBLOCK) {
-      closeClient(pollIndex);
-    }
-    return;
-  }
-  out.erase(0, n);
-}
-
-const std::string& Server::getPassword() const {
-  return this->_password;
+    // TODO: 대체된 커맨드 시스템(ICommand 등)을 사용하여 실행
+    // 예: CommandInvoker::execute(command, context);
+    
+    // 임시 테스트용 에코 (구조 확인용)
+    // ISession* session = findSession(fd);
+    // if (session) session->send("Server echoes: " + commandLine + "\r\n");
 }
