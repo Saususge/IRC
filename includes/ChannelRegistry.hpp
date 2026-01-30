@@ -9,6 +9,9 @@ class ChannelRegistry : private IChannelRegistry {
                            const std::string& nick);
   IRC::Numeric partChannel(const std::string& channelName,
                            const std::string& nick);
+  IRC::Numeric kickChannel(const std::string& channelName,
+                           const std::string& requesterNick,
+                           const std::string& nick) = 0;
   bool hasChannel(const std::string& channelName);
   const std::vector<const std::string>& getChannels();
   IRC::Numeric setClientOp(const std::string& channelName,
@@ -27,24 +30,12 @@ class ChannelRegistry : private IChannelRegistry {
                           const std::string requesterNick,
                           IChannel::IChannelMode mode);
 
-  IRC::Numeric removeClient(const std::string& channelName,
-                            const std::string& nick);
   bool hasClient(const std::string& channelName, const std::string& nick) const;
   bool isClientOp(const std::string& channelName,
                   const std::string& nick) const;
   const std::vector<const std::string>& getClients();
 
   int getClientNumber(const std::string& channelName) const;
-
-  IRC::Numeric setMode(const std::string& channelName,
-                       const std::string& requesterNick,
-                       IChannel::IChannelMode mode);
-  IRC::Numeric addMode(const std::string& channelName,
-                       const std::string& requesterNick,
-                       IChannel::IChannelMode mode);
-  IRC::Numeric removeMode(const std::string& channelName,
-                          const std::string& requesterNick,
-                          IChannel::IChannelMode mode);
 
   IRC::Numeric addToInviteList(const std::string& channelName,
                                const std::string& requesterNick,

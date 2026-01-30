@@ -30,8 +30,26 @@ IRC::Numeric Channel::addClient(const std::string& nick,
 
 IRC::Numeric Channel::removeClient(const std::string& nick) {
   if (joinedUsers.find(nick) == joinedUsers.end()) return IRC::ERR_NOTONCHANNEL;
+
   joinedUsers.erase(nick);
+  // TODO: call clientRegistry.partChannel();
+
   return IRC::RPL_STRREPLY;  // <prefix> PART <channel> :<comment>
+}
+IRC::Numeric Channel::kickClient(const std::string& requesterNick,
+                                 const std::string& targetNick) {
+  if (joinedUsers.find(requesterNick) == joinedUsers.end())
+    return IRC::ERR_NOTONCHANNEL;
+  if (operators.find(requesterNick) == operators.end())
+    return IRC::ERR_CHANOPRIVSNEEDED;
+  if (joinedUsers.find(targetNick) == joinedUsers.end())
+    return IRC::ERR_USERNOTINCHANNEL;
+
+  joinedUsers.erase(targetNick);
+  // TODO: call clientRegistry.partChannel();
+  // should broadcast quit to other clients including requester.
+  // killed client should receive <prefix> KILL <requester> :<comment>
+  return IRC::RPL_STRREPLY;
 }
 
 bool Channel::hasClient(const std::string& nick) const {

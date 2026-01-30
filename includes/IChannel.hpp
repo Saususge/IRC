@@ -22,6 +22,8 @@ class IChannel {
   virtual IRC::Numeric addClient(const std::string& nick,
                                  const std::string& key = "") = 0;
   virtual IRC::Numeric removeClient(const std::string& nick) = 0;
+  IRC::Numeric kickClient(const std::string& requesterNick,
+                          const std::string& targetNick);
   virtual bool hasClient(const std::string& nick) const = 0;
   virtual IRC::Numeric setClientOp(const std::string& requesterNick,
                                    const std::string& targetNick) = 0;

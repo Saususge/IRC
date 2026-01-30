@@ -16,6 +16,8 @@ class Channel : private IChannel {
 
   IRC::Numeric addClient(const std::string& nick, const std::string& key = "");
   IRC::Numeric removeClient(const std::string& nick);
+  IRC::Numeric kickClient(const std::string& requesterNick,
+                          const std::string& targetNick);
   bool hasClient(const std::string& nick) const;
   IRC::Numeric setClientOp(const std::string& requesterNick,
                            const std::string& targetNick);
