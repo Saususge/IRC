@@ -2,6 +2,7 @@
 #define CHANNEL_HPP
 
 #include <set>
+#include <vector>
 
 #include "IChannel.hpp"
 #include "IClientRegistry.hpp"

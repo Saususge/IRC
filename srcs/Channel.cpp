@@ -31,21 +31,63 @@ IRC::Numeric Channel::addClient(const std::string& nick,
 IRC::Numeric Channel::removeClient(const std::string& nick) {
   if (joinedUsers.find(nick) == joinedUsers.end()) return IRC::ERR_NOTONCHANNEL;
   joinedUsers.erase(nick);
+  return IRC::RPL_STRREPLY;  // <prefix> PART <channel> :<comment>
 }
 
-bool Channel::hasClient(const std::string& nick) const {}
+bool Channel::hasClient(const std::string& nick) const {
+  return joinedUsers.find(nick) != joinedUsers.end();
+}
 
 IRC::Numeric Channel::setClientOp(const std::string& nick,
-                                  const std::string& targetNick) {}
+                                  const std::string& targetNick) {
+  std::set<std::string>::iterator joinIter = joinedUsers.find(nick);
+  std::set<std::string>::iterator opIter = operators.find(nick);
+
+  // It is not a problem to send ERR_NOTONCHANNEL. But RFC 2812 does not specify
+  // numeric reply.
+  if (joinIter == joinedUsers.end() || opIter == operators.end())
+    return IRC::ERR_CHANOPRIVSNEEDED;
+
+  joinIter = joinedUsers.find(targetNick);
+  if (joinIter == joinedUsers.end()) return IRC::ERR_USERNOTINCHANNEL;
+
+  operators.insert(targetNick);
+  return IRC::RPL_STRREPLY;  // <prefix> MODE <channel> +o <target>
+}
 
 IRC::Numeric Channel::unsetClientOp(const std::string& nick,
-                                    const std::string& targetNick) {}
+                                    const std::string& targetNick) {
+  std::set<std::string>::iterator joinIter = joinedUsers.find(nick);
+  std::set<std::string>::iterator opIter = operators.find(nick);
 
-bool Channel::isClientOp(const std::string& nick) const {}
+  // It is not a problem to send ERR_NOTONCHANNEL. But RFC 2812 does not specify
+  // numeric reply.
+  if (joinIter == joinedUsers.end() || opIter == operators.end())
+    return IRC::ERR_CHANOPRIVSNEEDED;
 
-const std::vector<const std::string>& Channel::getClients() {}
+  joinIter = joinedUsers.find(targetNick);
+  if (joinIter == joinedUsers.end()) return IRC::ERR_USERNOTINCHANNEL;
 
-int Channel::getClientNumber() const {}
+  opIter = operators.find(targetNick);
+  if (opIter == operators.end()) return IRC::DO_NOTHING;
+
+  operators.erase(targetNick);
+  return IRC::RPL_STRREPLY;  // <prefix> MODE <channel> -o <target>
+}
+
+bool Channel::isClientOp(const std::string& nick) const {
+  if (joinedUsers.find(nick) == joinedUsers.end()) return false;
+
+  return operators.find(nick) != operators.end();
+}
+
+const std::vector<const std::string>& Channel::getClients() {
+  const std::vector<const std::string> v(joinedUsers.begin(),
+                                         joinedUsers.end());
+  return v;
+}
+
+int Channel::getClientNumber() const { return joinedUsers.size(); }
 
 IRC::Numeric Channel::setMode(const std::string& reqeusterNick,
                               IChannelMode mode) {}
@@ -57,9 +99,22 @@ IRC::Numeric Channel::removeMode(const std::string& reqeusterNick,
                                  IChannelMode mode) {}
 
 IRC::Numeric Channel::addToInviteList(const std::string& requesterNick,
-                                      const std::string& targetNick) {}
+                                      const std::string& targetNick) {
+  if (joinedUsers.find(requesterNick) == joinedUsers.end()) {
+    return IRC::ERR_NOTONCHANNEL;
+  } else if (joinedUsers.find(targetNick) == joinedUsers.end()) {
+    return IRC::ERR_USERONCHANNEL;
+  } else if (mode & 0b10 && operators.find(requesterNick) == operators.end()) {
+    return IRC::ERR_CHANOPRIVSNEEDED;
+  }
+
+  invitedUsers.insert(targetNick);
+  return IRC::RPL_INVITING;
+}
 
 IRC::Numeric Channel::removeFromInviteList(const std::string& requesterNick,
                                            const std::string& targetNick) {}
 
-bool Channel::isInInviteList(const std::string& nick) const {}
+bool Channel::isInInviteList(const std::string& nick) const {
+  return invitedUsers.find(nick) != invitedUsers.end();
+}
