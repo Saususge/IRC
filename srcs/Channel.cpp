@@ -93,18 +93,21 @@ IRC::Numeric Channel::setMode(const std::string& reqeusterNick,
                               IChannelMode mode) {
   (void)reqeusterNick;
   (void)mode;
+  return IRC::DO_NOTHING;
 }
 
 IRC::Numeric Channel::addMode(const std::string& reqeusterNick,
                               IChannelMode mode) {
   (void)reqeusterNick;
   (void)mode;
+  return IRC::DO_NOTHING;
 }
 
 IRC::Numeric Channel::removeMode(const std::string& reqeusterNick,
                                  IChannelMode mode) {
   (void)reqeusterNick;
   (void)mode;
+  return IRC::DO_NOTHING;
 }
 
 IRC::Numeric Channel::addToInviteList(const std::string& requesterNick,
