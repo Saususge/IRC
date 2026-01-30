@@ -1,6 +1,11 @@
 #ifndef CHANNELREGISTRY_HPP
 #define CHANNELREGISTRY_HPP
 
+#include <iostream>
+#include <map>
+#include <vector>
+
+#include "IChannel.hpp"
 #include "IChannelRegistry.hpp"
 
 class ChannelRegistry : private IChannelRegistry {
@@ -11,7 +16,7 @@ class ChannelRegistry : private IChannelRegistry {
                            const std::string& nick);
   IRC::Numeric kickChannel(const std::string& channelName,
                            const std::string& requesterNick,
-                           const std::string& nick) = 0;
+                           const std::string& targetNick);
   bool hasChannel(const std::string& channelName);
   const std::vector<const std::string>& getChannels();
   IRC::Numeric setClientOp(const std::string& channelName,
@@ -48,6 +53,7 @@ class ChannelRegistry : private IChannelRegistry {
                 const std::string& except = "");
 
  private:
+  std::map<std::string, IChannel> channels;
 };
 
 #endif  // CHANNELREGISTRY_HPP
