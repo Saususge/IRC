@@ -124,10 +124,6 @@ IRC::Numeric Channel::addToInviteList(const std::string& requesterNick,
   return IRC::RPL_INVITING;
 }
 
-// TODO: Remove below function
-IRC::Numeric Channel::removeFromInviteList(const std::string& requesterNick,
-                                           const std::string& targetNick) {}
-
 bool Channel::isInInviteList(const std::string& nick) const {
   return invitedUsers.find(nick) != invitedUsers.end();
 }

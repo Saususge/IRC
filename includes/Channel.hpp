@@ -32,8 +32,6 @@ class Channel : private IChannel {
 
   IRC::Numeric addToInviteList(const std::string& requesterNick,
                                const std::string& targetNick);
-  IRC::Numeric removeFromInviteList(const std::string& requesterNick,
-                                    const std::string& targetNick);
   bool isInInviteList(const std::string& nick) const;
 
  private:

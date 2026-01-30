@@ -57,9 +57,6 @@ class IChannelRegistry {
   virtual IRC::Numeric addToInviteList(const std::string& channelName,
                                        const std::string& requesterNick,
                                        const std::string& targetNick) = 0;
-  virtual IRC::Numeric removeFromInviteList(const std::string& channelName,
-                                            const std::string& requesterNick,
-                                            const std::string& targetNick) = 0;
   virtual bool isInInviteList(const std::string& channelName,
                               const std::string& nick) const = 0;
 
