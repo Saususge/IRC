@@ -3,6 +3,14 @@
 #include <iostream>
 #include <cstdlib>
 
+void gracefulQuit(int sig) {
+
+}
+
+void set_signal(void) {
+
+}
+
 int main(int argc, char **argv)
 {
 	if (argc != 3)

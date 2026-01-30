@@ -19,7 +19,8 @@ class IChannel {
   virtual int broadcast(const std::string& msg,
                         const std::string& except = "") = 0;
 
-  virtual IRC::Numeric addClient(const std::string& nick) = 0;
+  virtual IRC::Numeric addClient(const std::string& nick,
+                                 const std::string& key = "") = 0;
   virtual IRC::Numeric removeClient(const std::string& nick) = 0;
   virtual bool hasClient(const std::string& nick) const = 0;
   virtual IRC::Numeric setClientOp(const std::string& requesterNick,

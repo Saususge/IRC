@@ -10,38 +10,121 @@ int Channel::broadcast(const std::string& msg, const std::string& except = "") {
   return 1;
 }
 
-int Channel::addClient(const std::string& nick) {
-  if (joinedUsers.find(nick) != joinedUsers.end()) return 0;
+IRC::Numeric Channel::addClient(const std::string& nick,
+                                const std::string& key) {
+  if (joinedUsers.find(nick) != joinedUsers.end())
+    return IRC::DO_NOTHING;
+  else if (this->mode & 0b10 && invitedUsers.find(nick) == invitedUsers.end()) {
+    return IRC::ERR_INVITEONLYCHAN;
+  } else if (!this->key.empty() && this->key != key) {
+    return IRC::ERR_BADCHANNELKEY;
+  } else if (this->limit != 0 && this->limit <= this->joinedUsers.size()) {
+    return IRC::ERR_CHANNELISFULL;
+  }
+
   joinedUsers.insert(nick);
-  return 1;
+  this->mode & 0b10 ? this->invitedUsers.erase(nick) : 0;
+
+  return topic.empty() ? IRC::RPL_NOTOPIC : IRC::RPL_TOPIC;
 }
 
-void Channel::removeClient(const std::string& nick) {}
+IRC::Numeric Channel::removeClient(const std::string& nick) {
+  if (joinedUsers.find(nick) == joinedUsers.end()) return IRC::ERR_NOTONCHANNEL;
+  joinedUsers.erase(nick);
+  return IRC::RPL_STRREPLY;  // <prefix> PART <channel> :<comment>
+}
 
-bool Channel::hasClient(const std::string& nick) const {}
+bool Channel::hasClient(const std::string& nick) const {
+  return joinedUsers.find(nick) != joinedUsers.end();
+}
 
-int Channel::setClientOp(const std::string& nick) {}
+IRC::Numeric Channel::setClientOp(const std::string& nick,
+                                  const std::string& targetNick) {
+  std::set<std::string>::iterator joinIter = joinedUsers.find(nick);
+  std::set<std::string>::iterator opIter = operators.find(nick);
 
-int Channel::unsetClientOp(const std::string& nick) {}
+  // It is not a problem to send ERR_NOTONCHANNEL. But RFC 2812 does not specify
+  // numeric reply.
+  if (joinIter == joinedUsers.end() || opIter == operators.end())
+    return IRC::ERR_CHANOPRIVSNEEDED;
 
-int Channel::isClientOp(const std::string& nick) const {}
+  joinIter = joinedUsers.find(targetNick);
+  if (joinIter == joinedUsers.end()) return IRC::ERR_USERNOTINCHANNEL;
 
-const std::vector<const std::string>& Channel::getClients() {}
+  operators.insert(targetNick);
+  return IRC::RPL_STRREPLY;  // <prefix> MODE <channel> +o <target>
+}
 
-int Channel::getClientNumber() const {}
+IRC::Numeric Channel::unsetClientOp(const std::string& nick,
+                                    const std::string& targetNick) {
+  std::set<std::string>::iterator joinIter = joinedUsers.find(nick);
+  std::set<std::string>::iterator opIter = operators.find(nick);
 
-int Channel::setMode(const std::string& reqeusterNick, IChannelMode mode) {}
+  // It is not a problem to send ERR_NOTONCHANNEL. But RFC 2812 does not specify
+  // numeric reply.
+  if (joinIter == joinedUsers.end() || opIter == operators.end())
+    return IRC::ERR_CHANOPRIVSNEEDED;
 
-int Channel::addMode(const std::string& reqeusterNick, IChannelMode mode) {}
+  joinIter = joinedUsers.find(targetNick);
+  if (joinIter == joinedUsers.end()) return IRC::ERR_USERNOTINCHANNEL;
 
-int Channel::removeMode(const std::string& reqeusterNick, IChannelMode mode) {}
+  opIter = operators.find(targetNick);
+  if (opIter == operators.end()) return IRC::DO_NOTHING;
 
-IChannel::IChannelMode Channel::getMode() const {}
+  operators.erase(targetNick);
+  return IRC::RPL_STRREPLY;  // <prefix> MODE <channel> -o <target>
+}
 
-int Channel::addToInviteList(const std::string& requesterNick,
-                             const std::string& targetNick) {}
+bool Channel::isClientOp(const std::string& nick) const {
+  if (joinedUsers.find(nick) == joinedUsers.end()) return false;
 
-int Channel::removeFromInviteList(const std::string& requesterNick,
-                                  const std::string& targetNick) {}
+  return operators.find(nick) != operators.end();
+}
 
-bool Channel::isInInviteList(const std::string& nick) const {}
+const std::vector<const std::string>& Channel::getClients() {
+  const std::vector<const std::string> v(joinedUsers.begin(),
+                                         joinedUsers.end());
+  return v;
+}
+
+int Channel::getClientNumber() const { return joinedUsers.size(); }
+
+IRC::Numeric Channel::setMode(const std::string& reqeusterNick,
+                              IChannelMode mode) {
+  (void)reqeusterNick;
+  (void)mode;
+}
+
+IRC::Numeric Channel::addMode(const std::string& reqeusterNick,
+                              IChannelMode mode) {
+  (void)reqeusterNick;
+  (void)mode;
+}
+
+IRC::Numeric Channel::removeMode(const std::string& reqeusterNick,
+                                 IChannelMode mode) {
+  (void)reqeusterNick;
+  (void)mode;
+}
+
+IRC::Numeric Channel::addToInviteList(const std::string& requesterNick,
+                                      const std::string& targetNick) {
+  if (joinedUsers.find(requesterNick) == joinedUsers.end()) {
+    return IRC::ERR_NOTONCHANNEL;
+  } else if (joinedUsers.find(targetNick) == joinedUsers.end()) {
+    return IRC::ERR_USERONCHANNEL;
+  } else if (mode & 0b10 && operators.find(requesterNick) == operators.end()) {
+    return IRC::ERR_CHANOPRIVSNEEDED;
+  }
+
+  invitedUsers.insert(targetNick);
+  return IRC::RPL_INVITING;
+}
+
+// TODO: Remove below function
+IRC::Numeric Channel::removeFromInviteList(const std::string& requesterNick,
+                                           const std::string& targetNick) {}
+
+bool Channel::isInInviteList(const std::string& nick) const {
+  return invitedUsers.find(nick) != invitedUsers.end();
+}
