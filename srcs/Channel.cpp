@@ -90,13 +90,22 @@ const std::vector<const std::string>& Channel::getClients() {
 int Channel::getClientNumber() const { return joinedUsers.size(); }
 
 IRC::Numeric Channel::setMode(const std::string& reqeusterNick,
-                              IChannelMode mode) {}
+                              IChannelMode mode) {
+  (void)reqeusterNick;
+  (void)mode;
+}
 
 IRC::Numeric Channel::addMode(const std::string& reqeusterNick,
-                              IChannelMode mode) {}
+                              IChannelMode mode) {
+  (void)reqeusterNick;
+  (void)mode;
+}
 
 IRC::Numeric Channel::removeMode(const std::string& reqeusterNick,
-                                 IChannelMode mode) {}
+                                 IChannelMode mode) {
+  (void)reqeusterNick;
+  (void)mode;
+}
 
 IRC::Numeric Channel::addToInviteList(const std::string& requesterNick,
                                       const std::string& targetNick) {
@@ -112,6 +121,7 @@ IRC::Numeric Channel::addToInviteList(const std::string& requesterNick,
   return IRC::RPL_INVITING;
 }
 
+// TODO: Remove below function
 IRC::Numeric Channel::removeFromInviteList(const std::string& requesterNick,
                                            const std::string& targetNick) {}
 
