@@ -36,6 +36,10 @@ class Channel : private IChannel {
                                const std::string& targetNick);
   bool isInInviteList(const std::string& nick) const;
 
+  IRC::Numeric setTopic(const std::string& nick, const std::string& topic);
+  IRC::Numeric reqTopic(const std::string& nick);
+  const std::string& getTopic();
+
  private:
   std::string channelName;
   std::string topic;

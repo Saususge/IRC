@@ -48,6 +48,12 @@ class ChannelRegistry : private IChannelRegistry {
   bool isInInviteList(const std::string& channelName,
                       const std::string& nick) const;
 
+  IRC::Numeric setTopic(const std::string& channelName, const std::string& nick,
+                        const std::string& topic);
+  IRC::Numeric reqTopic(const std::string& channelName,
+                        const std::string& nick);
+  const std::string& getTopic(const std::string& channelName);
+
   // Use `except` only if excluding sender.
   int broadcast(const std::string& channelName, const std::string& msg,
                 const std::string& except = "");
