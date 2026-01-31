@@ -148,3 +148,34 @@ int ChannelRegistry::broadcast(const std::string& channelName,
 
   return iter->second.broadcast(msg, except);
 }
+
+IRC::Numeric ChannelRegistry::setTopic(const std::string& channelName,
+                                       const std::string& nick,
+                                       const std::string& topic) {
+  std::map<std::string, IChannel>::iterator iter = channels.find(channelName);
+  if (iter == channels.end()) {
+    // rfc 2812 topic does not return ERR_NOSUCHCHANNEL
+    return IRC::DO_NOTHING;
+  }
+
+  return iter->second.setTopic(nick, topic);
+}
+
+IRC::Numeric ChannelRegistry::reqTopic(const std::string& channelName,
+                                       const std::string& nick) {
+  std::map<std::string, IChannel>::iterator iter = channels.find(channelName);
+  if (iter == channels.end()) {
+    // rfc 2812 topic does not return ERR_NOSUCHCHANNEL
+    return IRC::DO_NOTHING;
+  }
+
+  return iter->second.reqTopic(nick);
+}
+
+const std::string& ChannelRegistry::getTopic(const std::string& channelName) {
+  std::map<std::string, IChannel>::iterator iter = channels.find(channelName);
+  if (iter == channels.end()) {
+    return ":ERROR:";
+  }
+  return iter->second.getTopic();
+}

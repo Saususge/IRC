@@ -145,3 +145,21 @@ IRC::Numeric Channel::addToInviteList(const std::string& requesterNick,
 bool Channel::isInInviteList(const std::string& nick) const {
   return invitedUsers.find(nick) != invitedUsers.end();
 }
+
+IRC::Numeric Channel::setTopic(const std::string& nick,
+                               const std::string& topic) {
+  if (joinedUsers.find(nick) == joinedUsers.end())
+    return IRC::ERR_NOTONCHANNEL;
+  else if (operators.find(nick) == operators.end())
+    return IRC::ERR_CHANOPRIVSNEEDED;
+
+  this->topic = topic;
+  return IRC::RPL_STRREPLY;
+}
+
+IRC::Numeric Channel::reqTopic(const std::string& nick) {
+  if (joinedUsers.find(nick) == joinedUsers.end()) return IRC::ERR_NOTONCHANNEL;
+  return topic.empty() ? IRC::RPL_NOTOPIC : IRC::RPL_TOPIC;
+}
+
+const std::string& Channel::getTopic() { return topic; }
