@@ -150,7 +150,7 @@ IRC::Numeric Channel::setTopic(const std::string& nick,
                                const std::string& topic) {
   if (joinedUsers.find(nick) == joinedUsers.end())
     return IRC::ERR_NOTONCHANNEL;
-  else if (operators.find(nick) == operators.end())
+  else if (mode & 0b1 && operators.find(nick) == operators.end())
     return IRC::ERR_CHANOPRIVSNEEDED;
 
   this->topic = topic;
