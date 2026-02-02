@@ -46,6 +46,8 @@ void AServer::initSocketOrDie(int port) {
 }
 
 void AServer::run() {
+    std::set<int> removePollFDs;
+
     std::cout << "Server started..." << std::endl;
     while (true) {
         int ret = poll(&_pollfds[0], _pollfds.size(), -1);
@@ -56,7 +58,6 @@ void AServer::run() {
 
             if (_pollfds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) {
                 onClientDisconnect(_pollfds[i].fd); 
-                // Todo: fd remove at _pollfds
                 continue; 
             }
 
