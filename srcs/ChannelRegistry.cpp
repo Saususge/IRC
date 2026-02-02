@@ -1,11 +1,12 @@
 #include "ChannelRegistry.hpp"
 
 IRC::Numeric ChannelRegistry::joinChannel(const std::string& channelName,
-                                          const std::string& nick) {
+                                          const std::string& nick,
+                                          const std::string& key) {
   std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
   if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
 
-  return iter->second->addClient(nick);
+  return iter->second->addClient(nick, key);
 }
 
 IRC::Numeric ChannelRegistry::partChannel(const std::string& channelName,
@@ -25,11 +26,11 @@ IRC::Numeric ChannelRegistry::kickChannel(const std::string& channelName,
   return iter->second->kickClient(requesterNick, targetNick);
 }
 
-bool ChannelRegistry::hasChannel(const std::string& channelName) {
+bool ChannelRegistry::hasChannel(const std::string& channelName) const {
   return channels.find(channelName) != channels.end();
 }
 
-const std::map<std::string, IChannel*>& ChannelRegistry::getChannels() {
+const std::map<std::string, IChannel*>& ChannelRegistry::getChannels() const {
   return channels;
 }
 
@@ -52,9 +53,9 @@ IRC::Numeric ChannelRegistry::unsetClientOp(const std::string& channelName,
 }
 
 IRC::Numeric ChannelRegistry::setMode(const std::string& channelName,
-                                      const std::string requesterNick,
+                                      const std::string& requesterNick,
                                       IChannel::IChannelMode mode,
-                                      std::vector<const std::string> params) {
+                                      std::vector<std::string> params) {
   (void)requesterNick;
   (void)mode;
   (void)params;
@@ -64,7 +65,7 @@ IRC::Numeric ChannelRegistry::setMode(const std::string& channelName,
 }
 
 IRC::Numeric ChannelRegistry::addMode(const std::string& channelName,
-                                      const std::string requesterNick,
+                                      const std::string& requesterNick,
                                       IChannel::IChannelMode mode,
                                       const std::string& param) {
   std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
@@ -73,7 +74,7 @@ IRC::Numeric ChannelRegistry::addMode(const std::string& channelName,
 }
 
 IRC::Numeric ChannelRegistry::removeMode(const std::string& channelName,
-                                         const std::string requesterNick,
+                                         const std::string& requesterNick,
                                          IChannel::IChannelMode mode,
                                          const std::string& param) {
   std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);

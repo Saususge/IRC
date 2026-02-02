@@ -29,7 +29,7 @@ class Channel : public IChannel {
   int getClientNumber() const;
 
   IRC::Numeric setMode(const std::string& requesterNick, IChannelMode mode,
-                       std::vector<const std::string> params);
+                       std::vector<std::string> params);
   IRC::Numeric addMode(const std::string& requesterNick, IChannelMode mode,
                        const std::string& param);
   IRC::Numeric removeMode(const std::string& requesterNick, IChannelMode mode,

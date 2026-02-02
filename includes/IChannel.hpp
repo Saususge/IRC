@@ -45,7 +45,7 @@ class IChannel {
   // valid client limit per channel RLIMIT_NOFILE($ulimit -n) / 10 -> 102.4
   virtual IRC::Numeric setMode(const std::string& requesterNick,
                                IChannelMode mode,
-                               std::vector<const std::string> params) = 0;
+                               std::vector<std::string> params) = 0;
   virtual IRC::Numeric addMode(const std::string& requesterNick,
                                IChannelMode mode, const std::string& param) = 0;
   virtual IRC::Numeric removeMode(const std::string& requesterNick,

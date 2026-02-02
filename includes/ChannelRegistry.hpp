@@ -10,14 +10,15 @@
 class ChannelRegistry : public IChannelRegistry {
  public:
   IRC::Numeric joinChannel(const std::string& channelName,
-                           const std::string& nick);
+                           const std::string& nick,
+                           const std::string& key = "");
   IRC::Numeric partChannel(const std::string& channelName,
                            const std::string& nick);
   IRC::Numeric kickChannel(const std::string& channelName,
                            const std::string& requesterNick,
                            const std::string& targetNick);
-  bool hasChannel(const std::string& channelName);
-  const std::map<std::string, IChannel*>& getChannels();
+  bool hasChannel(const std::string& channelName) const;
+  const std::map<std::string, IChannel*>& getChannels() const;
   IRC::Numeric setClientOp(const std::string& channelName,
                            const std::string& requesterNick,
                            const std::string& targetNick);
@@ -25,14 +26,14 @@ class ChannelRegistry : public IChannelRegistry {
                              const std::string& requesterNick,
                              const std::string& targetNick);
   IRC::Numeric setMode(const std::string& channelName,
-                       const std::string requesterNick,
+                       const std::string& requesterNick,
                        IChannel::IChannelMode mode,
-                       std::vector<const std::string> params);
+                       std::vector<std::string> params);
   IRC::Numeric addMode(const std::string& channelName,
-                       const std::string requesterNick,
+                       const std::string& requesterNick,
                        IChannel::IChannelMode mode, const std::string& param);
   IRC::Numeric removeMode(const std::string& channelName,
-                          const std::string requesterNick,
+                          const std::string& requesterNick,
                           IChannel::IChannelMode mode,
                           const std::string& param);
 

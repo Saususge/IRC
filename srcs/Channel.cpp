@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 
-int Channel::broadcast(const std::string& msg, const std::string& except = "") {
+int Channel::broadcast(const std::string& msg, const std::string& except) {
   for (std::set<std::string>::iterator iter = joinedUsers.begin();
        iter != joinedUsers.end(); iter++) {
     if (*iter == except) continue;
@@ -51,7 +51,7 @@ IRC::Numeric Channel::kickClient(const std::string& requesterNick,
   joinedUsers.erase(targetNick);
   // TODO: call clientRegistry.partChannel();
   // should broadcast quit to other clients including requester.
-  // killed client should receive <prefix> KILL <requester> :<comment>
+  // killed client should receive <prefix> KICK <requester> :<comment>
   return IRC::RPL_STRREPLY;
 }
 
@@ -108,7 +108,7 @@ int Channel::getClientNumber() const { return joinedUsers.size(); }
 
 IRC::Numeric Channel::setMode(const std::string& reqeusterNick,
                               IChannelMode mode,
-                              std::vector<const std::string> params) {
+                              std::vector<std::string> params) {
   (void)reqeusterNick;
   (void)mode;
   (void)params;

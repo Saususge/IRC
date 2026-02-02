@@ -1,5 +1,5 @@
-#ifndef ICHANNELRESISTRY_HPP
-#define ICHANNELRESISTRY_HPP
+#ifndef ICHANNELREGISTRY_HPP
+#define ICHANNELREGISTRY_HPP
 
 #include <set>
 #include <vector>
@@ -19,8 +19,8 @@ class IChannelRegistry {
   virtual IRC::Numeric kickChannel(const std::string& channelName,
                                    const std::string& requesterNick,
                                    const std::string& targetNick) = 0;
-  virtual bool hasChannel(const std::string& channelName) = 0;
-  virtual const std::map<std::string, IChannel*>& getChannels() = 0;
+  virtual bool hasChannel(const std::string& channelName) const = 0;
+  virtual const std::map<std::string, IChannel*>& getChannels() const = 0;
   virtual IRC::Numeric setClientOp(const std::string& channelName,
                                    const std::string& requesterNick,
                                    const std::string& targetNick) = 0;
@@ -28,15 +28,15 @@ class IChannelRegistry {
                                      const std::string& requesterNick,
                                      const std::string& targetNick) = 0;
   virtual IRC::Numeric setMode(const std::string& channelName,
-                               const std::string requesterNick,
+                               const std::string& requesterNick,
                                IChannel::IChannelMode mode,
-                               std::vector<const std::string> params) = 0;
+                               std::vector<std::string> params) = 0;
   virtual IRC::Numeric addMode(const std::string& channelName,
-                               const std::string requesterNick,
+                               const std::string& requesterNick,
                                IChannel::IChannelMode mode,
                                const std::string& param) = 0;
   virtual IRC::Numeric removeMode(const std::string& channelName,
-                                  const std::string requesterNick,
+                                  const std::string& requesterNick,
                                   IChannel::IChannelMode mode,
                                   const std::string& param) = 0;
 
@@ -66,4 +66,4 @@ class IChannelRegistry {
   virtual int broadcast(const std::string& channelName, const std::string& msg,
                         const std::string& except = "") = 0;
 };
-#endif  // ICHANNELRESISTRY_HPP
+#endif  // ICHANNELREGISTRY_HPP
