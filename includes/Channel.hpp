@@ -44,7 +44,7 @@ class Channel : private IChannel {
   std::string channelName;
   std::string topic;
   std::string key;
-  IChannel::IChannelMode mode;  // inv, topic
+  IChannel::IChannelMode mode;  // inv, topic, key, limit
   size_t limit;
 
   std::set<std::string> invitedUsers;

@@ -10,6 +10,11 @@ class IChannel {
  public:
   // Bit mask
   typedef int IChannelMode;
+  static const IChannelMode MINVITE = 0b10000;
+  static const IChannelMode MTOPIC = 0b01000;
+  static const IChannelMode MKEY = 0b00100;
+  static const IChannelMode MOP = 0b00010;
+  static const IChannelMode MLIMIT = 0b00001;
 
   virtual ~IChannel() {};
 
@@ -34,6 +39,8 @@ class IChannel {
 
   virtual int getClientNumber() const = 0;
 
+  // MODE +k : blank key not allowed.
+  // valid client limit per channel RLIMIT_NOFILE($ulimit -n) / 10
   virtual IRC::Numeric setMode(const std::string& requesterNick,
                                IChannelMode mode) = 0;
   virtual IRC::Numeric addMode(const std::string& requesterNick,
