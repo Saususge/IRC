@@ -27,13 +27,15 @@ class ChannelRegistry : private IChannelRegistry {
                              const std::string& targetNick);
   IRC::Numeric setMode(const std::string& channelName,
                        const std::string requesterNick,
-                       IChannel::IChannelMode mode);
+                       IChannel::IChannelMode mode,
+                       std::vector<const std::string> params);
   IRC::Numeric addMode(const std::string& channelName,
                        const std::string requesterNick,
-                       IChannel::IChannelMode mode);
+                       IChannel::IChannelMode mode, const std::string& param);
   IRC::Numeric removeMode(const std::string& channelName,
                           const std::string requesterNick,
-                          IChannel::IChannelMode mode);
+                          IChannel::IChannelMode mode,
+                          const std::string& param);
 
   bool hasClient(const std::string& channelName, const std::string& nick) const;
   bool isClientOp(const std::string& channelName,

@@ -40,13 +40,16 @@ class IChannel {
   virtual int getClientNumber() const = 0;
 
   // MODE +k : blank key not allowed.
-  // valid client limit per channel RLIMIT_NOFILE($ulimit -n) / 10
+  // MODE -k : also requires password
+  // valid client limit per channel RLIMIT_NOFILE($ulimit -n) / 10 -> 102.4
   virtual IRC::Numeric setMode(const std::string& requesterNick,
-                               IChannelMode mode) = 0;
+                               IChannelMode mode,
+                               std::vector<const std::string> params) = 0;
   virtual IRC::Numeric addMode(const std::string& requesterNick,
-                               IChannelMode mode) = 0;
+                               IChannelMode mode, const std::string& param) = 0;
   virtual IRC::Numeric removeMode(const std::string& requesterNick,
-                                  IChannelMode mode) = 0;
+                                  IChannelMode mode,
+                                  const std::string& params) = 0;
 
   virtual IRC::Numeric addToInviteList(const std::string& requesterNick,
                                        const std::string& targetNick) = 0;

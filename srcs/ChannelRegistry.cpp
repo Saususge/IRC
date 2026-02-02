@@ -57,9 +57,11 @@ IRC::Numeric ChannelRegistry::unsetClientOp(const std::string& channelName,
 
 IRC::Numeric ChannelRegistry::setMode(const std::string& channelName,
                                       const std::string requesterNick,
-                                      IChannel::IChannelMode mode) {
+                                      IChannel::IChannelMode mode,
+                                      std::vector<const std::string> params) {
   (void)requesterNick;
   (void)mode;
+  (void)params;
   std::map<std::string, IChannel>::iterator iter = channels.find(channelName);
   if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
   return IRC::DO_NOTHING;
@@ -67,22 +69,20 @@ IRC::Numeric ChannelRegistry::setMode(const std::string& channelName,
 
 IRC::Numeric ChannelRegistry::addMode(const std::string& channelName,
                                       const std::string requesterNick,
-                                      IChannel::IChannelMode mode) {
-  (void)requesterNick;
-  (void)mode;
+                                      IChannel::IChannelMode mode,
+                                      const std::string& param) {
   std::map<std::string, IChannel>::iterator iter = channels.find(channelName);
   if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
-  return IRC::DO_NOTHING;
+  return iter->second.addMode(requesterNick, mode, param);
 }
 
 IRC::Numeric ChannelRegistry::removeMode(const std::string& channelName,
                                          const std::string requesterNick,
-                                         IChannel::IChannelMode mode) {
-  (void)requesterNick;
-  (void)mode;
+                                         IChannel::IChannelMode mode,
+                                         const std::string& param) {
   std::map<std::string, IChannel>::iterator iter = channels.find(channelName);
   if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
-  return IRC::DO_NOTHING;
+  return iter->second.removeMode(requesterNick, mode, param);
 }
 
 bool ChannelRegistry::hasClient(const std::string& channelName,

@@ -1,5 +1,7 @@
 #include "Channel.hpp"
 
+#include <cstdlib>
+
 int Channel::broadcast(const std::string& msg, const std::string& except = "") {
   if (!except.empty()) joinedUsers.erase(except);
   for (std::set<std::string>::iterator iter = joinedUsers.begin();
@@ -109,24 +111,83 @@ const std::vector<const std::string>& Channel::getClients() {
 int Channel::getClientNumber() const { return joinedUsers.size(); }
 
 IRC::Numeric Channel::setMode(const std::string& reqeusterNick,
-                              IChannelMode mode) {
+                              IChannelMode mode,
+                              std::vector<const std::string> params) {
   (void)reqeusterNick;
   (void)mode;
+  (void)params;
   return IRC::DO_NOTHING;
 }
 
-IRC::Numeric Channel::addMode(const std::string& reqeusterNick,
-                              IChannelMode mode) {
-  (void)reqeusterNick;
-  (void)mode;
-  return IRC::DO_NOTHING;
+IRC::Numeric Channel::addMode(const std::string& requesterNick,
+                              IChannelMode mode, const std::string& param) {
+  if (operators.find(requesterNick) == operators.end())
+    return IRC::ERR_CHANOPRIVSNEEDED;
+
+  if (mode & IChannel::MINVITE) {
+    if (this->mode & IChannel::MINVITE) return IRC::DO_NOTHING;
+    this->mode |= IChannel::MINVITE;
+
+  } else if (mode & IChannel::MTOPIC) {
+    if (this->mode & IChannel::MTOPIC) return IRC::DO_NOTHING;
+    this->mode |= IChannel::MTOPIC;
+
+  } else if (mode & IChannel::MKEY) {
+    if (!this->key.empty()) return IRC::ERR_KEYSET;
+    if (param.empty()) return IRC::ERR_NEEDMOREPARAMS;
+    this->key = param;
+
+  } else if (mode & IChannel::MOP) {
+    if (param.empty()) return IRC::ERR_NEEDMOREPARAMS;
+    return this->setClientOp(requesterNick, param);
+
+  } else if (mode & IChannel::MLIMIT) {
+    if (this->limit != 0) return IRC::DO_NOTHING;
+    if (param.empty()) return IRC::ERR_NEEDMOREPARAMS;
+
+    char* end;
+    size_t num_limit =
+        static_cast<size_t>(std::strtol(param.c_str(), &end, 10));
+    if (*end != '\0' || (num_limit < joinedUsers.size() || 102 < num_limit))
+      return IRC::DO_NOTHING;
+
+    this->limit = num_limit;
+  } else {
+    return IRC::DO_NOTHING;
+  }
+  return IRC::RPL_STRREPLY;
 }
 
-IRC::Numeric Channel::removeMode(const std::string& reqeusterNick,
-                                 IChannelMode mode) {
-  (void)reqeusterNick;
-  (void)mode;
-  return IRC::DO_NOTHING;
+IRC::Numeric Channel::removeMode(const std::string& requesterNick,
+                                 IChannelMode mode, const std::string& param) {
+  if (operators.find(requesterNick) == operators.end())
+    return IRC::ERR_CHANOPRIVSNEEDED;
+
+  if (mode & IChannel::MINVITE) {
+    if (!(this->mode & IChannel::MINVITE)) return IRC::DO_NOTHING;
+    this->mode &= ~IChannel::MINVITE;
+
+  } else if (mode & IChannel::MTOPIC) {
+    if (!(this->mode & IChannel::MTOPIC)) return IRC::DO_NOTHING;
+    this->mode &= ~IChannel::MTOPIC;
+
+  } else if (mode & IChannel::MKEY) {
+    if (this->key.empty()) return IRC::DO_NOTHING;
+    if (param.empty() || this->key != param) return IRC::ERR_KEYSET;
+    this->key.clear();
+
+  } else if (mode & IChannel::MOP) {
+    if (param.empty()) return IRC::ERR_NEEDMOREPARAMS;
+    return this->unsetClientOp(requesterNick, param);
+
+  } else if (mode & IChannel::MLIMIT) {
+    if (this->limit == 0) return IRC::DO_NOTHING;
+    this->limit = 0;
+
+  } else {
+    return IRC::DO_NOTHING;
+  }
+  return IRC::RPL_STRREPLY;
 }
 
 IRC::Numeric Channel::addToInviteList(const std::string& requesterNick,
