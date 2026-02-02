@@ -3,12 +3,11 @@
 #include <cstdlib>
 
 int Channel::broadcast(const std::string& msg, const std::string& except = "") {
-  if (!except.empty()) joinedUsers.erase(except);
   for (std::set<std::string>::iterator iter = joinedUsers.begin();
        iter != joinedUsers.end(); iter++) {
+    if (*iter == except) continue;
     this->clientRegistry.send(*iter, msg);
   }
-  if (!except.empty()) joinedUsers.insert(except);
   return 1;
 }
 
@@ -16,7 +15,8 @@ IRC::Numeric Channel::addClient(const std::string& nick,
                                 const std::string& key) {
   if (joinedUsers.find(nick) != joinedUsers.end())
     return IRC::DO_NOTHING;
-  else if (this->mode & 0b10 && invitedUsers.find(nick) == invitedUsers.end()) {
+  else if (this->mode & IChannel::MINVITE &&
+           invitedUsers.find(nick) == invitedUsers.end()) {
     return IRC::ERR_INVITEONLYCHAN;
   } else if (!this->key.empty() && this->key != key) {
     return IRC::ERR_BADCHANNELKEY;
@@ -26,7 +26,7 @@ IRC::Numeric Channel::addClient(const std::string& nick,
 
   if (joinedUsers.size() == 0) operators.insert(nick);
   joinedUsers.insert(nick);
-  if ((mode & 0b10) && (invitedUsers.find(nick) == invitedUsers.end()))
+  if (invitedUsers.find(nick) != invitedUsers.end())
     this->invitedUsers.erase(nick);
   return topic.empty() ? IRC::RPL_NOTOPIC : IRC::RPL_TOPIC;
 }
@@ -102,11 +102,7 @@ bool Channel::isClientOp(const std::string& nick) const {
   return operators.find(nick) != operators.end();
 }
 
-const std::vector<const std::string>& Channel::getClients() {
-  const std::vector<const std::string> v(joinedUsers.begin(),
-                                         joinedUsers.end());
-  return v;
-}
+const std::set<std::string>& Channel::getClients() const { return joinedUsers; }
 
 int Channel::getClientNumber() const { return joinedUsers.size(); }
 
@@ -146,12 +142,12 @@ IRC::Numeric Channel::addMode(const std::string& requesterNick,
     if (param.empty()) return IRC::ERR_NEEDMOREPARAMS;
 
     char* end;
-    size_t num_limit =
-        static_cast<size_t>(std::strtol(param.c_str(), &end, 10));
-    if (*end != '\0' || (num_limit < joinedUsers.size() || 102 < num_limit))
+    long num_limit = std::strtol(param.c_str(), &end, 10);
+    if (*end != '\0' || num_limit < 0 ||
+        (num_limit < joinedUsers.size() || IChannel::MAXUSER < num_limit))
       return IRC::DO_NOTHING;
 
-    this->limit = num_limit;
+    this->limit = static_cast<size_t>(num_limit);
   } else {
     return IRC::DO_NOTHING;
   }
@@ -172,8 +168,8 @@ IRC::Numeric Channel::removeMode(const std::string& requesterNick,
     this->mode &= ~IChannel::MTOPIC;
 
   } else if (mode & IChannel::MKEY) {
-    if (this->key.empty()) return IRC::DO_NOTHING;
-    if (param.empty() || this->key != param) return IRC::ERR_KEYSET;
+    if (this->key.empty() || param.empty() || this->key != param)
+      return IRC::DO_NOTHING;
     this->key.clear();
 
   } else if (mode & IChannel::MOP) {
@@ -196,7 +192,8 @@ IRC::Numeric Channel::addToInviteList(const std::string& requesterNick,
     return IRC::ERR_NOTONCHANNEL;
   } else if (joinedUsers.find(targetNick) == joinedUsers.end()) {
     return IRC::ERR_USERONCHANNEL;
-  } else if (mode & 0b10 && operators.find(requesterNick) == operators.end()) {
+  } else if (mode & IChannel::MINVITE &&
+             operators.find(requesterNick) == operators.end()) {
     return IRC::ERR_CHANOPRIVSNEEDED;
   }
 
@@ -212,7 +209,7 @@ IRC::Numeric Channel::setTopic(const std::string& nick,
                                const std::string& topic) {
   if (joinedUsers.find(nick) == joinedUsers.end())
     return IRC::ERR_NOTONCHANNEL;
-  else if (mode & 0b1 && operators.find(nick) == operators.end())
+  else if (mode & IChannel::MTOPIC && operators.find(nick) == operators.end())
     return IRC::ERR_CHANOPRIVSNEEDED;
 
   this->topic = topic;
@@ -224,4 +221,4 @@ IRC::Numeric Channel::reqTopic(const std::string& nick) {
   return topic.empty() ? IRC::RPL_NOTOPIC : IRC::RPL_TOPIC;
 }
 
-const std::string& Channel::getTopic() { return topic; }
+const std::string& Channel::getTopic() const { return topic; }

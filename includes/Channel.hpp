@@ -7,7 +7,7 @@
 #include "IChannel.hpp"
 #include "IClientRegistry.hpp"
 
-class Channel : private IChannel {
+class Channel : public IChannel {
  public:
   const std::string& getChannelName() const;
 
@@ -24,7 +24,7 @@ class Channel : private IChannel {
   IRC::Numeric unsetClientOp(const std::string& requesterNick,
                              const std::string& targetNick);
   bool isClientOp(const std::string& nick) const;
-  const std::vector<const std::string>& getClients();
+  const std::set<std::string>& getClients() const;
 
   int getClientNumber() const;
 
@@ -41,7 +41,7 @@ class Channel : private IChannel {
 
   IRC::Numeric setTopic(const std::string& nick, const std::string& topic);
   IRC::Numeric reqTopic(const std::string& nick);
-  const std::string& getTopic();
+  const std::string& getTopic() const;
 
  private:
   std::string channelName;

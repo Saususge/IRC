@@ -3,12 +3,11 @@
 
 #include <iostream>
 #include <map>
-#include <vector>
 
 #include "IChannel.hpp"
 #include "IChannelRegistry.hpp"
 
-class ChannelRegistry : private IChannelRegistry {
+class ChannelRegistry : public IChannelRegistry {
  public:
   IRC::Numeric joinChannel(const std::string& channelName,
                            const std::string& nick);
@@ -18,7 +17,7 @@ class ChannelRegistry : private IChannelRegistry {
                            const std::string& requesterNick,
                            const std::string& targetNick);
   bool hasChannel(const std::string& channelName);
-  const std::vector<const std::string>& getChannels();
+  const std::map<std::string, IChannel*>& getChannels();
   IRC::Numeric setClientOp(const std::string& channelName,
                            const std::string& requesterNick,
                            const std::string& targetNick);
@@ -40,7 +39,7 @@ class ChannelRegistry : private IChannelRegistry {
   bool hasClient(const std::string& channelName, const std::string& nick) const;
   bool isClientOp(const std::string& channelName,
                   const std::string& nick) const;
-  const std::vector<const std::string>& getClients();
+  const std::set<std::string>& getClients(const std::string& channelName) const;
 
   int getClientNumber(const std::string& channelName) const;
 
@@ -54,14 +53,14 @@ class ChannelRegistry : private IChannelRegistry {
                         const std::string& topic);
   IRC::Numeric reqTopic(const std::string& channelName,
                         const std::string& nick);
-  const std::string& getTopic(const std::string& channelName);
+  const std::string& getTopic(const std::string& channelName) const;
 
   // Use `except` only if excluding sender.
   int broadcast(const std::string& channelName, const std::string& msg,
                 const std::string& except = "");
 
  private:
-  std::map<std::string, IChannel> channels;
+  std::map<std::string, IChannel*> channels;
 };
 
 #endif  // CHANNELREGISTRY_HPP

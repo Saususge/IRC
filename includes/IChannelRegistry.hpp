@@ -1,7 +1,7 @@
 #ifndef ICHANNELRESISTRY_HPP
 #define ICHANNELRESISTRY_HPP
 
-#include <string>
+#include <set>
 #include <vector>
 
 #include "IChannel.hpp"
@@ -20,7 +20,7 @@ class IChannelRegistry {
                                    const std::string& requesterNick,
                                    const std::string& targetNick) = 0;
   virtual bool hasChannel(const std::string& channelName) = 0;
-  virtual const std::vector<const std::string>& getChannels() = 0;
+  virtual const std::map<std::string, IChannel*>& getChannels() = 0;
   virtual IRC::Numeric setClientOp(const std::string& channelName,
                                    const std::string& requesterNick,
                                    const std::string& targetNick) = 0;
@@ -44,7 +44,8 @@ class IChannelRegistry {
                          const std::string& nick) const = 0;
   virtual bool isClientOp(const std::string& channelName,
                           const std::string& nick) const = 0;
-  virtual const std::vector<const std::string>& getClients() = 0;
+  virtual const std::set<std::string>& getClients(
+      const std::string& channelName) const = 0;
 
   virtual int getClientNumber(const std::string& channelName) const = 0;
 
@@ -59,7 +60,7 @@ class IChannelRegistry {
                                 const std::string& topic) = 0;
   virtual IRC::Numeric reqTopic(const std::string& channelName,
                                 const std::string& nick) = 0;
-  virtual const std::string& getTopic(const std::string& channelName) = 0;
+  virtual const std::string& getTopic(const std::string& channelName) const = 0;
 
   // Use `except` only if excluding sender.
   virtual int broadcast(const std::string& channelName, const std::string& msg,

@@ -15,6 +15,7 @@ class IChannel {
   static const IChannelMode MKEY = 0b00100;
   static const IChannelMode MOP = 0b00010;
   static const IChannelMode MLIMIT = 0b00001;
+  static const size_t MAXUSER = 102;
 
   virtual ~IChannel() {};
 
@@ -35,7 +36,7 @@ class IChannel {
   virtual IRC::Numeric unsetClientOp(const std::string& requesterNick,
                                      const std::string& targetNick) = 0;
   virtual bool isClientOp(const std::string& nick) const = 0;
-  virtual const std::vector<const std::string>& getClients() = 0;
+  virtual const std::set<std::string>& getClients() const = 0;
 
   virtual int getClientNumber() const = 0;
 
@@ -58,6 +59,6 @@ class IChannel {
   virtual IRC::Numeric setTopic(const std::string& nick,
                                 const std::string& topic) = 0;
   virtual IRC::Numeric reqTopic(const std::string& nick) = 0;
-  virtual const std::string& getTopic() = 0;
+  virtual const std::string& getTopic() const = 0;
 };
 #endif
