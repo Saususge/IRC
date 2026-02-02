@@ -9,6 +9,8 @@
 
 class Channel : public IChannel {
  public:
+  Channel(const std::string& channelName, IClientRegistry& clientRegistry);
+  ~Channel();
   const std::string& getChannelName() const;
 
   // Use `except` only for exclusing the sender

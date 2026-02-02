@@ -2,6 +2,22 @@
 
 #include <cstdlib>
 
+Channel::Channel(const std::string& channelName,
+                 IClientRegistry& clientRegistry)
+    : channelName(channelName),
+      topic(""),
+      key(""),
+      mode(0),
+      limit(0),
+      invitedUsers(),
+      joinedUsers(),
+      operators(),
+      clientRegistry(clientRegistry) {}
+
+Channel::~Channel() {}
+
+const std::string& Channel::getChannelName() const { return channelName; }
+
 int Channel::broadcast(const std::string& msg, const std::string& except) {
   for (std::set<std::string>::iterator iter = joinedUsers.begin();
        iter != joinedUsers.end(); iter++) {
