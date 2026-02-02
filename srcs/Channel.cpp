@@ -22,9 +22,10 @@ IRC::Numeric Channel::addClient(const std::string& nick,
     return IRC::ERR_CHANNELISFULL;
   }
 
+  if (joinedUsers.size() == 0) operators.insert(nick);
   joinedUsers.insert(nick);
-  this->mode & 0b10 ? this->invitedUsers.erase(nick) : 0;
-
+  if ((mode & 0b10) && (invitedUsers.find(nick) == invitedUsers.end()))
+    this->invitedUsers.erase(nick);
   return topic.empty() ? IRC::RPL_NOTOPIC : IRC::RPL_TOPIC;
 }
 
