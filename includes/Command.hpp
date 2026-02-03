@@ -83,7 +83,7 @@ class DccSendCommand : public ICommand {
 };
 
 namespace CommandFactory {
-extern std::map<std::string, ICommand&> pool;
+const ICommand& getCommand(const std::string& cmd);
 };
 
 #endif

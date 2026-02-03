@@ -1,7 +1,6 @@
 #include "Command.hpp"
 
 #include <cassert>
-#include <iostream>
 #include <map>
 #include <string>
 
@@ -9,9 +8,58 @@
 #include "IServerConfig.hpp"
 #include "Response.hpp"
 #include "numeric.hpp"
+
 namespace CommandFactory {
-std::map<std::string, ICommand&> pool;
+class CommandPool {
+ public:
+  CommandPool() {
+    _pool["PASS"] = &_passCmd;
+    _pool["NICK"] = &_nickCmd;
+    _pool["USER"] = &_userCmd;
+    _pool["QUIT"] = &_quitCmd;
+    _pool["JOIN"] = &_joinCmd;
+    _pool["PART"] = &_partCmd;
+    _pool["MODE"] = &_modeCmd;
+    _pool["TOPIC"] = &_topicCmd;
+    _pool["NAMES"] = &_namesCmd;
+    _pool["INVITE"] = &_inviteCmd;
+    _pool["KICK"] = &_kickCmd;
+    _pool["PRIVMSG"] = &_privmsgCmd;
+    _pool["NOTICE"] = &_noticeCmd;
+    _pool["DCC"] = &_dccSendCmd;
+  };
+  const std::map<std::string, ICommand*>& getPool() { return _pool; }
+
+ private:
+  std::map<std::string, ICommand*> _pool;
+  PassCommand _passCmd;
+  NickCommand _nickCmd;
+  UserCommand _userCmd;
+  QuitCommand _quitCmd;
+  JoinCommand _joinCmd;
+  PartCommand _partCmd;
+  ChannelModeCommand _modeCmd;
+  TopicCommand _topicCmd;
+  NamesCommand _namesCmd;
+  InviteCommand _inviteCmd;
+  KickCommand _kickCmd;
+  PrivmsgCommand _privmsgCmd;
+  NoticeCommand _noticeCmd;
+  DccSendCommand _dccSendCmd;
+};
+
+const std::map<std::string, ICommand*>& getPool() {
+  static CommandPool _pool;
+  return _pool.getPool();
 }
+
+const ICommand& getCommand(const std::string& cmd) {
+  if (getPool().find(cmd) == getPool().end()) {
+    assert(0 && "Unexpected Command");
+  }
+  return *getPool().find(cmd)->second;
+}
+}  // namespace CommandFactory
 
 // Numeric Replies: ERR_NEEDMOREPARAMS, ERR_ALREADYREGISTRED
 IRC::Numeric PassCommand::execute(ICommandContext& ctx) const {
@@ -56,6 +104,7 @@ inline void sendWelcomeMessage(ICommandContext& ctx) {
   const std::string nick = ctx.requesterClient().getNick();
   ctx.requester().send(Response::build(
       "001", nick, ":Welcome to the Internet Relay Network " + nick));
+#warning IServerConfig may need more info.
   //   ctx.requester().send(Response::build(
   //       "002", nick,
   //       ":Your host is " + ctx.serverConfig().getServerName() +
