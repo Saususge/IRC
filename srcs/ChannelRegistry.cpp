@@ -1,10 +1,18 @@
 #include "ChannelRegistry.hpp"
 
+#include <utility>
+
+#include "Channel.hpp"
+
 IRC::Numeric ChannelRegistry::joinChannel(const std::string& channelName,
                                           const std::string& nick,
-                                          const std::string& key) {
+                                          const std::string& key,
+                                          IClientRegistry& clientRegistry) {
   std::map<std::string, IChannel&>::iterator iter = channels.find(channelName);
-  if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
+  if (iter == channels.end()) {
+    channels.insert(
+        std::make_pair(channelName, Channel(channelName, clientRegistry)));
+  }
 
   return iter->second.addClient(nick, key);
 }
@@ -14,7 +22,11 @@ IRC::Numeric ChannelRegistry::partChannel(const std::string& channelName,
   std::map<std::string, IChannel&>::iterator iter = channels.find(channelName);
   if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
 
-  return iter->second.removeClient(nick);
+  IRC::Numeric reply = iter->second.removeClient(nick);
+  if (reply == IRC::RPL_STRREPLY && iter->second.getClientNumber() == 0)
+    channels.erase(channelName);
+
+  return reply;
 }
 
 IRC::Numeric ChannelRegistry::kickChannel(const std::string& channelName,

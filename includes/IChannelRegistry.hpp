@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "IChannel.hpp"
+#include "IClientRegistry.hpp"
 #include "numeric.hpp"
 
 class IChannelRegistry {
@@ -13,7 +14,8 @@ class IChannelRegistry {
 
   virtual IRC::Numeric joinChannel(const std::string& channelName,
                                    const std::string& nick,
-                                   const std::string& key = "") = 0;
+                                   const std::string& key = "",
+                                   IClientRegistry& clientRegistry) = 0;
   virtual IRC::Numeric partChannel(const std::string& channelName,
                                    const std::string& nick) = 0;
   virtual IRC::Numeric kickChannel(const std::string& channelName,

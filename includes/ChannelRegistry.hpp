@@ -10,8 +10,8 @@
 class ChannelRegistry : public IChannelRegistry {
  public:
   IRC::Numeric joinChannel(const std::string& channelName,
-                           const std::string& nick,
-                           const std::string& key = "");
+                           const std::string& nick, const std::string& key = "",
+                           IClientRegistry& clientRegistry);
   IRC::Numeric partChannel(const std::string& channelName,
                            const std::string& nick);
   IRC::Numeric kickChannel(const std::string& channelName,
