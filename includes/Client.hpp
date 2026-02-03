@@ -9,7 +9,7 @@
 
 class Client : public IClient {
  public:
-  Client(IServerConfig& serverConfig);
+  Client(Session& session, IServerConfig& serverConfig);
   ~Client();
   IRC::Numeric Authenticate(IServerConfig& serverConfig,
                             const std::string& password);
@@ -23,7 +23,7 @@ class Client : public IClient {
   const std::string& getRealName();
 
   // ClientResistry or equivalent has to send.
-  // virtual int send(const std::string& msg);
+  int send(const std::string& msg);
 
   IRC::Numeric joinChannel(IChannelRegistry& registry,
                            const std::string& channelName,
@@ -38,11 +38,15 @@ class Client : public IClient {
   std::string _realname;
 
   short loginFlags;
-  bool registerd;
+  bool registered;
 
   std::vector<std::string> _joinedChannels;
 
   ISession& session;
+
+  IRC::Numeric checkLoginFlags();
+  std::vector<std::string>::iterator findFromJoinedChannel(
+      const std::string& channelName);
 };
 
 #endif

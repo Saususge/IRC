@@ -33,7 +33,7 @@ class IClient {
   virtual const std::string& getRealName() = 0;
 
   // ClientResistry or equivalent has to send.
-  // virtual int send(const std::string& msg) = 0;
+  virtual int send(const std::string& msg) = 0;
 
   virtual IRC::Numeric joinChannel(IChannelRegistry& registry,
                                    const std::string& channelName,
