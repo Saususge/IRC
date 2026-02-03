@@ -10,8 +10,9 @@ std::string build(const std::string& code, const std::string& target,
          message + "\r\n";
 }
 
-std::string error(const std::string& code, const std::string& target,
-                  const std::string& message) {
+// Alias of `build`
+inline std::string error(const std::string& code, const std::string& target,
+                         const std::string& message) {
   return build(code, target, message);
 }
 };  // namespace Response

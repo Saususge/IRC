@@ -11,7 +11,7 @@ class Client : public IClient {
  public:
   Client(ISession& session, IServerConfig& serverConfig);
   ~Client();
-  IRC::Numeric Authenticate(IServerConfig& serverConfig,
+  IRC::Numeric Authenticate(const IServerConfig& serverConfig,
                             const std::string& password);
   // NICK
   IRC::Numeric setNick(IClientRegistry& registry, const std::string& nick);
