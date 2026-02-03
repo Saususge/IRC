@@ -4,36 +4,33 @@
 #include <string>
 #include <vector>
 
-class Client {
+#include "IClient.hpp"
+#include "ISession.hpp"
+
+class Client : public IClient {
  public:
-  Client();
-  Client(std::string nickname, std::string username, std::string realname);
+  Client(IServerConfig& serverConfig);
   ~Client();
+  IRC::Numeric Authenticate(IServerConfig& serverConfig,
+                            const std::string& password);
+  // NICK
+  IRC::Numeric setNick(IClientRegistry& registry, const std::string& nick);
+  // USER
+  IRC::Numeric setUserInfo(const std::string& user,
+                           const std::string& realName);
+  const std::string& getNick();
+  const std::string& getUser();
+  const std::string& getRealName();
 
-  std::string getNickname() const;
-  void setNickname(std::string nickname);
+  // ClientResistry or equivalent has to send.
+  // virtual int send(const std::string& msg);
 
-  std::string getUsername() const;
-  
-  std::string getRealname() const;
-
-  void onPass();
-  void onNick();
-  void onUser();
-
-  bool getPass() const;
-  bool getNick() const;
-  bool getUser() const;
-  short getLoginFlags() const;
-
-  bool isRegistrable() const;
-
-  bool getRegisterd() const;
-  void setRegisterd(bool value);
-
-  // 채널 관련 메서드는 필요시 추가
-  void joinChannel(std::string channelName);
-  void leaveChannel(std::string channelName);
+  IRC::Numeric joinChannel(IChannelRegistry& registry,
+                           const std::string& channelName,
+                           const std::string& key = "");
+  IRC::Numeric partChannel(IChannelRegistry& registry,
+                           const std::string& channelName);
+  const std::vector<std::string>& getJoinedChannels();
 
  private:
   std::string _nickname;
@@ -42,8 +39,10 @@ class Client {
 
   short loginFlags;
   bool registerd;
-  
+
   std::vector<std::string> _joinedChannels;
+
+  ISession& session;
 };
 
 #endif

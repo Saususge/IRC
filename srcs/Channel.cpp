@@ -51,8 +51,6 @@ IRC::Numeric Channel::removeClient(const std::string& nick) {
   if (joinedUsers.find(nick) == joinedUsers.end()) return IRC::ERR_NOTONCHANNEL;
 
   joinedUsers.erase(nick);
-  // TODO: call clientRegistry.partChannel();
-
   return IRC::RPL_STRREPLY;  // <prefix> PART <channel> :<comment>
 }
 IRC::Numeric Channel::kickClient(const std::string& requesterNick,
@@ -65,7 +63,6 @@ IRC::Numeric Channel::kickClient(const std::string& requesterNick,
     return IRC::ERR_USERNOTINCHANNEL;
 
   joinedUsers.erase(targetNick);
-  // TODO: call clientRegistry.partChannel();
   // should broadcast quit to other clients including requester.
   // killed client should receive <prefix> KICK <requester> :<comment>
   return IRC::RPL_STRREPLY;
