@@ -35,7 +35,6 @@ class AServer {
   void handlePollIn(size_t index);
   void handlePollOut(size_t index);
 
-  std::set<int> removePollFDs;
   std::map<int, ISession*> _sessions;
   std::vector<struct pollfd> _pollfds;
   int _listeningSocketFD;
