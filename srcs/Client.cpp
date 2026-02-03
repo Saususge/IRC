@@ -14,7 +14,7 @@ Client::Client(Session& session, IServerConfig& serverConfig)
 
 Client::~Client() {}
 
-IRC::Numeric Client::Authenticate(IServerConfig& serverConfig,
+IRC::Numeric Client::Authenticate(const IServerConfig& serverConfig,
                                   const std::string& password) {
   if (registered) return IRC::ERR_ALREADYREGISTRED;
 
@@ -76,10 +76,10 @@ const std::vector<std::string>& Client::getJoinedChannels() {
 }
 
 IRC::Numeric Client::checkLoginFlags() {
-  if (loginFlags == IClient::RPASS | IClient::RNICK | IClient::RUSER) {
+  if (loginFlags == (IClient::RPASS | IClient::RNICK | IClient::RUSER)) {
     registered = true;
     return IRC::RPL_WELCOME;
-  } else if (loginFlags == IClient::RNICK | IClient::RUSER) {
+  } else if (loginFlags == (IClient::RNICK | IClient::RUSER)) {
     return IRC::ERR_PASSWDMISMATCH;
   }
   // caller should check that the client has joined any channel. if so,
