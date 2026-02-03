@@ -5,6 +5,7 @@
 #include <map>
 #include <poll.h>
 #include <string>
+#include <set>
 
 #include "ISession.hpp"
 #include "IServerConfig.hpp"
