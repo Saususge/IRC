@@ -11,6 +11,12 @@
 
 class IClient {
  public:
+  typedef int ClientFlag;
+
+  static const ClientFlag RPASS = 0b100;
+  static const ClientFlag RNICK = 0b010;
+  static const ClientFlag RUSER = 0b001;
+
   virtual ~IClient() {};
 
   // Pass
@@ -27,10 +33,11 @@ class IClient {
   virtual const std::string& getRealName() = 0;
 
   // ClientResistry or equivalent has to send.
-  // virtual int send(const std::string& msg) = 0;
+  virtual int send(const std::string& msg) = 0;
 
   virtual IRC::Numeric joinChannel(IChannelRegistry& registry,
-                                   const std::string& channelName) = 0;
+                                   const std::string& channelName,
+                                   const std::string& key = "") = 0;
   virtual IRC::Numeric partChannel(IChannelRegistry& registry,
                                    const std::string& channelName) = 0;
   virtual const std::vector<std::string>& getJoinedChannels() = 0;
