@@ -1,6 +1,7 @@
 #ifndef ICHANNELREGISTRY_HPP
 #define ICHANNELREGISTRY_HPP
 
+#include <map>
 #include <set>
 #include <vector>
 
