@@ -28,7 +28,7 @@ class ICommand {
  public:
   virtual ~ICommand();
 
-  virtual IRC::Numeric excute(ICommandContext& ctx) const;
+  virtual IRC::Numeric execute(ICommandContext& ctx) const;
 };
 
 #endif
