@@ -2,7 +2,7 @@
 
 #include "Session.hpp"
 
-Client::Client(Session& session, IServerConfig& serverConfig)
+Client::Client(ISession& session, IServerConfig& serverConfig)
     : _nickname(""),
       _username(""),
       _realname(""),

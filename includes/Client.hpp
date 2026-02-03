@@ -9,7 +9,7 @@
 
 class Client : public IClient {
  public:
-  Client(Session& session, IServerConfig& serverConfig);
+  Client(ISession& session, IServerConfig& serverConfig);
   ~Client();
   IRC::Numeric Authenticate(IServerConfig& serverConfig,
                             const std::string& password);
