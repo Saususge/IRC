@@ -659,9 +659,9 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
 
   // Query mode
   if (ctx.args().size() == 1) {
-    const std::map<std::string, IChannel*>& channels =
+    const std::map<std::string, IChannel&>& channels =
         ctx.channels().getChannels();
-    std::map<std::string, IChannel*>::const_iterator it = channels.find(target);
+    std::map<std::string, IChannel&>::const_iterator it = channels.find(target);
     if (it == channels.end()) {
       ctx.requester().send(
           Response::error("403", nick, target + " :No such channel"));
