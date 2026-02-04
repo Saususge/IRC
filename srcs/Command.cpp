@@ -104,21 +104,19 @@ inline void sendWelcomeMessage(ICommandContext& ctx) {
   const std::string nick = ctx.requesterClient().getNick();
   ctx.requester().send(Response::build(
       "001", nick, ":Welcome to the Internet Relay Network " + nick));
-#warning IServerConfig may need more info.
-  //   ctx.requester().send(Response::build(
-  //       "002", nick,
-  //       ":Your host is " + ctx.serverConfig().getServerName() +
-  //           ", running version " + ctx.serverConfig().getVersion()));
-  //   ctx.requester().send(Response::build(
-  //       "003", nick,
-  //       ":This server was created " +
-  //       ctx.serverConfig().getCreationDate()));
-  //   ctx.requester().send(
-  //       Response::build("004", nick,
-  //                       ctx.serverConfig().getServerName() + " " +
-  //                           ctx.serverConfig().getVersion() + " " +
-  //                           ctx.serverConfig().getUserModes() + " " +
-  //                           ctx.serverConfig().getChannelModes()));
+  ctx.requester().send(Response::build(
+      "002", nick,
+      ":Your host is " + ctx.serverConfig().getServerName() +
+          ", running version " + ctx.serverConfig().getVersion()));
+  ctx.requester().send(Response::build(
+      "003", nick,
+      ":This server was created " + ctx.serverConfig().getCreationDate()));
+  ctx.requester().send(
+      Response::build("004", nick,
+                      ctx.serverConfig().getServerName() + " " +
+                          ctx.serverConfig().getVersion() + " " +
+                          ctx.serverConfig().getUserModes() + " " +
+                          ctx.serverConfig().getChannelModes()));
   ctx.requester().send(Response::build("002", nick, ":Your host is "));
   ctx.requester().send(
       Response::build("003", nick, ":This server was created "));

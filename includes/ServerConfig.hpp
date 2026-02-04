@@ -19,8 +19,8 @@ class ServerConfig : public IServerConfig {
   const std::string& getServerName() const { return _serverName; }
   const std::string& getVersion() const { return _version; }
   const std::string& getCreationDate() const { return _creationDate; }
-  const std::string getUsermode() const { return "n/a"; }
-  const std::string getChannelmode() const { return "itkol"; }
+  const std::string getUserModes() const { return "n/a"; }
+  const std::string getChannelModes() const { return "itkol"; }
 
  private:
   const std::string _password;
