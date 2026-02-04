@@ -1,9 +1,18 @@
 #include "Server.hpp"
 
+#include <ctime>
 #include <iostream>
 
+#include "ServerConfig.hpp"
+
+static std::string currentTimeString() {
+  time_t t = std::time(NULL);
+  const char* s = std::ctime(&t);
+  return s ? std::string(s) : std::string();
+}
+
 Server::Server(int port, const std::string& password)
-    : AServer(port), _config(password) {
+    : AServer(port), _config(password, currentTimeString()) {
   // Implementation of registries can be added here
 }
 
