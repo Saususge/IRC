@@ -33,7 +33,6 @@ class AServer {
   void initSocketOrDie(int port);
   void acceptClient();
   void handlePollIn(size_t index);
-  void handlePollOut(size_t index);
 
   std::map<int, ISession*> _sessions;
   std::vector<struct pollfd> _pollfds;
