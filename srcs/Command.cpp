@@ -387,7 +387,8 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
   }
 
   const std::string key = ctx.args().size() > 1 ? ctx.args()[1] : "";
-  IRC::Numeric result = ctx.channels().joinChannel(channelName, nick, key);
+  IRC::Numeric result =
+      ctx.channels().joinChannel(channelName, nick, ctx.clients(), key);
 
   switch (result) {
     case IRC::ERR_NOSUCHCHANNEL:
