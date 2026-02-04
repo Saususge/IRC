@@ -24,8 +24,8 @@ class ServerConfig : public IServerConfig {
 
  private:
   const std::string _password;
+  const std::string _creationDate;
   const std::string _serverName;
   const std::string _version;
-  const std::string _creationDate;
 };
 #endif
