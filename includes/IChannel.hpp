@@ -48,9 +48,12 @@ class IChannel {
   [[deprecated("Use ClientID overload")]]
   virtual IRC::Numeric setClientOp(const std::string& requesterNick,
                                    const std::string& targetNick) = 0;
+  virtual IRC::Numeric setClientOp(ClientID requesterID, ClientID targetID) = 0;
   [[deprecated("Use ClientID overload")]]
   virtual IRC::Numeric unsetClientOp(const std::string& requesterNick,
                                      const std::string& targetNick) = 0;
+  virtual IRC::Numeric unsetClientOp(ClientID requesterID,
+                                     ClientID targetID) = 0;
   [[deprecated("Use ClientID overload")]]
   virtual bool isClientOp(const std::string& nick) const = 0;
   virtual bool isClientOp(ClientID id) const = 0;
@@ -97,5 +100,19 @@ class IChannel {
   virtual IRC::Numeric setTopic(ClientID id, const std::string& topic) = 0;
   virtual IRC::Numeric reqTopic(ClientID id) = 0;
   virtual const std::string& getTopic() const = 0;
+
+  virtual bool isLimited() const = 0;
+  virtual int getMaxMember() const = 0;
+  virtual bool isInviteOnly() const = 0;
+  virtual bool isTopicOpOnly() const = 0;
+  virtual bool hasKey() const = 0;
+  virtual IRC::Numeric setInviteOnly(ClientID id) = 0;
+  virtual IRC::Numeric unsetInviteOnly(ClientID id) = 0;
+  virtual IRC::Numeric setTopicOpOnly(ClientID id) = 0;
+  virtual IRC::Numeric unsetTopicOpOnly(ClientID id) = 0;
+  virtual IRC::Numeric setKey(ClientID id, const std::string& newKey) = 0;
+  virtual IRC::Numeric unsetKey(ClientID id) = 0;
+  virtual IRC::Numeric setLimit(ClientID id, int limit) = 0;
+  virtual IRC::Numeric unsetLimit(ClientID id) = 0;
 };
 #endif

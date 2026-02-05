@@ -17,6 +17,7 @@ IClient* getClient(const std::string& nick);
 std::set<const IClient*> getClients();
 
 ClientID getClientID(IClient* client);
+ClientID getClientID(const std::string& nick);
 std::set<ClientID> getClientIDs();
 }  // namespace ClientManagement
 

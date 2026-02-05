@@ -1,7 +1,9 @@
 #include "Command.hpp"
 
 #include <cassert>
+#include <cstdlib>
 #include <set>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -676,21 +678,16 @@ IRC::Numeric InviteCommand::execute(ICommandContext& ctx) const {
 }
 
 namespace {
-struct ModeChange {
-  bool isAdding;
-  char mode;
-  std::string param;
-};
-
-std::vector<ModeChange> parseModeString(
-    const std::string& modeString, const std::vector<std::string>& params) {
-  std::vector<ModeChange> changes;
+void parseModeArguments(const std::string& modeStr,
+                        const std::vector<std::string>& rawParams,
+                        std::vector<std::pair<bool, char> >& modePairs,
+                        std::vector<std::string>& params) {
   bool isAdding = true;
-  size_t paramIndex = 0;
+  size_t paramIdx = 0;
+  int paramModeCount = 0;
 
-  for (size_t i = 0; i < modeString.size(); ++i) {
-    char c = modeString[i];
-
+  for (size_t i = 0; i < modeStr.size(); ++i) {
+    char c = modeStr[i];
     if (c == '+') {
       isAdding = true;
       continue;
@@ -699,151 +696,175 @@ std::vector<ModeChange> parseModeString(
       isAdding = false;
       continue;
     }
+    bool needsParam =
+        (c == 'o' || (c == 'k' && isAdding) || (c == 'l' && isAdding));
 
-    ModeChange change;
-    change.isAdding = isAdding;
-    change.mode = c;
+    if (needsParam) {
+      if (paramModeCount >= 3) continue;
 
-    // Modes that require parameters
-    if (c == 'o' || c == 'k' || c == 'l') {
-      if (paramIndex < params.size()) {
-        change.param = params[paramIndex++];
+      if (paramIdx < rawParams.size()) {
+        modePairs.push_back(std::make_pair(isAdding, c));
+        params.push_back(rawParams[paramIdx++]);
+        paramModeCount++;
       }
+    } else {
+      modePairs.push_back(std::make_pair(isAdding, c));
     }
-
-    changes.push_back(change);
   }
-
-  return changes;
 }
 
-IChannel::IChannelMode charToMode(char c) {
-  switch (c) {
-    case 'i':
-      return IChannel::MINVITE;
-    case 't':
-      return IChannel::MTOPIC;
-    case 'k':
-      return IChannel::MKEY;
-    case 'o':
-      return IChannel::MOP;
-    case 'l':
-      return IChannel::MLIMIT;
-    default:
-      assert(0);
-      return IChannel::MLIMIT;
+std::string intToString(int n) {
+  std::stringstream ss;
+  ss << n;
+  return ss.str();
+}
+
+std::string getFullModeResponse(IChannel* channel) {
+  std::string modes = "+";
+  std::string params = "";
+
+  if (channel->isInviteOnly()) modes += 'i';
+  if (channel->isTopicOpOnly()) modes += 't';
+  if (channel->hasKey()) modes += 'k';
+  if (channel->isLimited()) {
+    modes += 'l';
+    params += " " + intToString(channel->getMaxMember());
   }
+  return modes + params;
 }
 }  // namespace
-
-// Numeric Replies: ERR_NEEDMOREPARAMS, ERR_CHANOPRIVSNEEDED,
-// ERR_NOSUCHCHANNEL, ERR_NOTONCHANNEL, ERR_KEYSET, ERR_UNKNOWNMODE,
-// ERR_USERSDONTMATCH, RPL_CHANNELMODEIS, RPL_BANLIST, RPL_ENDOFBANLIST
 IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
+  ISession& requester = ctx.requester();
+  ClientID clientID = ctx.requesterClient().getID();
+
   if (ctx.args().empty()) {
-    ctx.requester().send(
-        Response::error("461", nick, "MODE :Not enough parameters"));
+    requester.send(Response::error("461", nick, "MODE :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
-  const std::string& target = ctx.args()[0];
-  if (!(target[0] == '#' || target[0] == '&' || target[0] == '+')) {
-    ctx.requester().send(
+
+  const std::string& channelName = ctx.args()[0];
+  if (!Validator::isChannelNameValid(channelName)) {
+    requester.send(
         Response::error("502", nick, ":Can't change mode for other users"));
     return IRC::ERR_USERSDONTMATCH;
   }
-  if (!ctx.channels().hasChannel(target)) {
-    ctx.requester().send(
-        Response::error("403", nick, target + " :No such channel"));
+
+  IChannel* channel = ChannelManagement::getChannel(channelName);
+  if (channel == NULL) {
+    requester.send(
+        Response::error("403", nick, channelName + " :No such channel"));
     return IRC::ERR_NOSUCHCHANNEL;
   }
 
-  // Query mode
   if (ctx.args().size() == 1) {
-    const std::map<std::string, IChannel*>& channels =
-        ctx.channels().getChannels();
-    std::map<std::string, IChannel*>::const_iterator it = channels.find(target);
-    if (it == channels.end()) {
-      ctx.requester().send(
-          Response::error("403", nick, target + " :No such channel"));
-      return IRC::ERR_NOSUCHCHANNEL;
-    }
-
-    // TODO: Should we implement RPL_CHANNELMODEIS?
-    // const std::string modes = it->second->getModeString();
-    // ctx.requester().send(Response::build("324", nick, target + " " + modes));
+    requester.send(Response::build(
+        "324", nick, channelName + " " + getFullModeResponse(channel)));
     return IRC::RPL_CHANNELMODEIS;
   }
 
-  // Set mode
-  const std::string& modeString = ctx.args()[1];
-  std::vector<std::string> modeParams;
-  for (size_t i = 2; i < ctx.args().size(); ++i) {
-    modeParams.push_back(ctx.args()[i]);
-  }
+  std::vector<std::string> rawParams;
+  for (size_t i = 2; i < ctx.args().size(); ++i)
+    rawParams.push_back(ctx.args()[i]);
 
-  std::vector<ModeChange> changes = parseModeString(modeString, modeParams);
-  std::string appliedModes;
-  std::string appliedParams;
-  bool lastWasAdding = true;
+  std::vector<std::pair<bool, char> > modePairs;
+  std::vector<std::string> params;
+  parseModeArguments(ctx.args()[1], rawParams, modePairs, params);
 
-  for (std::vector<ModeChange>::const_iterator it = changes.begin();
-       it != changes.end(); ++it) {
-    const ModeChange& change = *it;
-    IChannel::IChannelMode mode = charToMode(change.mode);
-    IRC::Numeric result;
+  std::string appliedModes = "";
+  std::string appliedParams = "";
+  bool currentAdding = true;
+  bool firstSuccess = true;
+  size_t usedParamIdx = 0;
+  bool hasChanged = false;
 
-    if (change.mode == 'o') {
-      result = change.isAdding
-                   ? ctx.channels().setClientOp(target, nick, change.param)
-                   : ctx.channels().unsetClientOp(target, nick, change.param);
+  for (size_t i = 0; i < modePairs.size(); ++i) {
+    bool isAdding = modePairs[i].first;
+    char mode = modePairs[i].second;
+    IRC::Numeric result = IRC::DO_NOTHING;
+    bool needParam =
+        (mode == 'o' || (mode == 'k' && isAdding) || (mode == 'l' && isAdding));
+    std::string currentParam = needParam ? params[usedParamIdx] : "";
 
-    } else {
-      result =
-          change.isAdding
-              ? ctx.channels().addMode(target, nick, mode, change.param)
-              : ctx.channels().removeMode(target, nick, mode, change.param);
-    }
-
-    switch (result) {
-      case IRC::ERR_NOTONCHANNEL:
-        ctx.requester().send(Response::error(
-            "442", nick, target + " :You're not on that channel"));
-        return IRC::ERR_NOTONCHANNEL;
-
-      case IRC::ERR_CHANOPRIVSNEEDED:
-        ctx.requester().send(Response::error(
-            "482", nick, target + " :You're not channel operator"));
-        return IRC::ERR_CHANOPRIVSNEEDED;
-
-      case IRC::DO_NOTHING:
-        if (lastWasAdding != change.isAdding) {
-          appliedModes += change.isAdding ? '+' : '-';
-          lastWasAdding = change.isAdding;
-        }
-        appliedModes += change.mode;
-        if (!change.param.empty()) {
-          if (!appliedParams.empty()) appliedParams += " ";
-          appliedParams += change.param;
-        }
+    switch (mode) {
+      case 'i':
+        result = isAdding ? channel->setInviteOnly(clientID)
+                          : channel->unsetInviteOnly(clientID);
         break;
-
+      case 't':
+        result = isAdding ? channel->setTopicOpOnly(clientID)
+                          : channel->unsetTopicOpOnly(clientID);
+        break;
+      case 'k':
+        result = isAdding ? channel->setKey(clientID, currentParam)
+                          : channel->unsetKey(clientID);
+        break;
+      case 'l':
+        result = isAdding ? channel->setLimit(clientID,
+                                              std::atoi(currentParam.c_str()))
+                          : channel->unsetLimit(clientID);
+        break;
+      case 'o': {
+        IClient* targetClient = ClientManagement::getClient(currentParam);
+        if (targetClient == NULL ||
+            !channel->hasClient(targetClient->getID())) {
+          requester.send(Response::error("441", nick,
+                                         currentParam + " " + channelName +
+                                             " :They aren't on that channel"));
+          result = IRC::ERR_USERNOTINCHANNEL;
+        } else {
+          result =
+              isAdding
+                  ? channel->setClientOp(clientID, targetClient->getID())
+                  : channel->unsetClientOp(clientID, targetClient->getID());
+        }
+      } break;
       default:
-        assert(0);
-        break;
+        requester.send(Response::error(
+            "472", nick, std::string(1, mode) + " :is unknown mode char"));
+        continue;
+    }
+    if (result == IRC::RPL_STRREPLY) {
+      hasChanged = true;
+      if (firstSuccess || currentAdding != isAdding) {
+        appliedModes += (isAdding ? '+' : '-');
+        currentAdding = isAdding;
+        firstSuccess = false;
+      }
+      appliedModes += mode;
+      if (!currentParam.empty()) {
+        if (!appliedParams.empty()) appliedParams += " ";
+        appliedParams += currentParam;
+      }
+    } else if (result == IRC::ERR_CHANOPRIVSNEEDED) {
+      requester.send(Response::error(
+          "482", nick, channelName + " :You're not channel operator"));
+      break;  // Early stop
+    } else if (result == IRC::ERR_NOCHANMODES) {
+      requester.send(Response::error(
+          "477", nick, channelName + " :Channel doesn't support modes"));
+      break;  // Early stop
+    } else if (result == IRC::ERR_KEYSET) {
+      requester.send(Response::error(
+          "467", nick, channelName + " :Channel key already set"));
+    } else {
+      assert(0 && "Unexpected result");
+    }
+    if (needParam) {
+      ++usedParamIdx;
     }
   }
 
-  if (!appliedModes.empty()) {
-    std::string modeNotification =
-        ":" + nick + " MODE " + target + " " + appliedModes;
-    if (!appliedParams.empty()) {
-      modeNotification += " " + appliedParams;
-    }
-    ctx.channels().broadcast(target, modeNotification);
+  if (hasChanged) {
+    std::string diffString = appliedModes;
+    if (!appliedParams.empty()) diffString += " " + appliedParams;
+    channel->broadcast(channelName,
+                       ":" + nick + " MODE " + channelName + " " + diffString);
+    requester.send(Response::build(
+        "324", nick, channelName + " " + getFullModeResponse(channel)));
   }
 
-  return IRC::DO_NOTHING;
+  return IRC::RPL_CHANNELMODEIS;
 }
 
 // Numeric Replies: ERR_NORECIPIENT, ERR_NOTEXTTOSEND, ERR_CANNOTSENDTOCHAN,
@@ -851,13 +872,15 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
 // ERR_NOSUCHSERVER
 IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
+  ISession& requester = ctx.requester();
+  ClientID requesterID = ctx.requesterClient().getID();
   if (ctx.args().empty()) {
-    ctx.requester().send(
+    requester.send(
         Response::error("411", nick, ":No recipient given (PRIVMSG)"));
     return IRC::ERR_NORECIPIENT;
   }
   if (ctx.args().size() < 2 || ctx.args()[1].empty()) {
-    ctx.requester().send(Response::error("412", nick, ":No text to send"));
+    requester.send(Response::error("412", nick, ":No text to send"));
     return IRC::ERR_NOTEXTTOSEND;
   }
   const std::string& target = ctx.args()[0];
@@ -867,7 +890,7 @@ IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
   if (target[0] == '#' || target[0] == '&' || target[0] == '+') {
     // Channel message
     if (!ctx.channels().hasChannel(target)) {
-      ctx.requester().send(
+      requester.send(
           Response::error("403", nick, target + " :No such channel"));
       return IRC::ERR_NOSUCHCHANNEL;
     }
@@ -877,7 +900,7 @@ IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
 
   // Private message to user
   if (!ctx.clients().hasClient(target)) {
-    ctx.requester().send(
+    requester.send(
         Response::error("401", nick, target + " :No such nick/channel"));
     return IRC::ERR_NOSUCHNICK;
   }
