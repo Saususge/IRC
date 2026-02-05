@@ -61,6 +61,37 @@ const ICommand& getCommand(const std::string& cmd) {
 }
 }  // namespace CommandFactory
 
+CommandContext::CommandContext(ISession& sessionRef, IClient& clientRef,
+                               IClientRegistry& clientRegistry,
+                               IChannelRegistry& channelRegistry,
+                               IServerConfig& serverConfig)
+    : sessionRef(sessionRef),
+      clientRef(clientRef),
+      clientRegistry(clientRegistry),
+      channelRegistry(channelRegistry),
+      serverConfigRef(serverConfig) {}
+
+CommandContext::~CommandContext() {}
+
+const std::string& CommandContext::getCommandType() const {
+  return commandType;
+}
+
+const std::vector<std::string>& CommandContext::args() const { return argsVec; }
+
+// Use for disconnecting or replying to user
+ISession& CommandContext::requester() const { return sessionRef; }
+
+IClient& CommandContext::requesterClient() const { return clientRef; }
+
+IClientRegistry& CommandContext::clients() const { return clientRegistry; }
+
+IChannelRegistry& CommandContext::channels() const { return channelRegistry; }
+
+const IServerConfig& CommandContext::serverConfig() const {
+  return serverConfigRef;
+}
+
 // Numeric Replies: ERR_NEEDMOREPARAMS, ERR_ALREADYREGISTRED
 IRC::Numeric PassCommand::execute(ICommandContext& ctx) const {
   const std::string target = ctx.requesterClient().getNick().empty()
@@ -241,8 +272,8 @@ void sendChannelNames(ICommandContext& ctx, const std::string& nick,
                       const std::string& channelName) {
   const std::set<std::string>& members = ctx.channels().getClients(channelName);
 
-  // RPL_NAMREPLY (353): "( "=" / "*" / "@" ) <channel> :[ "@" / "+" ] <nick> *(
-  // " " [ "@" / "+" ] <nick> )"
+  // RPL_NAMREPLY (353): "( "=" / "*" / "@" ) <channel> :[ "@" / "+" ]
+  // <nick> *( " " [ "@" / "+" ] <nick> )"
   // "=" for public, "*" for private, "@" for secret
   // For now: assume all channels are public
   std::string namesList;
@@ -361,9 +392,9 @@ IRC::Numeric TopicCommand::execute(ICommandContext& ctx) const {
   return result;
 }
 
-// Numeric Replies: ERR_NEEDMOREPARAMS, ERR_NOSUCHCHANNEL, ERR_TOOMANYCHANNELS,
-// ERR_BADCHANNELKEY, ERR_BANNEDFROMCHAN, ERR_CHANNELISFULL, ERR_INVITEONLYCHAN,
-// RPL_TOPIC
+// Numeric Replies: ERR_NEEDMOREPARAMS, ERR_NOSUCHCHANNEL,
+// ERR_TOOMANYCHANNELS, ERR_BADCHANNELKEY, ERR_BANNEDFROMCHAN,
+// ERR_CHANNELISFULL, ERR_INVITEONLYCHAN, RPL_TOPIC
 IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
   if (ctx.args().empty()) {
@@ -634,9 +665,9 @@ IChannel::IChannelMode charToMode(char c) {
 }
 }  // namespace
 
-// Numeric Replies: ERR_NEEDMOREPARAMS, ERR_CHANOPRIVSNEEDED, ERR_NOSUCHCHANNEL,
-// ERR_NOTONCHANNEL, ERR_KEYSET, ERR_UNKNOWNMODE, ERR_USERSDONTMATCH,
-// RPL_CHANNELMODEIS, RPL_BANLIST, RPL_ENDOFBANLIST
+// Numeric Replies: ERR_NEEDMOREPARAMS, ERR_CHANOPRIVSNEEDED,
+// ERR_NOSUCHCHANNEL, ERR_NOTONCHANNEL, ERR_KEYSET, ERR_UNKNOWNMODE,
+// ERR_USERSDONTMATCH, RPL_CHANNELMODEIS, RPL_BANLIST, RPL_ENDOFBANLIST
 IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
   if (ctx.args().empty()) {

@@ -7,6 +7,35 @@
 #include "ICommand.hpp"
 #include "numeric.hpp"
 
+class CommandContext : public ICommandContext {
+ public:
+  CommandContext(ISession& sessionRef, IClient& clientRef,
+                 IClientRegistry& clientRegistry,
+                 IChannelRegistry& channelRegistry,
+                 IServerConfig& serverConfig);
+  ~CommandContext();
+
+  const std::string& getCommandType() const;
+  const std::vector<std::string>& args() const;
+  // Use for disconnecting or replying to user
+  ISession& requester() const;
+  IClient& requesterClient() const;
+
+  IClientRegistry& clients() const;
+  IChannelRegistry& channels() const;
+  const IServerConfig& serverConfig() const;
+
+ private:
+  std::string commandType;
+  std::vector<std::string> argsVec;
+
+  ISession& sessionRef;
+  IClient& clientRef;
+  IClientRegistry& clientRegistry;
+  IChannelRegistry& channelRegistry;
+  IServerConfig& serverConfigRef;
+};
+
 // 3.1.1 Password message
 class PassCommand : public ICommand {
   IRC::Numeric execute(ICommandContext& ctx) const;
