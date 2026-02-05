@@ -1,40 +1,44 @@
 #include "ClientRegistry.hpp"
 
-ClientRegistry::ClientRegistry() {}
-ClientRegistry::~ClientRegistry() {}
+#include <map>
 
-bool ClientRegistry::isNickInUse(const std::string& nick) const {
-  return _clients.find(nick) != _clients.end();
-}
+#include "Client.hpp"
+#include "IClient.hpp"
+#include "IClientRegistry.hpp"
 
-bool ClientRegistry::hasClient(const std::string& nick) const {
-  return isNickInUse(nick);
-}
-
-const std::vector<std::string>& ClientRegistry::getClients() const {
-  return _cachedNickList;
-}
-
-int ClientRegistry::send(const std::string& nick, const std::string& msg) {
-  (void)nick;
-  (void)msg;
-  return 0;
-}
-
-void ClientRegistry::addClient(const std::string& nick, int fd) {
-  _clients[nick] = fd;
-}
-
-void ClientRegistry::removeClient(const std::string& nick) {
-  _clients.erase(nick);
-}
-
-void ClientRegistry::removeClientByFd(int fd) {
-  for (std::map<std::string, int>::iterator it = _clients.begin();
-       it != _clients.end(); ++it) {
-    if (it->second == fd) {
-      _clients.erase(it);
-      return;
-    }
+ClientRegistry::ClientRegistry() : _nextClientID(0) {}
+ClientRegistry::~ClientRegistry() {
+  for (iterator it = _clients.begin(); it != _clients.end(); ++it) {
+    delete it->second;
   }
+};
+
+ClientID ClientRegistry::createClient() {
+  _clients[_nextClientID] = new Client();
+  return _nextClientID++;
+}
+
+void ClientRegistry::deleteClient(ClientID id) {
+  iterator it = _clients.find(id);
+  if (it == _clients.end()) {
+    return;
+  }
+  delete it->second;
+  _clients.erase(it);
+}
+
+IClient* ClientRegistry::getClient(ClientID id) {
+  iterator it = _clients.find(id);
+  if (it == _clients.end()) {
+    return NULL;
+  }
+  return it->second;
+}
+
+const std::set<IClient*> ClientRegistry::getClients() {
+  std::set<IClient*> ret;
+  for (iterator it = _clients.begin(); it != _clients.end(); ++it) {
+    ret.insert(it->second);
+  }
+  return ret;
 }

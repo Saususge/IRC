@@ -2,28 +2,24 @@
 #define CLIENTREGISTRY_HPP
 
 #include <map>
-#include <string>
 
 #include "IClientRegistry.hpp"
 
 class ClientRegistry : public IClientRegistry {
  public:
   ClientRegistry();
-  virtual ~ClientRegistry();
+  ~ClientRegistry();
 
-  bool isNickInUse(const std::string& nick) const;
-  bool hasClient(const std::string& nick) const;
-  const std::vector<std::string>& getClients() const;
-  int send(const std::string& nick, const std::string& msg);
+  ClientID createClient();
+  void deleteClient(ClientID id);
 
-  // Simple management for now
-  void addClient(const std::string& nick, int fd);
-  void removeClient(const std::string& nick);
-  void removeClientByFd(int fd);
+  IClient* getClient(ClientID id);
+  const std::set<IClient*> getClients();
 
  private:
-  std::map<std::string, int> _clients;
-  mutable std::vector<std::string> _cachedNickList;
+  std::map<ClientID, IClient*> _clients;
+  ClientID _nextClientID;
+  typedef std::map<ClientID, IClient*>::iterator iterator;
 };
 
 #endif
