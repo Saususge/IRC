@@ -368,7 +368,7 @@ IRC::Numeric TopicCommand::execute(ICommandContext& ctx) const {
 
   // Set topic
   const std::string& newTopic = ctx.args()[1];
-  IRC::Numeric result = channel->setTopic(nick, newTopic);
+  IRC::Numeric result = channel->setTopic(clientID, newTopic);
   switch (result) {
     case IRC::ERR_CHANOPRIVSNEEDED:
       requester.send(Response::error(
@@ -619,38 +619,52 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
 // ERR_USERONCHANNEL, ERR_CHANOPRIVSNEEDED
 IRC::Numeric InviteCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
+  ISession& requester = ctx.requester();
+  ClientID requesterID = ctx.requesterClient().getID();
 
   if (ctx.args().size() < 2) {
-    ctx.requester().send(
+    requester.send(
         Response::error("461", nick, "INVITE :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
 
   const std::string& targetNick = ctx.args()[0];
+  IClient* targetClient = ClientManagement::getClient(targetNick);
+  if (targetClient == NULL) {
+    requester.send(Response::error("401", nick, targetNick + " :No such nick"));
+    return IRC::ERR_NOSUCHNICK;
+  }
   const std::string& channelName = ctx.args()[1];
+  IChannel* channel = ChannelManagement::getChannel(channelName);
+  if (channel == NULL) {
+    const std::string inviteNotification =
+        ":" + nick + " INVITE " + targetNick + " :" + channelName;
+    requester.send(inviteNotification);
+    return IRC::RPL_INVITING;
+  }
 
-  IRC::Numeric result =
-      ctx.channels().addToInviteList(channelName, nick, targetNick);
+  IRC::Numeric result = channel->addToInviteList(
+      requesterID, ClientManagement::getClientID(targetClient));
   switch (result) {
     case IRC::ERR_NOTONCHANNEL:
-      ctx.requester().send(Response::error(
+      requester.send(Response::error(
           "442", nick, channelName + " :You're not on that channel"));
       break;
     case IRC::ERR_CHANOPRIVSNEEDED:
-      ctx.requester().send(Response::error(
+      requester.send(Response::error(
           "482", nick, channelName + " :You're not channel operator"));
       break;
     case IRC::ERR_USERONCHANNEL:
-      ctx.requester().send(Response::error(
+      requester.send(Response::error(
           "443", nick,
           targetNick + " " + channelName + " :is already on channel"));
       break;
     case IRC::RPL_INVITING: {
-      ctx.requester().send(
+      requester.send(
           Response::build("341", nick, targetNick + " " + channelName));
       const std::string inviteNotification =
           ":" + nick + " INVITE " + targetNick + " :" + channelName;
-      ctx.clients().send(targetNick, inviteNotification);
+      requester.send(inviteNotification);
     } break;
 
     default:

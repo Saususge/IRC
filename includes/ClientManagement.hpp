@@ -4,7 +4,7 @@
 #include <set>
 
 #include "IClient.hpp"
-#include "IClientRegistry.hpp"
+#include "ISession.hpp"
 
 namespace ClientManagement {
 ClientID createClient();
@@ -12,6 +12,7 @@ void deleteClient(ClientID id);
 
 IClient* getClient(ClientID id);
 IClient* getClient(SessionID sessionID);
+IClient* getClient(ISession* session);
 IClient* getClient(const std::string& nick);
 std::set<const IClient*> getClients();
 

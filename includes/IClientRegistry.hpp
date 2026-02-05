@@ -5,8 +5,6 @@
 
 #include "IClient.hpp"
 
-typedef std::size_t ClientID;
-
 class IClientRegistry {
  public:
   virtual ~IClientRegistry() {};
