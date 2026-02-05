@@ -7,12 +7,15 @@ INCLUDES := -Iincludes
 
 SRCS := \
 	main.cpp \
-	srcs/Server.cpp \
-	srcs/Client.cpp \
-	srcs/utils.cpp \
+	srcs/AServer.cpp \
 	srcs/Channel.cpp \
-	srcs/Manager.cpp \
-	srcs/Session.cpp
+	srcs/ChannelRegistry.cpp \
+	srcs/Client.cpp \
+	srcs/ClientRegistry.cpp \
+	srcs/Command.cpp \
+	srcs/Server.cpp \
+	srcs/Session.cpp \
+	srcs/utils.cpp \
 
 
 OBJS := $(SRCS:.cpp=.o)
@@ -29,6 +32,7 @@ $(NAME): $(OBJS)
 
 clean:
 	rm -f $(OBJS)
+	rm -f $(DEPS)
 
 fclean: clean
 	rm -f $(NAME)

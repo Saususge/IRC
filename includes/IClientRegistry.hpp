@@ -13,7 +13,7 @@ class IClientRegistry {
   // virtual int registerClient(IClient* client);
   virtual bool isNickInUse(const std::string& nick) const = 0;
   virtual bool hasClient(const std::string& nick) const = 0;
-  virtual const std::vector<const std::string>& getClients() const = 0;
+  virtual const std::vector<std::string>& getClients() const = 0;
 
   virtual int send(const std::string& nick, const std::string& msg) = 0;
 };

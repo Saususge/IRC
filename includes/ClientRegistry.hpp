@@ -1,9 +1,10 @@
 #ifndef CLIENTREGISTRY_HPP
 #define CLIENTREGISTRY_HPP
 
-#include "IClientRegistry.hpp"
 #include <map>
 #include <string>
+
+#include "IClientRegistry.hpp"
 
 class ClientRegistry : public IClientRegistry {
  public:
@@ -12,7 +13,7 @@ class ClientRegistry : public IClientRegistry {
 
   bool isNickInUse(const std::string& nick) const;
   bool hasClient(const std::string& nick) const;
-  const std::vector<const std::string>& getClients() const;
+  const std::vector<std::string>& getClients() const;
   int send(const std::string& nick, const std::string& msg);
 
   // Simple management for now
@@ -22,7 +23,7 @@ class ClientRegistry : public IClientRegistry {
 
  private:
   std::map<std::string, int> _clients;
-  mutable std::vector<const std::string> _cachedNickList;
+  mutable std::vector<std::string> _cachedNickList;
 };
 
 #endif

@@ -140,7 +140,10 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
   const std::string& newNick = ctx.args()[0];
   IClient& client = ctx.requesterClient();
 
-  IRC::Numeric result = client.setNick(ctx.clients(), newNick);
+  IRC::Numeric result = client.setNick(newNick);
+  // TODO: Use ClientRegistry to set nickname. The registry will check nickname
+  // duplication.
+  // IRC::Numeric result = ctx.clients().setNick(current, newNick);
 
   switch (result) {
     case IRC::ERR_ERRONEUSNICKNAME:
@@ -658,9 +661,9 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
 
   // Query mode
   if (ctx.args().size() == 1) {
-    const std::map<std::string, IChannel&>& channels =
+    const std::map<std::string, IChannel*>& channels =
         ctx.channels().getChannels();
-    std::map<std::string, IChannel&>::const_iterator it = channels.find(target);
+    std::map<std::string, IChannel*>::const_iterator it = channels.find(target);
     if (it == channels.end()) {
       ctx.requester().send(
           Response::error("403", nick, target + " :No such channel"));

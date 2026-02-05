@@ -1,6 +1,7 @@
 #ifndef ICHANNEL_HPP
 #define ICHANNEL_HPP
 
+#include <set>
 #include <string>
 #include <vector>
 

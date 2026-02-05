@@ -79,7 +79,10 @@ class NoticeCommand : public ICommand {
 
 // DCC SEND (CTCP)
 class DccSendCommand : public ICommand {
-  IRC::Numeric execute(ICommandContext& ctx) const;
+  IRC::Numeric execute(ICommandContext& ctx) const {
+    (void)ctx;
+    return IRC::DO_NOTHING;
+  }
 };
 
 namespace CommandFactory {
