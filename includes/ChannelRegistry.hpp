@@ -19,7 +19,7 @@ class ChannelRegistry : public IChannelRegistry {
                            const std::string& requesterNick,
                            const std::string& targetNick);
   bool hasChannel(const std::string& channelName) const;
-  const std::map<std::string, IChannel&>& getChannels() const;
+  const std::map<std::string, IChannel*>& getChannels() const;
   IRC::Numeric setClientOp(const std::string& channelName,
                            const std::string& requesterNick,
                            const std::string& targetNick);
@@ -62,7 +62,7 @@ class ChannelRegistry : public IChannelRegistry {
                 const std::string& except = "");
 
  private:
-  std::map<std::string, IChannel&> channels;
+  std::map<std::string, IChannel*> channels;
 };
 
 #endif  // CHANNELREGISTRY_HPP

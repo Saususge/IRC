@@ -23,7 +23,7 @@ class IChannelRegistry {
                                    const std::string& requesterNick,
                                    const std::string& targetNick) = 0;
   virtual bool hasChannel(const std::string& channelName) const = 0;
-  virtual const std::map<std::string, IChannel&>& getChannels() const = 0;
+  virtual const std::map<std::string, IChannel*>& getChannels() const = 0;
   virtual IRC::Numeric setClientOp(const std::string& channelName,
                                    const std::string& requesterNick,
                                    const std::string& targetNick) = 0;
