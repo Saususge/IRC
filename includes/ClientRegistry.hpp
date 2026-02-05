@@ -16,8 +16,9 @@ class ClientRegistry : public IClientRegistry {
   int send(const std::string& nick, const std::string& msg);
 
   // Simple management for now
-  void addClient(const std::string& nick);
+  void addClient(const std::string& nick, int fd);
   void removeClient(const std::string& nick);
+  void removeClientByFd(int fd);
 
  private:
   std::map<std::string, int> _clients;

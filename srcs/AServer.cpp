@@ -10,11 +10,12 @@
 #include "Session.hpp"
 #include "utils.hpp"
 
-AServer::AServer(int port) { initSocketOrDie(port); }
+AServer::AServer(int port) : _listeningSocketFD(-1) { initSocketOrDie(port); }
 
 AServer::~AServer() {
   for (std::map<int, ISession*>::iterator it = _sessions.begin();
        it != _sessions.end(); ++it) {
+    it->second->disconnect();
     delete it->second;
   }
   _sessions.clear();
@@ -50,7 +51,7 @@ void AServer::initSocketOrDie(int port) {
 void AServer::run() {
   std::cout << "Server started..." << std::endl;
   while (true) {
-    std::set<int> removePollFDs;
+    std::set<int> removeFDs;
     int ret = poll(&_pollfds[0], _pollfds.size(), -1);
     if (ret < 0) break;
 
@@ -58,39 +59,72 @@ void AServer::run() {
       if (_pollfds[i].revents == 0) continue;
 
       if (_pollfds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) {
-        if (POLLHUP) removePollFDs.insert(_pollfds[i].fd);
-        onClientDisconnect(_pollfds[i].fd);
+        removeFDs.insert(_pollfds[i].fd);
         continue;
       }
 
       if (_pollfds[i].revents & POLLIN) {
         if (_pollfds[i].fd == _listeningSocketFD)
           acceptClient();
-        else
-          handlePollIn(i);
+        else {
+          bool shouldRemove = handlePollIn(i);
+          if (shouldRemove) removeFDs.insert(_pollfds[i].fd);
+        }
+      }
+    }
+
+    for (std::set<int>::iterator it = removeFDs.begin(); it != removeFDs.end();
+         ++it) {
+      int fd = *it;
+      onClientDisconnect(fd);
+
+      for (std::vector<struct pollfd>::iterator pIt = _pollfds.begin();
+           pIt != _pollfds.end(); ++pIt) {
+        if (pIt->fd == fd) {
+          _pollfds.erase(pIt);
+          break;
+        }
       }
     }
   }
 }
 
 void AServer::acceptClient() {
-  // todo: accept logic
+  int clientFD = accept(_listeningSocketFD, NULL, NULL);
+  if (clientFD < 0) return;
+
+  fcntl(clientFD, F_SETFL, O_NONBLOCK);
+
+  struct pollfd pfd;
+  pfd.fd = clientFD;
+  pfd.events = POLLIN;
+  pfd.revents = 0;
+  _pollfds.push_back(pfd);
+
+  _sessions[clientFD] = createSession(clientFD);
+  std::cout << "Client connected: fd=" << clientFD << std::endl;
 }
 
-void AServer::handlePollIn(size_t index) {
+ISession* AServer::createSession(int fd) { return new Session(fd); }
+
+bool AServer::handlePollIn(size_t index) {
   int fd = _pollfds[index].fd;
+  if (_sessions.find(fd) == _sessions.end()) return true;
   ISession* session = _sessions[fd];
 
   std::string msg = session->read();
 
-  if (!msg.empty()) {
-    this->onClientMessage(fd, msg);
+  if (msg.empty()) {
+    return true;
   }
+
+  this->onClientMessage(fd, msg);
+  return false;
 }
 
 void AServer::onClientDisconnect(int fd) {
   if (_sessions.find(fd) != _sessions.end()) {
-    delete _sessions[fd];
+    _sessions[fd]->disconnect();
     _sessions.erase(fd);
   }
 }

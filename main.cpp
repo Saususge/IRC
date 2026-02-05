@@ -6,7 +6,7 @@
 #include "Server.hpp"
 
 void gracefulQuit(int sig) {
-  (int)sig;
+  (void)sig;
   std::cout << "Terminating the server." << std::endl;
   exit(0);
 }

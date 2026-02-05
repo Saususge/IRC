@@ -24,6 +24,8 @@ Server::Server(int port, const std::string& password)
 
 Server::~Server() {}
 const IServerConfig& Server::serverConfig() const { return _config; }
+IClientRegistry& Server::clients() { return _clients; }
+IChannelRegistry& Server::channels() { return _channels; }
 
 void Server::onClientMessage(int fd, const std::string& msg) {
   std::cout << "[Server] Msg from " << fd << ": " << msg << std::endl;
@@ -32,6 +34,6 @@ void Server::onClientMessage(int fd, const std::string& msg) {
 }
 
 void Server::onClientDisconnect(int fd) {
-  // Todo: client remove at registries
+  _clients.removeClientByFd(fd);
   AServer::onClientDisconnect(fd);
 }
