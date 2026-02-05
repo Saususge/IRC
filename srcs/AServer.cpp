@@ -125,7 +125,6 @@ bool AServer::handlePollIn(size_t index) {
 void AServer::onClientDisconnect(int fd) {
   if (_sessions.find(fd) != _sessions.end()) {
     _sessions[fd]->disconnect();
-    delete _sessions[fd];
     _sessions.erase(fd);
   }
 }
