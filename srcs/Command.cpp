@@ -645,8 +645,7 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
     return IRC::ERR_NEEDMOREPARAMS;
   }
   const std::string& target = ctx.args()[0];
-#warning Should we implement + channel? (No op channel)
-  if (!(target[0] == '#' || target[0] == '&')) {
+  if (!(target[0] == '#' || target[0] == '&' || target[0] == '+')) {
     ctx.requester().send(
         Response::error("502", nick, ":Can't change mode for other users"));
     return IRC::ERR_USERSDONTMATCH;
@@ -671,7 +670,6 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
     // TODO: Should we implement RPL_CHANNELMODEIS?
     // const std::string modes = it->second->getModeString();
     // ctx.requester().send(Response::build("324", nick, target + " " + modes));
-#warning Should we implement RPL_CHANNELMODEIS?
     return IRC::RPL_CHANNELMODEIS;
   }
 
@@ -764,8 +762,7 @@ IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
   const std::string& message = ctx.args()[1];
   const std::string privmsgNotification =
       ":" + nick + " PRIVMSG " + target + " :" + message;
-#warning Should we implement + channel?
-  if (target[0] == '#' || target[0] == '&') {
+  if (target[0] == '#' || target[0] == '&' || target[0] == '+') {
     // Channel message
     if (!ctx.channels().hasChannel(target)) {
       ctx.requester().send(
@@ -798,8 +795,7 @@ IRC::Numeric NoticeCommand::execute(ICommandContext& ctx) const {
   const std::string noticeNotification =
       ":" + nick + " NOTICE " + target + " :" + message;
 
-#warning Should we implement + channel?
-  if (target[0] == '#' || target[0] == '&') {
+  if (target[0] == '#' || target[0] == '&' || target[0] == '+') {
     // Channel notice
     if (!ctx.channels().hasChannel(target) ||
         !ctx.channels().hasClient(target, nick)) {
