@@ -21,10 +21,20 @@ int ClientRegistry::send(const std::string& nick, const std::string& msg) {
     return 0;
 }
 
-void ClientRegistry::addClient(const std::string& nick) {
-    _clients[nick] = 1;
+void ClientRegistry::addClient(const std::string& nick, int fd) {
+    _clients[nick] = fd;
 }
 
 void ClientRegistry::removeClient(const std::string& nick) {
     _clients.erase(nick);
+}
+
+void ClientRegistry::removeClientByFd(int fd) {
+    for (std::map<std::string, int>::iterator it = _clients.begin();
+         it != _clients.end(); ++it) {
+        if (it->second == fd) {
+            _clients.erase(it);
+            return;
+        }
+    }
 }

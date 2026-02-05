@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "IChannelRegistry.hpp"
+#include "IClient.hpp"
 #include "IClientRegistry.hpp"
 #include "IServerConfig.hpp"
 #include "ISession.hpp"
@@ -15,9 +16,10 @@ class ICommandContext {
   virtual ~ICommandContext() {};
 
   virtual const std::string& getCommandType() const = 0;
-  virtual const std::vector<const std::string> args() const = 0;
+  virtual const std::vector<std::string>& args() const = 0;
   // Use for disconnecting or replying to user
   virtual ISession& requester() = 0;
+  virtual IClient& requesterClient() = 0;
 
   virtual IClientRegistry& clients() = 0;
   virtual IChannelRegistry& channels() = 0;
@@ -28,7 +30,7 @@ class ICommand {
  public:
   virtual ~ICommand();
 
-  virtual IRC::Numeric excute(ICommandContext& ctx) const;
+  virtual IRC::Numeric execute(ICommandContext& ctx) const;
 };
 
 #endif

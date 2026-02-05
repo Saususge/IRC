@@ -6,8 +6,8 @@
 
 IRC::Numeric ChannelRegistry::joinChannel(const std::string& channelName,
                                           const std::string& nick,
-                                          const std::string& key,
-                                          IClientRegistry& clientRegistry) {
+                                          IClientRegistry& clientRegistry,
+                                          const std::string& key) {
   std::map<std::string, IChannel&>::iterator iter = channels.find(channelName);
   if (iter == channels.end()) {
     channels.insert(

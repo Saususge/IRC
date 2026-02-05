@@ -1,15 +1,17 @@
 #ifndef ASERVER_HPP
 #define ASERVER_HPP
 
-#include <vector>
-#include <map>
 #include <poll.h>
-#include <string>
 
-#include "ISession.hpp"
-#include "IServerConfig.hpp"
-#include "IClientRegistry.hpp"
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
+
 #include "IChannelRegistry.hpp"
+#include "IClientRegistry.hpp"
+#include "IServerConfig.hpp"
+#include "ISession.hpp"
 
 class AServer {
  public:
@@ -24,15 +26,19 @@ class AServer {
  protected:
   AServer(int port);
 
+  virtual ISession* createSession(int fd);
+
   virtual void onClientMessage(int fd, const std::string& msg) = 0;
-  
+
   virtual void onClientDisconnect(int fd);
 
  private:
+  AServer(const AServer&);
+  AServer& operator=(const AServer&);
+
   void initSocketOrDie(int port);
   void acceptClient();
-  void handlePollIn(size_t index);
-  void handlePollOut(size_t index);
+  bool handlePollIn(size_t index);
 
   std::map<int, ISession*> _sessions;
   std::vector<struct pollfd> _pollfds;
