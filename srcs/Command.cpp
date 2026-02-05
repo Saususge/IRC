@@ -733,6 +733,7 @@ std::string getFullModeResponse(IChannel* channel) {
   return modes + params;
 }
 }  // namespace
+
 IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
   ISession& requester = ctx.requester();
@@ -873,7 +874,6 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
 IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
   ISession& requester = ctx.requester();
-  ClientID requesterID = ctx.requesterClient().getID();
   if (ctx.args().empty()) {
     requester.send(
         Response::error("411", nick, ":No recipient given (PRIVMSG)"));
@@ -889,22 +889,24 @@ IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
       ":" + nick + " PRIVMSG " + target + " :" + message;
   if (target[0] == '#' || target[0] == '&' || target[0] == '+') {
     // Channel message
-    if (!ctx.channels().hasChannel(target)) {
+    IChannel* channel = ChannelManagement::getChannel(target);
+    if (channel == NULL) {
       requester.send(
           Response::error("403", nick, target + " :No such channel"));
       return IRC::ERR_NOSUCHCHANNEL;
     }
-    ctx.channels().broadcast(target, privmsgNotification, nick);
+    channel->broadcast(privmsgNotification, nick);
     return IRC::DO_NOTHING;
   }
 
   // Private message to user
-  if (!ctx.clients().hasClient(target)) {
+  IClient* client = ClientManagement::getClient(target);
+  if (client == NULL) {
     requester.send(
         Response::error("401", nick, target + " :No such nick/channel"));
     return IRC::ERR_NOSUCHNICK;
   }
-  ctx.clients().send(target, privmsgNotification);
+  SessionManagement::getSession(client)->send(privmsgNotification);
   return IRC::DO_NOTHING;
 }
 
@@ -922,19 +924,19 @@ IRC::Numeric NoticeCommand::execute(ICommandContext& ctx) const {
 
   if (target[0] == '#' || target[0] == '&' || target[0] == '+') {
     // Channel notice
-    if (!ctx.channels().hasChannel(target) ||
-        !ctx.channels().hasClient(target, nick)) {
+    IChannel* channel = ChannelManagement::getChannel(target);
+    if (channel == NULL) {
       return IRC::DO_NOTHING;
     }
-
-    ctx.channels().broadcast(target, noticeNotification, nick);
+    channel->broadcast(noticeNotification, nick);
     return IRC::DO_NOTHING;
   }
 
   // Private notice to user
-  if (!ctx.clients().hasClient(target)) {
+  IClient* client = ClientManagement::getClient(target);
+  if (client == NULL) {
     return IRC::DO_NOTHING;
   }
-  ctx.clients().send(target, noticeNotification);
+  SessionManagement::getSession(client)->send(noticeNotification);
   return IRC::DO_NOTHING;
 }
