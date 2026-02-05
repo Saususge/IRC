@@ -12,7 +12,7 @@ class Client : public IClient {
   ~Client();
 
   // PASS
-  IRC::Numeric Authenticate(const std::string& password);
+  IRC::Numeric Authenticate();
   // NICK
   IRC::Numeric setNick(const std::string& nick);
   // USER
@@ -22,15 +22,21 @@ class Client : public IClient {
   const std::string& getUser() const;
   const std::string& getRealName() const;
 
+  void setSessionID(SessionID id);
   SessionID getSessionID() const;
+
+  void Register() { _registered = true; };
+
+  bool isAuthenticated() const { return _loginFlags & IClient::RPASS; }
+  bool isRegistered() const { return _registered; }
 
  private:
   std::string _nickname;
   std::string _username;
   std::string _realname;
 
-  short loginFlags;
-  bool registered;
+  short _loginFlags;
+  bool _registered;
 
   IRC::Numeric checkLoginFlags();
 

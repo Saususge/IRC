@@ -15,15 +15,21 @@ class IClient {
 
   virtual ~IClient() {};
 
-  // Pass
-  virtual IRC::Numeric Authenticate(const std::string& password) = 0;
+  // PASS
+  virtual IRC::Numeric Authenticate() = 0;
   // NICK
   virtual IRC::Numeric setNick(const std::string& nick) = 0;
   // USER
   virtual IRC::Numeric setUserInfo(const std::string& user,
                                    const std::string& realName) = 0;
+
+  virtual void Register() = 0;
+
   virtual const std::string& getNick() const = 0;
   virtual const std::string& getUser() const = 0;
   virtual const std::string& getRealName() const = 0;
+
+  virtual bool isAuthenticated() const = 0;
+  virtual bool isRegistered() const = 0;
 };
 #endif  // ICLIENT_HPP
