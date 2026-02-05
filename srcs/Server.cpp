@@ -8,7 +8,13 @@
 static std::string currentTimeString() {
   time_t t = std::time(NULL);
   const char* s = std::ctime(&t);
-  return s ? std::string(s) : std::string();
+
+  if (!s) return std::string();
+
+  std::string str(s);
+  return (str.empty() || str[str.length() - 1] != '\n')
+             ? str
+             : str.erase(str.length() - 1);
 }
 
 Server::Server(int port, const std::string& password)
