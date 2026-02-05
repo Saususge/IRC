@@ -172,7 +172,7 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
       break;
 
     default:
-      assert(0);
+      assert(0 && "Unxpedted result");
       break;
   }
 
@@ -198,14 +198,14 @@ IRC::Numeric UserCommand::execute(ICommandContext& ctx) const {
   const std::string& realname = ctx.args()[3];
 
   IClient& client = ctx.requesterClient();
+  if (client.isRegistered()) {
+    ctx.requester().send(Response::error(
+        "462", target, ":Unauthorized command (already registered)"));
+    return IRC::ERR_ALREADYREGISTRED;
+  }
+
   IRC::Numeric result = client.setUserInfo(username, realname);
-
   switch (result) {
-    case IRC::ERR_ALREADYREGISTRED:
-      ctx.requester().send(Response::error(
-          "462", target, ":Unauthorized command (already registered)"));
-      break;
-
     case IRC::RPL_WELCOME:
       sendWelcomeMessage(ctx);
       break;
