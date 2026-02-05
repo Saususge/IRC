@@ -11,9 +11,9 @@ class ChannelRegistry : public IChannelRegistry {
   ~ChannelRegistry();
 
   std::string createChannel(const std::string& channelName);
-  void deleteChannel(const std::string& id);
+  void deleteChannel(const std::string& channelName);
 
-  IChannel* getChannel(const std::string& id);
+  IChannel* getChannel(const std::string& channelName);
   const std::set<IChannel*> getChannels();
 
  private:

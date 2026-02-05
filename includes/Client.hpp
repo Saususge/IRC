@@ -2,36 +2,27 @@
 #define CLIENT_HPP
 
 #include <string>
-#include <vector>
 
 #include "IClient.hpp"
-#include "ISession.hpp"
+#include "defs.hpp"
 
 class Client : public IClient {
  public:
-  Client(ISession& session, IServerConfig& serverConfig);
+  Client();
   ~Client();
-  IRC::Numeric Authenticate(const IServerConfig& serverConfig,
-                            const std::string& password);
+
+  // PASS
+  IRC::Numeric Authenticate(const std::string& password);
   // NICK
   IRC::Numeric setNick(const std::string& nick);
   // USER
   IRC::Numeric setUserInfo(const std::string& user,
                            const std::string& realName);
-  const std::string& getNick();
-  const std::string& getUser();
-  const std::string& getRealName();
+  const std::string& getNick() const;
+  const std::string& getUser() const;
+  const std::string& getRealName() const;
 
-  // ClientResistry or equivalent has to send.
-  int send(const std::string& msg);
-
-  IRC::Numeric joinChannel(IChannelRegistry& registry,
-                           const std::string& channelName,
-                           IClientRegistry& clientRegistry,
-                           const std::string& key = "");
-  IRC::Numeric partChannel(IChannelRegistry& registry,
-                           const std::string& channelName);
-  const std::vector<std::string>& getJoinedChannels();
+  SessionID getSessionID() const;
 
  private:
   std::string _nickname;
@@ -41,13 +32,9 @@ class Client : public IClient {
   short loginFlags;
   bool registered;
 
-  std::vector<std::string> _joinedChannels;
-
-  ISession& session;
-
   IRC::Numeric checkLoginFlags();
-  std::vector<std::string>::iterator findFromJoinedChannel(
-      const std::string& channelName);
+
+  SessionID _sessionID;
 };
 
 #endif

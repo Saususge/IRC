@@ -9,6 +9,7 @@
 
 class Channel : public IChannel {
  public:
+  Channel();
   Channel(const std::string& channelName, IClientRegistry& clientRegistry);
   ~Channel();
   const std::string& getChannelName() const;
