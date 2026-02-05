@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "defs.hpp"
 #include "numeric.hpp"
 
 class IChannel {
@@ -25,6 +26,7 @@ class IChannel {
   // Use `except` only for exclusing the sender
   virtual int broadcast(const std::string& msg,
                         const std::string& except = "") = 0;
+  virtual int broadcast(const std::string& msg, const ClientID except = -1) = 0;
 
   virtual IRC::Numeric addClient(const std::string& nick,
                                  const std::string& key = "") = 0;
@@ -32,6 +34,7 @@ class IChannel {
   virtual IRC::Numeric kickClient(const std::string& requesterNick,
                                   const std::string& targetNick) = 0;
   virtual bool hasClient(const std::string& nick) const = 0;
+  virtual bool hasClient(ClientID id) const = 0;
   virtual IRC::Numeric setClientOp(const std::string& requesterNick,
                                    const std::string& targetNick) = 0;
   virtual IRC::Numeric unsetClientOp(const std::string& requesterNick,

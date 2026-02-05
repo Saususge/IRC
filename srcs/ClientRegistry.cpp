@@ -42,3 +42,12 @@ const std::set<IClient*> ClientRegistry::getClients() {
   }
   return ret;
 }
+
+bool ClientRegistry::isNickinUse(const std::string& nick) {
+  for (iterator it = _clients.begin(); it != _clients.end(); ++it) {
+    if (it->second->getNick() == nick) {
+      return true;
+    }
+  }
+  return false;
+}

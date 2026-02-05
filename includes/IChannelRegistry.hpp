@@ -13,6 +13,6 @@ class IChannelRegistry {
   virtual void deleteChannel(const std::string& channelName) = 0;
 
   virtual IChannel* getChannel(const std::string& channelName) = 0;
-  virtual const std::set<IChannel*> getChannels() = 0;
+  virtual std::set<IChannel*> getChannels() = 0;
 };
 #endif  // ICHANNELREGISTRY_HPP

@@ -1,12 +1,19 @@
 #include "Command.hpp"
 
 #include <cassert>
+#include <set>
 #include <string>
 
+#include "ChannelManagement.hpp"
+#include "ClientManagement.hpp"
+#include "IChannel.hpp"
+#include "IClient.hpp"
+#include "IClientRegistry.hpp"
 #include "ICommand.hpp"
 #include "IServerConfig.hpp"
 #include "Response.hpp"
 #include "Session.hpp"
+#include "Validator.hpp"
 #include "numeric.hpp"
 
 CommandContext::CommandContext(ISession& sessionRef, IClient& clientRef,
@@ -101,13 +108,33 @@ inline void sendWelcomeMessage(ICommandContext& ctx) {
 }
 };  // namespace
 
+namespace {
+std::set<IChannel*> getJoinedChannels(ClientID client) {
+  std::set<IChannel*> _joinedChannels = ChannelManagement::getChannels();
+  std::set<IChannel*>::iterator it = _joinedChannels.begin();
+  while (it != _joinedChannels.end()) {
+    if (!(*it)->hasClient(client)) {
+      _joinedChannels.erase(it++);
+    } else {
+      ++it;
+    }
+  }
+  return _joinedChannels;
+}
+};  // namespace
+
 // Numeric Replies: ERR_NONICKNAMEGIVEN, ERR_ERRONEUSNICKNAME,
 // ERR_NICKNAMEINUSE, ERR_NICKCOLLISION
 IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
+  if (ctx.requesterClient().isAuthenticated() == false) {
+    ctx.requester().send(
+        "ERROR :Closing Link: * (Password required or incorrect)");
+    SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD());
+  }
+
   const std::string target = ctx.requesterClient().getNick().empty()
                                  ? "*"
                                  : ctx.requesterClient().getNick();
-
   if (ctx.args().empty()) {
     // ERR_NONICKNAMEGIVEN (431): ":No nickname given"
     ctx.requester().send(Response::error("431", target, ":No nickname given"));
@@ -115,30 +142,27 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
   }
 
   const std::string& newNick = ctx.args()[0];
+  if (ClientManagement::isNickinUse(newNick)) {
+    ctx.requester().send(Response::error(
+        "433", target, newNick + " :Nickname is already in use"));
+    return IRC::ERR_NICKNAMEINUSE;
+  }
+  if (!Validator::isValidNickname(newNick)) {
+    ctx.requester().send(
+        Response::error("432", target, newNick + " :Erroneous nickname"));
+    return IRC::ERR_ERRONEUSNICKNAME;
+  }
+
   IClient& client = ctx.requesterClient();
-
   IRC::Numeric result = client.setNick(newNick);
-  // TODO: Use ClientRegistry to set nickname. The registry will check nickname
-  // duplication.
-  // IRC::Numeric result = ctx.clients().setNick(current, newNick);
-
   switch (result) {
-    case IRC::ERR_ERRONEUSNICKNAME:
-      ctx.requester().send(
-          Response::error("432", target, newNick + " :Erroneous nickname"));
-      break;
-
-    case IRC::ERR_NICKNAMEINUSE:
-      ctx.requester().send(Response::error(
-          "433", target, newNick + " :Nickname is already in use"));
-      break;
-
     case IRC::RPL_STRREPLY: {
-      const std::vector<std::string>& channels = client.getJoinedChannels();
+      const std::set<IChannel*> joinedChannel =
+          getJoinedChannels(client.getID());
       const std::string nickChangeMsg = ":" + target + " NICK :" + newNick;
-      for (std::vector<std::string>::const_iterator it = channels.begin();
-           it != channels.end(); ++it) {
-        ctx.channels().broadcast(*it, nickChangeMsg, client.getNick());
+      for (std::set<IChannel*>::iterator it = joinedChannel.begin();
+           it != joinedChannel.end(); ++it) {
+        (*it)->broadcast(nickChangeMsg, client.getNick());
       }
       ctx.requester().send(nickChangeMsg);
     } break;

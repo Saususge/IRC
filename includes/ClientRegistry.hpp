@@ -14,7 +14,9 @@ class ClientRegistry : public IClientRegistry {
   void deleteClient(ClientID id);
 
   IClient* getClient(ClientID id);
-  const std::set<IClient*> getClients();
+  std::set<const IClient*> getClients();
+
+  bool isNickinUse(const std::string& nick);
 
  private:
   std::map<ClientID, IClient*> _clients;

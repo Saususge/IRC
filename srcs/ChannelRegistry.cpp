@@ -35,8 +35,8 @@ IChannel* ChannelRegistry::getChannel(const std::string& channelName) {
   return it->second;
 }
 
-const std::set<IChannel*> ChannelRegistry::getChannels() {
-  std::set<IChannel*> ret;
+std::set<const IChannel*> ChannelRegistry::getChannels() {
+  std::set<const IChannel*> ret;
   for (std::map<std::string, IChannel*>::iterator it = _channels.begin();
        it != _channels.end(); ++it) {
     ret.insert(it->second);

@@ -16,5 +16,5 @@ void deleteChannel(const std::string& channelName) {
 IChannel* getChannel(const std::string& channelName) {
   return _channelReg.getChannel(channelName);
 }
-const std::set<IChannel*> getChannels() { return _channelReg.getChannels(); }
+std::set<const IChannel*> getChannels() { return _channelReg.getChannels(); }
 };  // namespace ChannelManagement

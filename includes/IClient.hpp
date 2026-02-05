@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "defs.hpp"
 #include "numeric.hpp"
 
 class IClient {
@@ -17,6 +18,7 @@ class IClient {
 
   // PASS
   virtual IRC::Numeric Authenticate() = 0;
+  virtual bool isAuthenticated() const = 0;
   // NICK
   virtual IRC::Numeric setNick(const std::string& nick) = 0;
   // USER
@@ -28,6 +30,8 @@ class IClient {
   virtual const std::string& getNick() const = 0;
   virtual const std::string& getUser() const = 0;
   virtual const std::string& getRealName() const = 0;
+
+  virtual ClientID getID() const = 0;
 
   // virtual bool isAuthenticated() const = 0;
   virtual bool isRegistered() const = 0;
