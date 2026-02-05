@@ -225,16 +225,14 @@ IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
   // Quit message is optional, default to client's nick
   const std::string quitMsg = ctx.args().empty() ? nick : ctx.args()[0];
   const std::string quitNotification = ":" + nick + " QUIT :" + quitMsg;
-  const std::vector<std::string>& channels = client.getJoinedChannels();
-  for (std::vector<std::string>::const_iterator it = channels.begin();
-       it != channels.end(); ++it) {
-    ctx.channels().broadcast(*it, quitNotification, nick);
+  const std::set<IChannel*> joinedchannels = getJoinedChannels(client.getID());
+  for (std::set<IChannel*>::const_iterator it = joinedchannels.begin();
+       it != joinedchannels.end(); ++it) {
+    (*it)->broadcast(quitNotification, client.getID());
   }
   // Send ERROR to the quitting client
   ctx.requester().send("ERROR :Closing Link: " + nick + " (" + quitMsg + ")");
-  // We may need ISessionRegistry
   SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD());
-
   return IRC::DO_NOTHING;
 }
 
