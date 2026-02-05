@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include <iostream>
+#include <set>
 
 #include "Session.hpp"
 #include "utils.hpp"
@@ -13,12 +14,7 @@
 AServer::AServer(int port) : _listeningSocketFD(-1) { initSocketOrDie(port); }
 
 AServer::~AServer() {
-  for (std::map<int, ISession*>::iterator it = _sessions.begin();
-       it != _sessions.end(); ++it) {
-    it->second->disconnect();
-    delete it->second;
-  }
-  _sessions.clear();
+  SessionManagement::sessionReg.deleteScheduledSession();
   if (_listeningSocketFD != -1) close(_listeningSocketFD);
 }
 
@@ -73,11 +69,11 @@ void AServer::run() {
       }
     }
 
-    for (std::set<int>::iterator it = removeFDs.begin(); it != removeFDs.end();
-         ++it) {
+    const std::set<int> releasedFDs =
+        SessionManagement::sessionReg.deleteScheduledSession();
+    for (std::set<int>::iterator it = releasedFDs.begin();
+         it != removeFDs.end(); ++it) {
       int fd = *it;
-      onClientDisconnect(fd);
-
       for (std::vector<struct pollfd>::iterator pIt = _pollfds.begin();
            pIt != _pollfds.end(); ++pIt) {
         if (pIt->fd == fd) {
@@ -101,7 +97,7 @@ void AServer::acceptClient() {
   pfd.revents = 0;
   _pollfds.push_back(pfd);
 
-  _sessions[clientFD] = createSession(clientFD);
+  SessionManagement::sessionReg.addSession(createSession(clientFD));
   std::cout << "Client connected: fd=" << clientFD << std::endl;
 }
 
@@ -109,22 +105,14 @@ ISession* AServer::createSession(int fd) { return new Session(fd); }
 
 bool AServer::handlePollIn(size_t index) {
   int fd = _pollfds[index].fd;
-  if (_sessions.find(fd) == _sessions.end()) return true;
-  ISession* session = _sessions[fd];
-
+  ISession* session = SessionManagement::sessionReg.getSession(fd);
+  if (session == NULL) {
+    return true;
+  }
   std::string msg = session->read();
-
   if (msg.empty()) {
     return true;
   }
-
   this->onClientMessage(fd, msg);
   return false;
-}
-
-void AServer::onClientDisconnect(int fd) {
-  if (_sessions.find(fd) != _sessions.end()) {
-    _sessions[fd]->disconnect();
-    _sessions.erase(fd);
-  }
 }

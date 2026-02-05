@@ -217,6 +217,8 @@ IRC::Numeric UserCommand::execute(ICommandContext& ctx) const {
   return result;
 }
 
+#include "Session.hpp"
+
 // Numeric Replies: None (QUIT has no error cases)
 IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
   IClient& client = ctx.requesterClient();
@@ -231,7 +233,9 @@ IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
   }
   // Send ERROR to the quitting client
   ctx.requester().send("ERROR :Closing Link: " + nick + " (" + quitMsg + ")");
-  ctx.requester().disconnect();
+  // We may need ISessionRegistry
+  SessionManagement::sessionReg.scheduleForDeletion(
+      ctx.requester().getSocketFD());
 
   return IRC::DO_NOTHING;
 }

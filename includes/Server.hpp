@@ -17,7 +17,6 @@ class Server : public AServer {
 
  protected:
   virtual void onClientMessage(int fd, const std::string& msg);
-  virtual void onClientDisconnect(int fd);
 
  private:
   ServerConfig _config;

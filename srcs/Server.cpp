@@ -32,8 +32,3 @@ void Server::onClientMessage(int fd, const std::string& msg) {
 
   // TODO: Command Pattern applyation
 }
-
-void Server::onClientDisconnect(int fd) {
-  _clients.removeClientByFd(fd);
-  AServer::onClientDisconnect(fd);
-}

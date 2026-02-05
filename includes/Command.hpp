@@ -1,7 +1,6 @@
 #ifndef COMMAND_HPP
 #define COMMAND_HPP
 
-#include <map>
 #include <string>
 
 #include "ICommand.hpp"

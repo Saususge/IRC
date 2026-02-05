@@ -3,8 +3,6 @@
 
 #include <poll.h>
 
-#include <map>
-#include <set>
 #include <string>
 #include <vector>
 
@@ -30,8 +28,6 @@ class AServer {
 
   virtual void onClientMessage(int fd, const std::string& msg) = 0;
 
-  virtual void onClientDisconnect(int fd);
-
  private:
   AServer(const AServer&);
   AServer& operator=(const AServer&);
@@ -40,7 +36,6 @@ class AServer {
   void acceptClient();
   bool handlePollIn(size_t index);
 
-  std::map<int, ISession*> _sessions;
   std::vector<struct pollfd> _pollfds;
   int _listeningSocketFD;
 };

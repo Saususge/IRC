@@ -10,9 +10,6 @@ class ISession {
   virtual std::string read() = 0;
 
   virtual int send(const std::string& msg) = 0;
-  // Deferred Close
-  virtual int disconnect() = 0;
-  // Needed for deferred close pollFDs in AServer
   virtual int getSocketFD() const = 0;
 };
 

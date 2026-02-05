@@ -17,7 +17,7 @@ class ICommandContext {
 
   virtual const std::string& getCommandType() const = 0;
   virtual const std::vector<std::string>& args() const = 0;
-  // Use for disconnecting or replying to user
+  // Use for replying to user
   virtual ISession& requester() = 0;
   virtual IClient& requesterClient() = 0;
 

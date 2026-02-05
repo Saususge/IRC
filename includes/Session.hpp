@@ -1,15 +1,29 @@
 #ifndef SESSION_HPP
 #define SESSION_HPP
 
+#include <map>
+#include <set>
 #include <string>
-#include <vector>
 
 #include "ISession.hpp"
 
-namespace SessionManager {
-extern std::vector<int> deletionQueue;
-void scheduleForDeletion(int socketFD);
-}  // namespace SessionManager
+class SessionRegistry {
+ public:
+  ~SessionRegistry() { deleteScheduledSession(); }
+
+  void addSession(ISession* session);
+  ISession* getSession(int socketFD);
+  void scheduleForDeletion(int socketFD);
+  const std::set<int> deleteScheduledSession();
+
+ private:
+  std::set<int> _deletionQueue;
+  std::map<int, ISession*> _sessions;
+};
+
+namespace SessionManagement {
+extern SessionRegistry sessionReg;
+};  // namespace SessionManagement
 
 class Session : public ISession {
  public:
@@ -22,9 +36,6 @@ class Session : public ISession {
 
   // Return 0 on sucess
   int send(const std::string& msg);
-
-  // Return 0 on sucess
-  int disconnect();
 
   int getSocketFD() const;
 
