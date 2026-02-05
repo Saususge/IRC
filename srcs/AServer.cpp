@@ -15,6 +15,7 @@ AServer::AServer(int port) : _listeningSocketFD(-1) { initSocketOrDie(port); }
 AServer::~AServer() {
   for (std::map<int, ISession*>::iterator it = _sessions.begin();
        it != _sessions.end(); ++it) {
+    it->second->disconnect();
     delete it->second;
   }
   _sessions.clear();
@@ -84,7 +85,6 @@ void AServer::run() {
           break;
         }
       }
-      close(fd);
     }
   }
 }
@@ -101,9 +101,11 @@ void AServer::acceptClient() {
   pfd.revents = 0;
   _pollfds.push_back(pfd);
 
-  _sessions[clientFD] = new Session(clientFD);
+  _sessions[clientFD] = createSession(clientFD);
   std::cout << "Client connected: fd=" << clientFD << std::endl;
 }
+
+ISession* AServer::createSession(int fd) { return new Session(fd); }
 
 bool AServer::handlePollIn(size_t index) {
   int fd = _pollfds[index].fd;
@@ -122,6 +124,7 @@ bool AServer::handlePollIn(size_t index) {
 
 void AServer::onClientDisconnect(int fd) {
   if (_sessions.find(fd) != _sessions.end()) {
+    _sessions[fd]->disconnect();
     delete _sessions[fd];
     _sessions.erase(fd);
   }

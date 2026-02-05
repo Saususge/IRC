@@ -2,6 +2,8 @@
 #define SERVER_HPP
 
 #include "AServer.hpp"
+#include "ChannelRegistry.hpp"
+#include "ClientRegistry.hpp"
 #include "ServerConfig.hpp"
 
 class Server : public AServer {
@@ -19,6 +21,8 @@ class Server : public AServer {
 
  private:
   ServerConfig _config;
+  ClientRegistry _clients;
+  ChannelRegistry _channels;
 };
 
 #endif

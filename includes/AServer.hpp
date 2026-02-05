@@ -26,11 +26,16 @@ class AServer {
  protected:
   AServer(int port);
 
+  virtual ISession* createSession(int fd);
+
   virtual void onClientMessage(int fd, const std::string& msg) = 0;
 
   virtual void onClientDisconnect(int fd);
 
  private:
+  AServer(const AServer&);
+  AServer& operator=(const AServer&);
+
   void initSocketOrDie(int port);
   void acceptClient();
   bool handlePollIn(size_t index);
