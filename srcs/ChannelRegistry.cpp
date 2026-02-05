@@ -4,14 +4,26 @@
 
 #include "Channel.hpp"
 
+ChannelRegistry::ChannelRegistry() {}
+
+ChannelRegistry::~ChannelRegistry() {
+  for (std::map<std::string, IChannel*>::iterator it = channels.begin();
+       it != channels.end(); ++it) {
+    delete it->second;
+  }
+  channels.clear();
+}
+
 IRC::Numeric ChannelRegistry::joinChannel(const std::string& channelName,
                                           const std::string& nick,
                                           IClientRegistry& clientRegistry,
                                           const std::string& key) {
   std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
   if (iter == channels.end()) {
-    channels.insert(
-        std::make_pair(channelName, new Channel(channelName, clientRegistry)));
+    std::pair<std::map<std::string, IChannel*>::iterator, bool> result =
+        channels.insert(
+            std::make_pair(channelName, new Channel(channelName, clientRegistry)));
+    iter = result.first;
   }
 
   return iter->second->addClient(nick, key);
