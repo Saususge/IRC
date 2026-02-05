@@ -14,7 +14,7 @@
 AServer::AServer(int port) : _listeningSocketFD(-1) { initSocketOrDie(port); }
 
 AServer::~AServer() {
-  SessionManagement::sessionReg.deleteScheduledSession();
+  SessionManagement::deleteScheduledSession();
   if (_listeningSocketFD != -1) close(_listeningSocketFD);
 }
 
@@ -70,7 +70,7 @@ void AServer::run() {
     }
 
     const std::set<int> releasedFDs =
-        SessionManagement::sessionReg.deleteScheduledSession();
+        SessionManagement::deleteScheduledSession();
     for (std::set<int>::iterator it = releasedFDs.begin();
          it != removeFDs.end(); ++it) {
       int fd = *it;
@@ -97,7 +97,7 @@ void AServer::acceptClient() {
   pfd.revents = 0;
   _pollfds.push_back(pfd);
 
-  SessionManagement::sessionReg.addSession(createSession(clientFD));
+  SessionManagement::addSession(createSession(clientFD));
   std::cout << "Client connected: fd=" << clientFD << std::endl;
 }
 
@@ -105,7 +105,7 @@ ISession* AServer::createSession(int fd) { return new Session(fd); }
 
 bool AServer::handlePollIn(size_t index) {
   int fd = _pollfds[index].fd;
-  ISession* session = SessionManagement::sessionReg.getSession(fd);
+  ISession* session = SessionManagement::getSession(fd);
   if (session == NULL) {
     return true;
   }

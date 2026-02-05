@@ -22,7 +22,10 @@ class SessionRegistry {
 };
 
 namespace SessionManagement {
-extern SessionRegistry sessionReg;
+void addSession(ISession* session);
+ISession* getSession(int socketFD);
+void scheduleForDeletion(int socketFD);
+const std::set<int> deleteScheduledSession();
 };  // namespace SessionManagement
 
 class Session : public ISession {

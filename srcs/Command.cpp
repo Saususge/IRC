@@ -265,8 +265,7 @@ IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
   // Send ERROR to the quitting client
   ctx.requester().send("ERROR :Closing Link: " + nick + " (" + quitMsg + ")");
   // We may need ISessionRegistry
-  SessionManagement::sessionReg.scheduleForDeletion(
-      ctx.requester().getSocketFD());
+  SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD());
 
   return IRC::DO_NOTHING;
 }

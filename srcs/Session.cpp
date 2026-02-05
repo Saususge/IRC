@@ -7,45 +7,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <map>
-#include <set>
-
-#include "ISession.hpp"
-
-void SessionRegistry::addSession(ISession* session) {
-  _sessions[session->getSocketFD()] = session;
-}
-
-void SessionRegistry::scheduleForDeletion(int socketFD) {
-  _deletionQueue.insert(socketFD);
-}
-
-ISession* SessionRegistry::getSession(int socketFD) {
-  std::map<int, ISession*>::iterator sessionIter = _sessions.find(socketFD);
-  if (sessionIter == _sessions.end()) {
-    return NULL;
-  }
-  return sessionIter->second;
-}
-
-const std::set<int> SessionRegistry::deleteScheduledSession() {
-  for (std::set<int>::iterator it = _deletionQueue.begin();
-       it != _deletionQueue.end(); ++it) {
-    int fd = *it;
-    if (_sessions.find(fd) != _sessions.end()) {
-      delete _sessions[fd];
-      _sessions.erase(fd);
-    }
-  }
-  const std::set<int> ret = _deletionQueue;
-  _deletionQueue.clear();
-  return ret;
-}
-
-namespace SessionManagement {
-SessionRegistry sessionReg;
-};  // namespace SessionManagement
-
 Session::Session(int socketFD) : _socketFD(socketFD) {}
 Session::~Session() { close(_socketFD); }
 
@@ -54,7 +15,7 @@ std::string Session::read() {
 
   ssize_t n = recv(_socketFD, buf, sizeof(buf), 0);
   if (n <= 0) {
-    SessionManagement::sessionReg.scheduleForDeletion(_socketFD);
+    SessionManagement::scheduleForDeletion(_socketFD);
     return "";
   }
 
@@ -83,7 +44,7 @@ int Session::send(const std::string& msg) {
   ssize_t n = ::send(_socketFD, _outBuf.c_str(), _outBuf.size(), 0);
   if (n < 0) {
     if (errno != EAGAIN && errno != EWOULDBLOCK) {
-      SessionManagement::sessionReg.scheduleForDeletion(_socketFD);
+      SessionManagement::scheduleForDeletion(_socketFD);
       return 1;
     }
   }
