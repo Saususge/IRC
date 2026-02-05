@@ -5,7 +5,10 @@
 #include <set>
 #include <string>
 
+#include "IClient.hpp"
+#include "IClientRegistry.hpp"
 #include "ISession.hpp"
+#include "defs.hpp"
 
 class SessionRegistry {
  public:
@@ -20,13 +23,6 @@ class SessionRegistry {
   std::set<int> _deletionQueue;
   std::map<int, ISession*> _sessions;
 };
-
-namespace SessionManagement {
-void addSession(ISession* session);
-ISession* getSession(int socketFD);
-void scheduleForDeletion(int socketFD);
-const std::set<int> deleteScheduledSession();
-};  // namespace SessionManagement
 
 class Session : public ISession {
  public:

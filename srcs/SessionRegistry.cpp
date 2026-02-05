@@ -4,20 +4,6 @@
 #include "ISession.hpp"
 #include "Session.hpp"
 
-namespace SessionManagement {
-SessionRegistry sessionReg;
-
-void addSession(ISession* session) { return sessionReg.addSession(session); }
-ISession* getSession(int socketFD) { return sessionReg.getSession(socketFD); }
-
-void scheduleForDeletion(int socketFD) {
-  sessionReg.scheduleForDeletion(socketFD);
-}
-const std::set<int> deleteScheduledSession() {
-  return sessionReg.deleteScheduledSession();
-}
-};  // namespace SessionManagement
-
 void SessionRegistry::addSession(ISession* session) {
   _sessions[session->getSocketFD()] = session;
 }

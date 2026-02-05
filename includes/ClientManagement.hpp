@@ -3,6 +3,7 @@
 
 #include <set>
 
+#include "IClient.hpp"
 #include "IClientRegistry.hpp"
 
 namespace ClientManagement {
@@ -10,10 +11,12 @@ ClientID createClient();
 void deleteClient(ClientID id);
 
 IClient* getClient(ClientID id);
+IClient* getClient(SessionID sessionID);
+IClient* getClient(const std::string& nick);
 std::set<const IClient*> getClients();
-std::set<ClientID> getClientIDs();
 
-bool isNickinUse(const std::string& nick);
+ClientID getClientID(IClient* client);
+std::set<ClientID> getClientIDs();
 }  // namespace ClientManagement
 
 #endif

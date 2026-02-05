@@ -15,6 +15,7 @@
 #include "ISession.hpp"
 #include "Response.hpp"
 #include "Session.hpp"
+#include "SessionManagement.hpp"
 #include "Validator.hpp"
 #include "numeric.hpp"
 
@@ -144,7 +145,7 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
   }
 
   const std::string& newNick = ctx.args()[0];
-  if (ClientManagement::isNickinUse(newNick)) {
+  if (ClientManagement::getClient(newNick) != NULL) {
     ctx.requester().send(Response::error(
         "433", target, newNick + " :Nickname is already in use"));
     return IRC::ERR_NICKNAMEINUSE;
@@ -527,50 +528,76 @@ IRC::Numeric PartCommand::execute(ICommandContext& ctx) const {
 // ERR_USERNOTINCHANNEL, ERR_NOTONCHANNEL, ERR_NOSUCHCHANNEL
 IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
+  ISession& requester = ctx.requester();
+  ClientID requesterID = ctx.requesterClient().getID();
 
   if (ctx.args().size() < 2) {
-    ctx.requester().send(
-        Response::error("461", nick, "KICK :Not enough parameters"));
+    requester.send(Response::error("461", nick, "KICK :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
 
-  const std::string& channelName = ctx.args()[0];
-  const std::string& targetNick = ctx.args()[1];
+  std::vector<std::string> channelNames = split(ctx.args()[0], ",");
+  std::vector<std::string> targetNicks = split(ctx.args()[1], ",");
   const std::string kickMsg = ctx.args().size() > 2 ? ctx.args()[2] : nick;
 
-  IRC::Numeric result =
-      ctx.channels().kickChannel(channelName, nick, targetNick);
-  assert(0);
-
-  switch (result) {
-    case IRC::ERR_NOSUCHCHANNEL:
-      ctx.requester().send(
-          Response::error("403", nick, channelName + " :No such channel"));
-      break;
-    case IRC::ERR_NOTONCHANNEL:
-      ctx.requester().send(Response::error(
-          "442", nick, channelName + " :You're not on that channel"));
-      break;
-    case IRC::ERR_CHANOPRIVSNEEDED:
-      ctx.requester().send(Response::error(
-          "482", nick, channelName + " :You're not channel operator"));
-      break;
-    case IRC::ERR_USERNOTINCHANNEL:
-      ctx.requester().send(Response::error(
-          "441", nick,
-          targetNick + " " + channelName + " :They aren't on that channel"));
-      break;
-    case IRC::DO_NOTHING: {
-      const std::string kickNotification = ":" + nick + " KICK " + channelName +
-                                           " " + targetNick + " :" + kickMsg;
-      ctx.channels().broadcast(channelName, kickNotification);
-    } break;
-    default:
-      assert(0);
-      break;
+  bool isOneToN = (channelNames.size() == 1);
+  bool isNToN = (channelNames.size() == targetNicks.size());
+  if (!isOneToN && !isNToN) {
+    requester.send(Response::error("461", nick, "KICK :Not enough parameters"));
+    return IRC::ERR_NEEDMOREPARAMS;
   }
 
-  return result;
+  IRC::Numeric lastResult = IRC::DO_NOTHING;
+  for (size_t i = 0; i < targetNicks.size(); ++i) {
+    std::string currentChanName = isOneToN ? channelNames[0] : channelNames[i];
+    std::string currentTargetNick = targetNicks[i];
+    IChannel* channel = ChannelManagement::getChannel(currentChanName);
+    if (channel == NULL) {
+      requester.send(
+          Response::error("403", nick, currentChanName + " :No such channel"));
+      lastResult = IRC::ERR_NOSUCHCHANNEL;
+      continue;
+    }
+    IClient* targetClient = ClientManagement::getClient(currentTargetNick);
+    if (targetClient == NULL || !channel->hasClient(targetClient->getID())) {
+      requester.send(Response::error("441", nick,
+                                     currentTargetNick + " " + currentChanName +
+                                         " :They aren't on that channel"));
+      lastResult = IRC::ERR_USERNOTINCHANNEL;
+      continue;
+    }
+    IRC::Numeric result =
+        channel->kickClient(requesterID, targetClient->getID());
+    switch (result) {
+      case IRC::ERR_NOTONCHANNEL:
+        requester.send(Response::error(
+            "442", nick, currentChanName + " :You're not on that channel"));
+        break;
+      case IRC::ERR_CHANOPRIVSNEEDED:
+        requester.send(Response::error(
+            "482", nick, currentChanName + " :You're not channel operator"));
+        break;
+      case IRC::ERR_USERNOTINCHANNEL:
+        requester.send(Response::error("441", nick,
+                                       currentTargetNick + " " +
+                                           currentChanName +
+                                           " :They aren't on that channel"));
+        break;
+      case IRC::RPL_STRREPLY: {
+        const std::string kickNotification = ":" + nick + " KICK " +
+                                             currentChanName + " " +
+                                             currentTargetNick + " :" + kickMsg;
+        channel->broadcast(kickNotification, targetClient->getID());
+        SessionManagement::getSession(targetClient)->send(kickNotification);
+      } break;
+      default:
+        assert(0 && "Unexpected result");
+        break;
+    }
+    lastResult = result;
+  }
+
+  return lastResult;
 }
 
 // Numeric Replies: ERR_NEEDMOREPARAMS, ERR_NOSUCHCHANNEL, ERR_NOTONCHANNEL,
