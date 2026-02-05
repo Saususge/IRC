@@ -14,9 +14,9 @@
 #include "IServerConfig.hpp"
 #include "ISession.hpp"
 #include "Response.hpp"
-#include "Session.hpp"
 #include "SessionManagement.hpp"
 #include "Validator.hpp"
+#include "defs.hpp"
 #include "numeric.hpp"
 
 CommandContext::CommandContext(ISession& sessionRef, IClient& clientRef,
@@ -378,7 +378,7 @@ IRC::Numeric TopicCommand::execute(ICommandContext& ctx) const {
       // Topic changed successfully - broadcast to channel
       const std::string topicMsg =
           ":" + nick + " TOPIC " + channelName + " :" + newTopic;
-      channel->broadcast(topicMsg, -1);
+      channel->broadcast(topicMsg, ClientID(-1));
     } break;
     default:
       assert(0 && "Unexpected result");
@@ -473,7 +473,7 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
       case IRC::RPL_STRREPLY: {
         // Send topic and names
         const std::string joinMsg = ":" + nick + " JOIN :" + channelNames[i];
-        channel->broadcast(joinMsg, -1);
+        channel->broadcast(joinMsg, ClientID(-1));
         const std::string& topic = channel->getTopic();
         if (!topic.empty()) {
           requester.send(
@@ -493,43 +493,44 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
   return lastResult;
 }
 
-// Numeric Replies: ERR_NEEDMOREPARAMS, ERR_NOSUCHCHANNEL, ERR_NOTONCHANNEL
 IRC::Numeric PartCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
-
+  ISession& requester = ctx.requester();
+  ClientID clientID = ctx.requesterClient().getID();
   if (ctx.args().empty()) {
-    // ERR_NEEDMOREPARAMS (461)
-    ctx.requester().send(
-        Response::error("461", nick, "PART :Not enough parameters"));
+    requester.send(Response::error("461", nick, "PART :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
-  const std::string& channelName = ctx.args()[0];
+  const std::vector<std::string> channelNames = split(ctx.args()[0]);
   const std::string partMsg = ctx.args().size() > 1 ? ctx.args()[1] : nick;
-  IRC::Numeric result = ctx.channels().partChannel(channelName, nick);
 
-  switch (result) {
-    case IRC::ERR_NOSUCHCHANNEL:
-      ctx.requester().send(
+  IRC::Numeric lastResult = IRC::DO_NOTHING;
+  for (size_t i = 0; i < channelNames.size(); ++i) {
+    const std::string& channelName = channelNames[i];
+    IChannel* channel = ChannelManagement::getChannel(channelName);
+    if (channel == NULL) {
+      requester.send(
           Response::error("403", nick, channelName + " :No such channel"));
-      break;
-
-    case IRC::ERR_NOTONCHANNEL:
-      ctx.requester().send(Response::error(
+      lastResult = IRC::ERR_NOSUCHCHANNEL;
+      continue;
+    }
+    IRC::Numeric result = channel->part(clientID);
+    if (result == IRC::ERR_NOTONCHANNEL) {
+      requester.send(Response::error(
           "442", nick, channelName + " :You're not on that channel"));
-      break;
-
-    case IRC::DO_NOTHING: {
+      lastResult = IRC::ERR_NOTONCHANNEL;
+    } else {
       const std::string partNotification =
           ":" + nick + " PART " + channelName + " :" + partMsg;
-      ctx.channels().broadcast(channelName, partNotification);
-    } break;
-
-    default:
-      assert(0);
-      break;
+      channel->broadcast(partNotification, clientID);
+      requester.send(partNotification);
+      if (channel->getClientNumber() == 0) {
+        ChannelManagement::deleteChannel(channelName);
+      }
+      lastResult = result;
+    }
   }
-
-  return result;
+  return lastResult;
 }
 
 // Numeric Replies: ERR_NEEDMOREPARAMS, ERR_CHANOPRIVSNEEDED,
