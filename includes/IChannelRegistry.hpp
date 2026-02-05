@@ -42,6 +42,7 @@ class IChannelRegistry {
                                   const std::string& requesterNick,
                                   IChannel::IChannelMode mode,
                                   const std::string& param) = 0;
+  virtual const std::string getMode(const std::string& channelName) = 0;
 
   virtual bool hasClient(const std::string& channelName,
                          const std::string& nick) const = 0;

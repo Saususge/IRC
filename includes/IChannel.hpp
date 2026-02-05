@@ -52,6 +52,7 @@ class IChannel {
   virtual IRC::Numeric removeMode(const std::string& requesterNick,
                                   IChannelMode mode,
                                   const std::string& params) = 0;
+  virtual const std::string getMode() = 0;
 
   virtual IRC::Numeric addToInviteList(const std::string& requesterNick,
                                        const std::string& targetNick) = 0;

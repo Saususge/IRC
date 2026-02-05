@@ -36,6 +36,7 @@ class Channel : public IChannel {
                        const std::string& param);
   IRC::Numeric removeMode(const std::string& requesterNick, IChannelMode mode,
                           const std::string& param);
+  const std::string getMode();
 
   IRC::Numeric addToInviteList(const std::string& requesterNick,
                                const std::string& targetNick);

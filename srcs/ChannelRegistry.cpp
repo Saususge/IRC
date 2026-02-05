@@ -94,6 +94,13 @@ IRC::Numeric ChannelRegistry::removeMode(const std::string& channelName,
   return iter->second->removeMode(requesterNick, mode, param);
 }
 
+const std::string ChannelRegistry::getMode(const std::string& channelName) {
+  static const std::string error(":ERROR:");
+  std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
+  if (iter == channels.end()) return error;
+  return iter->second->getMode();
+}
+
 bool ChannelRegistry::hasClient(const std::string& channelName,
                                 const std::string& nick) const {
   std::map<std::string, IChannel*>::const_iterator iter =

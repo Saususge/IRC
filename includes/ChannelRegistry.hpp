@@ -37,6 +37,7 @@ class ChannelRegistry : public IChannelRegistry {
                           const std::string& requesterNick,
                           IChannel::IChannelMode mode,
                           const std::string& param);
+  const std::string getMode(const std::string& channelName);
 
   bool hasClient(const std::string& channelName, const std::string& nick) const;
   bool isClientOp(const std::string& channelName,

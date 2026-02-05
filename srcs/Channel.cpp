@@ -1,6 +1,7 @@
 #include "Channel.hpp"
 
 #include <cstdlib>
+#include <sstream>
 
 Channel::Channel(const std::string& channelName,
                  IClientRegistry& clientRegistry)
@@ -144,6 +145,7 @@ IRC::Numeric Channel::addMode(const std::string& requesterNick,
   } else if (mode & IChannel::MKEY) {
     if (!this->key.empty()) return IRC::ERR_KEYSET;
     if (param.empty()) return IRC::ERR_NEEDMOREPARAMS;
+    this->mode |= IChannel::MKEY;
     this->key = param;
 
   } else if (mode & IChannel::MOP) {
@@ -153,6 +155,8 @@ IRC::Numeric Channel::addMode(const std::string& requesterNick,
   } else if (mode & IChannel::MLIMIT) {
     if (this->limit != 0) return IRC::DO_NOTHING;
     if (param.empty()) return IRC::ERR_NEEDMOREPARAMS;
+
+    this->mode |= IChannel::MLIMIT;
 
     char* end;
     long num_limit = std::strtol(param.c_str(), &end, 10);
@@ -184,6 +188,7 @@ IRC::Numeric Channel::removeMode(const std::string& requesterNick,
   } else if (mode & IChannel::MKEY) {
     if (this->key.empty() || param.empty() || this->key != param)
       return IRC::DO_NOTHING;
+    this->mode &= ~IChannel::MKEY;
     this->key.clear();
 
   } else if (mode & IChannel::MOP) {
@@ -192,12 +197,35 @@ IRC::Numeric Channel::removeMode(const std::string& requesterNick,
 
   } else if (mode & IChannel::MLIMIT) {
     if (this->limit == 0) return IRC::DO_NOTHING;
+    this->mode &= ~IChannel::MLIMIT;
     this->limit = 0;
 
   } else {
     return IRC::DO_NOTHING;
   }
   return IRC::RPL_STRREPLY;
+}
+
+const std::string Channel::getMode() {
+  std::string modeStr("+");
+
+  if (mode & IChannel::MINVITE) {
+    modeStr += "i";
+  }
+  if (mode & IChannel::MTOPIC) {
+    modeStr += "t";
+  }
+  if (mode & IChannel::MKEY) {
+    modeStr += "k";
+  }
+  if (mode & IChannel::MLIMIT) {
+    std::stringstream ss;
+
+    ss << limit;
+    modeStr += "l ";
+    modeStr += ss.str();
+  }
+  return modeStr.size() == 1 ? "" : modeStr;
 }
 
 IRC::Numeric Channel::addToInviteList(const std::string& requesterNick,
