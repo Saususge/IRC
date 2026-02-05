@@ -25,10 +25,9 @@ class Client : public IClient {
   void setSessionID(SessionID id);
   SessionID getSessionID() const;
 
-  void Register() { _registered = true; };
-
-  bool isAuthenticated() const { return _loginFlags & IClient::RPASS; }
-  bool isRegistered() const { return _registered; }
+  void Register();
+  bool isRegistered() const;
+  bool isAuthenticated() const;
 
  private:
   std::string _nickname;

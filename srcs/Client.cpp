@@ -1,5 +1,9 @@
 #include "Client.hpp"
 
+#include <cassert>
+
+#include "numeric.hpp"
+
 Client::Client()
     : _nickname(""),
       _username(""),
@@ -20,7 +24,7 @@ IRC::Numeric Client::Authenticate() {
 // function.
 IRC::Numeric Client::setNick(const std::string& nick) {
   if (isAuthenticated() == false) {
-    return IRC::ERR_RESTRICTED;
+    return IRC::ERR_REGISTERBEFOREPASS;
   }
   this->_nickname = nick;
   _loginFlags |= IClient::RNICK;
@@ -31,7 +35,7 @@ IRC::Numeric Client::setNick(const std::string& nick) {
 IRC::Numeric Client::setUserInfo(const std::string& user,
                                  const std::string& realName) {
   if (isAuthenticated() == false) {
-    return IRC::ERR_RESTRICTED;
+    return IRC::ERR_REGISTERBEFOREPASS;
   }
   if (_registered) {
     return IRC::ERR_ALREADYREGISTRED;
@@ -48,6 +52,16 @@ const std::string& Client::getRealName() const { return _realname; }
 
 void Client::setSessionID(SessionID id) { _sessionID = id; }
 SessionID Client::getSessionID() const { return _sessionID; }
+
+void Client::Register() {
+  if (_registered) {
+    assert(0 && "Register twice");
+  }
+  _registered = true;
+};
+
+bool Client::isAuthenticated() const { return _loginFlags & IClient::RPASS; }
+bool Client::isRegistered() const { return _registered; }
 
 // IRC::Numeric Client::joinChannel(IChannelRegistry& registry,
 //                                  const std::string& channelName,
@@ -78,7 +92,6 @@ SessionID Client::getSessionID() const { return _sessionID; }
 
 IRC::Numeric Client::checkLoginFlags() {
   if (_loginFlags == (IClient::RPASS | IClient::RNICK | IClient::RUSER)) {
-    _registered = true;
     return IRC::RPL_WELCOME;
   }
   // caller should check that the client has joined any channel. if so,

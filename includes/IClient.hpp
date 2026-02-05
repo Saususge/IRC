@@ -29,7 +29,7 @@ class IClient {
   virtual const std::string& getUser() const = 0;
   virtual const std::string& getRealName() const = 0;
 
-  virtual bool isAuthenticated() const = 0;
+  // virtual bool isAuthenticated() const = 0;
   virtual bool isRegistered() const = 0;
 };
 #endif  // ICLIENT_HPP

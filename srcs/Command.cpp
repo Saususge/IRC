@@ -1,12 +1,12 @@
 #include "Command.hpp"
 
 #include <cassert>
-#include <map>
 #include <string>
 
 #include "ICommand.hpp"
 #include "IServerConfig.hpp"
 #include "Response.hpp"
+#include "Session.hpp"
 #include "numeric.hpp"
 
 CommandContext::CommandContext(ISession& sessionRef, IClient& clientRef,
@@ -46,7 +46,6 @@ IRC::Numeric PassCommand::execute(ICommandContext& ctx) const {
                                  ? "*"
                                  : ctx.requesterClient().getNick();
   if (ctx.args().empty()) {
-    // ERR_NEEDMOREPARAMS (461): "<command> :Not enough parameters"
     ctx.requester().send(
         Response::error("461", target, "PASS :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
@@ -54,27 +53,26 @@ IRC::Numeric PassCommand::execute(ICommandContext& ctx) const {
 
   const std::string& password = ctx.args()[0];
   const IServerConfig& serverConfig = ctx.serverConfig();
+  if (password != serverConfig.getPassword()) {
+    ctx.requester().send(
+        Response::error("464", target, "PASS :Password incorrect"));
+    ctx.requester().send("ERROR :Closing Link: * (Password incorrect)");
+    SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD());
+  }
 
   IClient& client = ctx.requesterClient();
-  IRC::Numeric result = client.Authenticate(serverConfig, password);
-
+  IRC::Numeric result = client.Authenticate();
   switch (result) {
     case IRC::ERR_ALREADYREGISTRED:
       ctx.requester().send(Response::error(
           "462", target, ":Unauthorized command (already registered)"));
       break;
-    case IRC::ERR_PASSWDMISMATCH:
-      ctx.requester().send(
-          Response::error("464", target, ":Password incorrect"));
-      break;
     case IRC::DO_NOTHING:
       break;
     default:
-      // Unexpected result
-      assert(0);  // PASS
+      assert(0 && "Unexpected result");
       break;
   }
-
   return result;
 }
 
@@ -195,8 +193,6 @@ IRC::Numeric UserCommand::execute(ICommandContext& ctx) const {
 
   return result;
 }
-
-#include "Session.hpp"
 
 // Numeric Replies: None (QUIT has no error cases)
 IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
