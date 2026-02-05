@@ -492,10 +492,8 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
   const std::string& targetNick = ctx.args()[1];
   const std::string kickMsg = ctx.args().size() > 2 ? ctx.args()[2] : nick;
 
-#warning TODO: We need kickClient
-  IRC::Numeric result = IRC::DO_NOTHING;
-  // IRC::Numeric result = ctx.channels().kickClient(channelName, nick,
-  // targetNick);
+  IRC::Numeric result =
+      ctx.channels().kickChannel(channelName, nick, targetNick);
   assert(0);
 
   switch (result) {
