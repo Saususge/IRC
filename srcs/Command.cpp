@@ -442,7 +442,14 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
   while (keys.size() < channelNames.size()) {
     keys.push_back("");
   }
+  IRC::Numeric lastResult;
   for (size_t i = 0; i < channelNames.size(); ++i) {
+    if (!Validator::isChannelNameValid(channelNames[i])) {
+      requester.send(
+          Response::error("476", nick, channelNames[i] + " :Bad Channel Mask"));
+      lastResult = IRC::ERR_BADCHANMASK;
+      continue;
+    }
     IChannel* channel = ChannelManagement::getChannel(channelNames[i]);
     IRC::Numeric result;
     if (channel == NULL) {
@@ -463,7 +470,7 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
         requester.send(Response::error(
             "471", nick, channelNames[i] + " :Cannot join channel (+l)"));
         break;
-      case IRC::DO_NOTHING: {
+      case IRC::RPL_STRREPLY: {
         // Send topic and names
         const std::string joinMsg = ":" + nick + " JOIN :" + channelNames[i];
         channel->broadcast(joinMsg, -1);
@@ -481,8 +488,9 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
         assert(0 && "Unexpected result");
         break;
     }
+    lastResult = result;
   }
-  return IRC::DO_NOTHING;
+  return lastResult;
 }
 
 // Numeric Replies: ERR_NEEDMOREPARAMS, ERR_NOSUCHCHANNEL, ERR_NOTONCHANNEL
@@ -551,6 +559,12 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
   for (size_t i = 0; i < targetNicks.size(); ++i) {
     std::string currentChanName = isOneToN ? channelNames[0] : channelNames[i];
     std::string currentTargetNick = targetNicks[i];
+    if (!Validator::isChannelNameValid(channelNames[i])) {
+      requester.send(
+          Response::error("476", nick, channelNames[i] + " :Bad Channel Mask"));
+      lastResult = IRC::ERR_BADCHANMASK;
+      continue;
+    }
     IChannel* channel = ChannelManagement::getChannel(currentChanName);
     if (channel == NULL) {
       requester.send(

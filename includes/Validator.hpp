@@ -5,6 +5,7 @@
 
 namespace Validator {
 bool isValidNickname(const std::string& nick);
+bool isChannelNameValid(const std::string& channelName);
 };  // namespace Validator
 
 #endif

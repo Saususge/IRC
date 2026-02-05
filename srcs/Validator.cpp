@@ -28,4 +28,21 @@ bool isValidNickname(const std::string& nick) {
   }
   return true;
 }
+
+bool isChannelNameValid(const std::string& name) {
+  if (name.empty() || name.length() > 50) {
+    return false;
+  }
+  char prefix = name[0];
+  if (prefix != '#' && prefix != '&' && prefix != '+' && prefix != '!') {
+    return false;
+  }
+  for (size_t i = 0; i < name.length(); ++i) {
+    unsigned char c = static_cast<unsigned char>(name[i]);
+    if (c <= ' ' || c == ',' || c == ':') {
+      return false;
+    }
+  }
+  return true;
+}
 }  // namespace Validator
