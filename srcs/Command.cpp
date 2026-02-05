@@ -11,6 +11,7 @@
 #include "IClientRegistry.hpp"
 #include "ICommand.hpp"
 #include "IServerConfig.hpp"
+#include "ISession.hpp"
 #include "Response.hpp"
 #include "Session.hpp"
 #include "Validator.hpp"
@@ -237,69 +238,88 @@ IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
 }
 
 namespace {
-void sendChannelNames(ICommandContext& ctx, const std::string& nick,
-                      const std::string& channelName) {
-  const std::set<std::string>& members = ctx.channels().getClients(channelName);
+void sendChannelNames(ISession& requester, const std::string& requesterNick,
+                      IChannel& channel) {
+  const std::string channelName = channel.getChannelName();
+  const std::set<ClientID> joinedClients = channel.getJoinedClients();
 
-  // RPL_NAMREPLY (353): "( "=" / "*" / "@" ) <channel> :[ "@" / "+" ]
-  // <nick> *( " " [ "@" / "+" ] <nick> )"
-  // "=" for public, "*" for private, "@" for secret
-  // For now: assume all channels are public
   std::string namesList;
-  for (std::set<std::string>::const_iterator it = members.begin();
-       it != members.end(); ++it) {
+  namesList.reserve(512);
+
+  for (std::set<ClientID>::const_iterator it = joinedClients.begin();
+       it != joinedClients.end(); ++it) {
+    std::string nickPrefix = channel.isClientOp(*it) ? "@" : "";
+    std::string clientNick = ClientManagement::getClient(*it)->getNick();
+    if (!namesList.empty()) namesList += " ";
+    namesList += nickPrefix + clientNick;
+  }
+  if (!namesList.empty()) {
+    requester.send(Response::build("353", requesterNick,
+                                   "= " + channelName + " :" + namesList));
+  }
+  requester.send(Response::build("366", requesterNick,
+                                 channelName + " :End of NAMES list"));
+}
+
+void sendWildcardNames(ISession& requester, const std::string& requesterNick,
+                       const std::set<ClientID>& remainClientIDs) {
+  if (remainClientIDs.empty()) {
+    return;
+  }
+
+  std::string namesList;
+  namesList.reserve(512);
+  for (std::set<ClientID>::const_iterator it = remainClientIDs.begin();
+       it != remainClientIDs.end(); ++it) {
+    std::string clientNick = ClientManagement::getClient(*it)->getNick();
     if (!namesList.empty()) {
       namesList += " ";
     }
-    // Prefix with @ if operator
-    if (ctx.channels().isClientOp(channelName, *it)) {
-      namesList += "@";
-    }
-    namesList += *it;
+    namesList += clientNick;
   }
-
-  ctx.requester().send(
-      Response::build("353", nick, "= " + channelName + " :" + namesList));
-
-  // RPL_ENDOFNAMES (366)
-  ctx.requester().send(
-      Response::build("366", nick, channelName + " :End of NAMES list"));
+  if (!namesList.empty()) {
+    requester.send(Response::build("353", requesterNick, "= * :" + namesList));
+  }
+  requester.send(Response::build("366", requesterNick, "* :End of NAMES list"));
 }
-}  // namespace
+};  // namespace
 
 // Numeric Replies: ERR_NOSUCHCHANNEL, RPL_NAMREPLY, RPL_ENDOFNAMES
 IRC::Numeric NamesCommand::execute(ICommandContext& ctx) const {
-  const std::string& nick = ctx.requesterClient().getNick();
-
+  ISession& requester = ctx.requester();
+  const std::string& nick =
+      ClientManagement::getClient(requester.getClientID())->getNick();
   if (ctx.args().empty()) {
     // No channel specified - list all visible channels
     // For single server: send names for all channels user is in
-    const std::vector<std::string>& channels =
-        ctx.requesterClient().getJoinedChannels();
-
-    for (std::vector<std::string>::const_iterator it = channels.begin();
-         it != channels.end(); ++it) {
-      sendChannelNames(ctx, nick, *it);
+    const std::set<IChannel*> allChannels = ChannelManagement::getChannels();
+    std::set<ClientID> remainClientIDs = ClientManagement::getClientIDs();
+    for (std::set<IChannel*>::const_iterator it = allChannels.begin();
+         it != allChannels.end(); ++it) {
+      sendChannelNames(requester, nick, **it);
+      const std::set<ClientID> joined = (*it)->getJoinedClients();
+      for (std::set<ClientID>::const_iterator cIt = joined.begin();
+           cIt != joined.end(); ++cIt) {
+        remainClientIDs.erase(*cIt);
+      }
     }
-
     // RPL_ENDOFNAMES for wildcard query
-    ctx.requester().send(Response::build("366", nick, "* :End of NAMES list"));
-
+    sendWildcardNames(requester, nick, remainClientIDs);
     return IRC::RPL_NAMREPLY;
   }
-
   // Channel(s) specified
-  const std::string& channelName = ctx.args()[0];
-
-  if (!ctx.channels().hasChannel(channelName)) {
-    // ERR_NOSUCHCHANNEL (403)
-    ctx.requester().send(
-        Response::error("403", nick, channelName + " :No such channel"));
-    return IRC::ERR_NOSUCHCHANNEL;
+  const std::vector<std::string>& _channelNames = ctx.args();
+  for (std::vector<std::string>::const_iterator it = _channelNames.begin();
+       it != _channelNames.end(); ++it) {
+    IChannel* _channel = ChannelManagement::getChannel(*it);
+    if (_channel == NULL) {
+      // ERR_NOSUCHCHANNEL (403)
+      ctx.requester().send(
+          Response::error("403", nick, *it + " :No such channel"));
+      continue;
+    }
+    sendChannelNames(requester, nick, *_channel);
   }
-
-  sendChannelNames(ctx, nick, channelName);
-
   return IRC::RPL_NAMREPLY;
 }
 

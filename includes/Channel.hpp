@@ -27,7 +27,7 @@ class Channel : public IChannel {
   IRC::Numeric unsetClientOp(const std::string& requesterNick,
                              const std::string& targetNick);
   bool isClientOp(const std::string& nick) const;
-  const std::set<std::string>& getClients() const;
+  const std::set<std::string>& getJoinedClients() const;
 
   int getClientNumber() const;
 

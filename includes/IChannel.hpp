@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "IClient.hpp"
 #include "defs.hpp"
 #include "numeric.hpp"
 
@@ -40,7 +41,8 @@ class IChannel {
   virtual IRC::Numeric unsetClientOp(const std::string& requesterNick,
                                      const std::string& targetNick) = 0;
   virtual bool isClientOp(const std::string& nick) const = 0;
-  virtual const std::set<std::string>& getClients() const = 0;
+  virtual bool isClientOp(ClientID id) const = 0;
+  virtual const std::set<ClientID> getJoinedClients() const = 0;
 
   virtual int getClientNumber() const = 0;
 

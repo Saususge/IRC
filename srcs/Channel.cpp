@@ -116,7 +116,9 @@ bool Channel::isClientOp(const std::string& nick) const {
   return operators.find(nick) != operators.end();
 }
 
-const std::set<std::string>& Channel::getClients() const { return joinedUsers; }
+const std::set<std::string>& Channel::getJoinedClients() const {
+  return joinedUsers;
+}
 
 int Channel::getClientNumber() const { return joinedUsers.size(); }
 
