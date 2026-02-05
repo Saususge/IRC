@@ -28,9 +28,12 @@ class IChannel {
                         const std::string& except = "") = 0;
   virtual int broadcast(const std::string& msg, const ClientID except = -1) = 0;
 
+  virtual IRC::Numeric join(ClientID clientID, const std::string& key = "") = 0;
+  virtual IRC::Numeric part(ClientID clientID, const std::string& key = "") = 0;
   virtual IRC::Numeric addClient(const std::string& nick,
                                  const std::string& key = "") = 0;
   virtual IRC::Numeric removeClient(const std::string& nick) = 0;
+  virtual IRC::Numeric removeClient(ClientID nick) = 0;
   virtual IRC::Numeric kickClient(const std::string& requesterNick,
                                   const std::string& targetNick) = 0;
   virtual bool hasClient(const std::string& nick) const = 0;

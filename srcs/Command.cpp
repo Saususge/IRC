@@ -3,6 +3,7 @@
 #include <cassert>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "ChannelManagement.hpp"
 #include "ClientManagement.hpp"
@@ -379,87 +380,108 @@ IRC::Numeric TopicCommand::execute(ICommandContext& ctx) const {
       channel->broadcast(topicMsg, -1);
     } break;
     default:
-      assert(0);
+      assert(0 && "Unexpected result");
       break;
   }
   return result;
 }
 
+namespace {
+std::vector<std::string> split(const std::string& str,
+                               const std::string& sep = ",") {
+  std::vector<std::string> result;
+  if (sep.empty()) {
+    result.push_back(str);
+    return result;
+  }
+  std::string::size_type start = 0;
+  std::string::size_type end = str.find(sep);
+  while (end != std::string::npos) {
+    result.push_back(str.substr(start, end - start));
+    start = end + sep.length();
+    end = str.find(sep, start);
+  }
+  result.push_back(str.substr(start));
+  return result;
+}
+};  // namespace
+
 // Numeric Replies: ERR_NEEDMOREPARAMS, ERR_NOSUCHCHANNEL,
 // ERR_TOOMANYCHANNELS, ERR_BADCHANNELKEY, ERR_BANNEDFROMCHAN,
 // ERR_CHANNELISFULL, ERR_INVITEONLYCHAN, RPL_TOPIC
 IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
+  ClientID clientID = ctx.requesterClient().getID();
   const std::string& nick = ctx.requesterClient().getNick();
+  ISession& requester = ctx.requester();
   if (ctx.args().empty()) {
     // ERR_NEEDMOREPARAMS (461)
-    ctx.requester().send(
-        Response::error("461", nick, "JOIN :Not enough parameters"));
+    requester.send(Response::error("461", nick, "JOIN :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
 
-  const std::string& channelName = ctx.args()[0];
-
   // Special case: JOIN 0 - part all channels
-  if (channelName == "0") {
-    const std::vector<std::string>& channels =
-        ctx.requesterClient().getJoinedChannels();
-    for (std::vector<std::string>::const_iterator it = channels.begin();
-         it != channels.end(); ++it) {
+  if (ctx.args()[0] == "0") {
+    const std::set<IChannel*> _joinedChannels = getJoinedChannels(clientID);
+    for (std::set<IChannel*>::const_iterator it = _joinedChannels.begin();
+         it != _joinedChannels.end(); ++it) {
       const std::string partNotification =
-          ":" + nick + " PART " + *it + " :" + nick;
-      ctx.channels().broadcast(*it, partNotification, nick);
-      ctx.channels().partChannel(*it, nick);
+          ":" + nick + " PART " + (*it)->getChannelName() + " :" + nick;
+      (*it)->broadcast(partNotification, nick);
+      (*it)->removeClient(clientID);
+      if ((*it)->getClientNumber() == 0) {
+        ChannelManagement::deleteChannel((*it)->getChannelName());
+      }
     }
     return IRC::DO_NOTHING;
   }
 
-  const std::string key = ctx.args().size() > 1 ? ctx.args()[1] : "";
-  IRC::Numeric result =
-      ctx.channels().joinChannel(channelName, nick, ctx.clients(), key);
-
-  switch (result) {
-    case IRC::ERR_NOSUCHCHANNEL:
-      ctx.requester().send(
-          Response::error("403", nick, channelName + " :No such channel"));
-      break;
-    case IRC::ERR_TOOMANYCHANNELS:
-      ctx.requester().send(Response::error(
-          "405", nick, channelName + " :You have joined too many channels"));
-      break;
-    case IRC::ERR_BADCHANNELKEY:
-      ctx.requester().send(Response::error(
-          "475", nick, channelName + " :Cannot join channel (+k)"));
-      break;
-    case IRC::ERR_INVITEONLYCHAN:
-      ctx.requester().send(Response::error(
-          "473", nick, channelName + " :Cannot join channel (+i)"));
-      break;
-    case IRC::ERR_CHANNELISFULL:
-      ctx.requester().send(Response::error(
-          "471", nick, channelName + " :Cannot join channel (+l)"));
-      break;
-    case IRC::DO_NOTHING: {
-      const std::string joinMsg = ":" + nick + " JOIN :" + channelName;
-      ctx.channels().broadcast(channelName, joinMsg);
-      const std::string& topic = ctx.channels().getTopic(channelName);
-      if (!topic.empty()) {
-        // RPL_TOPIC (332)
-        ctx.requester().send(
-            Response::build("332", nick, channelName + " :" + topic));
-      } else {
-        // RPL_NOTOPIC (331)
-        ctx.requester().send(
-            Response::build("331", nick, channelName + " :No topic is set"));
-      }
-      sendChannelNames(ctx, nick, channelName);
-    } break;
-
-    default:
-      assert(0);
-      break;
+  // Normal case
+  const std::vector<std::string> channelNames = split(ctx.args()[0]);
+  std::vector<std::string> keys = split(ctx.args()[1]);
+  while (keys.size() < channelNames.size()) {
+    keys.push_back("");
   }
-
-  return result;
+  for (size_t i = 0; i < channelNames.size(); ++i) {
+    IChannel* channel = ChannelManagement::getChannel(channelNames[i]);
+    IRC::Numeric result;
+    if (channel == NULL) {
+      ChannelManagement::createChannel(channelNames[i]);
+      channel = ChannelManagement::getChannel(channelNames[i]);
+    }
+    result = channel->join(clientID, keys[i]);
+    switch (result) {
+      case IRC::ERR_BADCHANNELKEY:
+        requester.send(Response::error(
+            "475", nick, channelNames[i] + " :Cannot join channel (+k)"));
+        break;
+      case IRC::ERR_INVITEONLYCHAN:
+        requester.send(Response::error(
+            "473", nick, channelNames[i] + " :Cannot join channel (+i)"));
+        break;
+      case IRC::ERR_CHANNELISFULL:
+        requester.send(Response::error(
+            "471", nick, channelNames[i] + " :Cannot join channel (+l)"));
+        break;
+      case IRC::DO_NOTHING: {
+        // Send topic and names
+        const std::string joinMsg = ":" + nick + " JOIN :" + channelNames[i];
+        channel->broadcast(joinMsg, -1);
+        const std::string& topic = channel->getTopic();
+        if (!topic.empty()) {
+          requester.send(
+              Response::build("332", nick, channelNames[i] + " :" + topic));
+        } else {
+          requester.send(Response::build(
+              "331", nick, channelNames[i] + " :No topic is set"));
+        }
+        sendChannelNames(requester, nick, *channel);
+      } break;
+      default:
+        assert(0 && "Unexpected result");
+        break;
+    }
+  }
+  return IRC::DO_NOTHING;
 }
 
 // Numeric Replies: ERR_NEEDMOREPARAMS, ERR_NOSUCHCHANNEL, ERR_NOTONCHANNEL
