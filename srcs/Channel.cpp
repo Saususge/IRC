@@ -156,8 +156,9 @@ IRC::Numeric Channel::addMode(const std::string& requesterNick,
 
     char* end;
     long num_limit = std::strtol(param.c_str(), &end, 10);
-    if (*end != '\0' || num_limit < 0 ||
-        (num_limit < joinedUsers.size() || IChannel::MAXUSER < num_limit))
+    if (*end != '\0' || num_limit < 0) return IRC::DO_NOTHING;
+    if ((size_t)num_limit < joinedUsers.size() ||
+        IChannel::MAXUSER < (size_t)num_limit)
       return IRC::DO_NOTHING;
 
     this->limit = static_cast<size_t>(num_limit);

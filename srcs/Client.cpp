@@ -25,8 +25,7 @@ IRC::Numeric Client::Authenticate(IServerConfig& serverConfig,
 // NICK
 // The registry should check for duplicate nicknames before calling this
 // function.
-IRC::Numeric Client::setNick(IClientRegistry& registry,
-                             const std::string& nick) {
+IRC::Numeric Client::setNick(const std::string& nick) {
   this->_nickname = nick;
   if (!registered) loginFlags |= IClient::RNICK;
   return checkLoginFlags();
@@ -51,12 +50,13 @@ int Client::send(const std::string& msg) { return session.send(msg); }
 
 IRC::Numeric Client::joinChannel(IChannelRegistry& registry,
                                  const std::string& channelName,
+                                 IClientRegistry& clientRegistry,
                                  const std::string& key) {
-  // JOIN does not return NOTONCHANNEL
   if (findFromJoinedChannel(channelName) != _joinedChannels.end())
     return IRC::DO_NOTHING;
 
-  IRC::Numeric reply = registry.joinChannel(channelName, _nickname, key);
+  IRC::Numeric reply =
+      registry.joinChannel(channelName, _nickname, clientRegistry, key);
   if (reply <= 400) _joinedChannels.push_back(channelName);
   return reply;
 }

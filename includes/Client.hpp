@@ -14,7 +14,7 @@ class Client : public IClient {
   IRC::Numeric Authenticate(IServerConfig& serverConfig,
                             const std::string& password);
   // NICK
-  IRC::Numeric setNick(IClientRegistry& registry, const std::string& nick);
+  IRC::Numeric setNick(const std::string& nick);
   // USER
   IRC::Numeric setUserInfo(const std::string& user,
                            const std::string& realName);
@@ -27,6 +27,7 @@ class Client : public IClient {
 
   IRC::Numeric joinChannel(IChannelRegistry& registry,
                            const std::string& channelName,
+                           IClientRegistry& clientRegistry,
                            const std::string& key = "");
   IRC::Numeric partChannel(IChannelRegistry& registry,
                            const std::string& channelName);

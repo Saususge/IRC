@@ -23,8 +23,7 @@ class IClient {
   virtual IRC::Numeric Authenticate(IServerConfig& serverConfig,
                                     const std::string& password) = 0;
   // NICK
-  virtual IRC::Numeric setNick(IClientRegistry& registry,
-                               const std::string& nick) = 0;
+  virtual IRC::Numeric setNick(const std::string& nick) = 0;
   // USER
   virtual IRC::Numeric setUserInfo(const std::string& user,
                                    const std::string& realName) = 0;
@@ -37,6 +36,7 @@ class IClient {
 
   virtual IRC::Numeric joinChannel(IChannelRegistry& registry,
                                    const std::string& channelName,
+                                   IClientRegistry& clientRegistry,
                                    const std::string& key = "") = 0;
   virtual IRC::Numeric partChannel(IChannelRegistry& registry,
                                    const std::string& channelName) = 0;
