@@ -24,8 +24,9 @@ int Channel::broadcast(const std::string& msg, const std::string& except) {
 int Channel::broadcast(const std::string& msg, const ClientID except) {
   for (std::set<ClientID>::iterator iter = joinedUsers.begin();
        iter != joinedUsers.end(); iter++) {
-    if (*iter == except) continue;
-    SessionManagement::getSession(*iter)->send(msg);
+    IClient* c = ClientManagement::getClient(*iter);
+    if (*iter == except || c == NULL) continue;
+    SessionManagement::getSession(c)->send(msg);
   }
   return 1;
 }
