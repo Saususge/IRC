@@ -10,7 +10,8 @@ Client::Client()
       _realname(""),
       _loginFlags(0),
       _registered(false),
-      _sessionID(-1) {}
+      _sessionID(-1),
+      _clientID(-1) {}
 
 Client::~Client() {}
 
@@ -52,6 +53,8 @@ const std::string& Client::getRealName() const { return _realname; }
 
 void Client::setSessionID(SessionID id) { _sessionID = id; }
 SessionID Client::getSessionID() const { return _sessionID; }
+
+ClientID Client::getID() const { return _clientID; }
 
 void Client::Register() {
   if (_registered) {

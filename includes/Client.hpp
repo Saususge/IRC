@@ -25,6 +25,8 @@ class Client : public IClient {
   void setSessionID(SessionID id);
   SessionID getSessionID() const;
 
+  ClientID getID() const;
+
   void Register();
   bool isRegistered() const;
   bool isAuthenticated() const;
@@ -40,6 +42,7 @@ class Client : public IClient {
   IRC::Numeric checkLoginFlags();
 
   SessionID _sessionID;
+  ClientID _clientID;
 };
 
 #endif
