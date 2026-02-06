@@ -14,7 +14,6 @@ ChannelRegistry::~ChannelRegistry() {
 };
 
 std::string ChannelRegistry::createChannel(const std::string& channelName) {
-#warning Should a `Channel` has a name?
   _channels[channelName] = new Channel();
   return channelName;
 }
