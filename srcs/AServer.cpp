@@ -9,6 +9,7 @@
 #include <set>
 
 #include "Session.hpp"
+#include "SessionManagement.hpp"
 #include "utils.hpp"
 
 AServer::AServer(int port) : _listeningSocketFD(-1) { initSocketOrDie(port); }
