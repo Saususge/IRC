@@ -6,6 +6,12 @@ struct ClientID {
   size_t value;
   explicit ClientID(size_t v) : value(v) {}
   operator size_t() const { return value; }
+
+  ClientID operator++(int) {
+    ClientID temp = *this;
+    this->value++;
+    return temp;
+  }
 };
 struct SessionID {
   size_t value;
