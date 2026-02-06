@@ -15,6 +15,7 @@ SRCS := \
 	srcs/Command.cpp \
 	srcs/Server.cpp \
 	srcs/Session.cpp \
+	srcs/SessionRegistry.cpp \
 	srcs/utils.cpp \
 
 
