@@ -16,6 +16,8 @@ class SessionRegistry {
 
   void addSession(ISession* session);
   ISession* getSession(int socketFD);
+  ISession* getSession(SessionID id);
+  const std::map<int, ISession*>& getSessions();
   void scheduleForDeletion(int socketFD);
   const std::set<int> deleteScheduledSession();
 
