@@ -1,20 +1,18 @@
 #ifndef ICLIENTREGISTRY_HPP
 #define ICLIENTREGISTRY_HPP
 
-#include <string>
-#include <vector>
+#include <set>
+
+#include "IClient.hpp"
 
 class IClientRegistry {
  public:
   virtual ~IClientRegistry() {};
 
-  // May need shared ptr for parameter
-  // registerClient will be done by ISession or equivalent
-  // virtual int registerClient(IClient* client);
-  virtual bool isNickInUse(const std::string& nick) const = 0;
-  virtual bool hasClient(const std::string& nick) const = 0;
-  virtual const std::vector<std::string>& getClients() const = 0;
+  virtual ClientID createClient() = 0;
+  virtual void deleteClient(ClientID id) = 0;
 
-  virtual int send(const std::string& nick, const std::string& msg) = 0;
+  virtual IClient* getClient(ClientID id) = 0;
+  virtual std::set<const IClient*> getClients() = 0;
 };
 #endif  // ICLIENTREGISTRY_HPP

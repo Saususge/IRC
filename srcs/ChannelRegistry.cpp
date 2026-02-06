@@ -1,221 +1,45 @@
 #include "ChannelRegistry.hpp"
 
+#include <map>
+#include <string>
 #include <utility>
 
 #include "Channel.hpp"
-
-ChannelRegistry::ChannelRegistry() {}
+#include "IChannel.hpp"
 
 ChannelRegistry::~ChannelRegistry() {
-  for (std::map<std::string, IChannel*>::iterator it = channels.begin();
-       it != channels.end(); ++it) {
+  for (std::map<std::string, IChannel*>::iterator it = _channels.begin();
+       it != _channels.end(); ++it)
     delete it->second;
+};
+
+std::string ChannelRegistry::createChannel(const std::string& channelName) {
+#warning Should a `Channel` has a name?
+  _channels[channelName] = new Channel();
+  return channelName;
+}
+void ChannelRegistry::deleteChannel(const std::string& channelName) {
+  std::map<std::string, IChannel*>::iterator it = _channels.find(channelName);
+  if (it == _channels.end()) {
+    return;
   }
-  channels.clear();
+  delete it->second;
+  _channels.erase(it);
 }
 
-IRC::Numeric ChannelRegistry::joinChannel(const std::string& channelName,
-                                          const std::string& nick,
-                                          IClientRegistry& clientRegistry,
-                                          const std::string& key) {
-  std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
-  if (iter == channels.end()) {
-    std::pair<std::map<std::string, IChannel*>::iterator, bool> result =
-        channels.insert(
-            std::make_pair(channelName, new Channel(channelName, clientRegistry)));
-    iter = result.first;
+IChannel* ChannelRegistry::getChannel(const std::string& channelName) {
+  std::map<std::string, IChannel*>::iterator it = _channels.find(channelName);
+  if (it == _channels.end()) {
+    return NULL;
   }
-
-  return iter->second->addClient(nick, key);
+  return it->second;
 }
 
-IRC::Numeric ChannelRegistry::partChannel(const std::string& channelName,
-                                          const std::string& nick) {
-  std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
-  if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
-
-  IRC::Numeric reply = iter->second->removeClient(nick);
-  if (reply == IRC::RPL_STRREPLY && iter->second->getClientNumber() == 0)
-    channels.erase(channelName);
-
-  return reply;
-}
-
-IRC::Numeric ChannelRegistry::kickChannel(const std::string& channelName,
-                                          const std::string& requesterNick,
-                                          const std::string& targetNick) {
-  std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
-  if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
-
-  return iter->second->kickClient(requesterNick, targetNick);
-}
-
-bool ChannelRegistry::hasChannel(const std::string& channelName) const {
-  return channels.find(channelName) != channels.end();
-}
-
-const std::map<std::string, IChannel*>& ChannelRegistry::getChannels() const {
-  return channels;
-}
-
-IRC::Numeric ChannelRegistry::setClientOp(const std::string& channelName,
-                                          const std::string& requesterNick,
-                                          const std::string& targetNick) {
-  std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
-  if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
-
-  return iter->second->setClientOp(requesterNick, targetNick);
-}
-
-IRC::Numeric ChannelRegistry::unsetClientOp(const std::string& channelName,
-                                            const std::string& requesterNick,
-                                            const std::string& targetNick) {
-  std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
-  if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
-
-  return iter->second->unsetClientOp(requesterNick, targetNick);
-}
-
-IRC::Numeric ChannelRegistry::setMode(const std::string& channelName,
-                                      const std::string& requesterNick,
-                                      IChannel::IChannelMode mode,
-                                      std::vector<std::string> params) {
-  (void)requesterNick;
-  (void)mode;
-  (void)params;
-  std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
-  if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
-  return IRC::DO_NOTHING;
-}
-
-IRC::Numeric ChannelRegistry::addMode(const std::string& channelName,
-                                      const std::string& requesterNick,
-                                      IChannel::IChannelMode mode,
-                                      const std::string& param) {
-  std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
-  if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
-  return iter->second->addMode(requesterNick, mode, param);
-}
-
-IRC::Numeric ChannelRegistry::removeMode(const std::string& channelName,
-                                         const std::string& requesterNick,
-                                         IChannel::IChannelMode mode,
-                                         const std::string& param) {
-  std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
-  if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
-  return iter->second->removeMode(requesterNick, mode, param);
-}
-
-const std::string ChannelRegistry::getMode(const std::string& channelName) {
-  static const std::string error(":ERROR:");
-  std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
-  if (iter == channels.end()) return error;
-  return iter->second->getMode();
-}
-
-bool ChannelRegistry::hasClient(const std::string& channelName,
-                                const std::string& nick) const {
-  std::map<std::string, IChannel*>::const_iterator iter =
-      this->channels.find(channelName);
-
-  if (iter == channels.end()) return false;
-
-  return iter->second->hasClient(nick);
-}
-
-bool ChannelRegistry::isClientOp(const std::string& channelName,
-                                 const std::string& nick) const {
-  std::map<std::string, IChannel*>::const_iterator iter =
-      this->channels.find(channelName);
-
-  if (iter == channels.end()) return false;
-
-  return iter->second->isClientOp(nick);
-}
-
-// TODO: change interface function. add const std::string& channelName param.
-const std::set<std::string>& ChannelRegistry::getClients(
-    const std::string& channelName) const {
-  std::map<std::string, IChannel*>::const_iterator iter =
-      channels.find(channelName);
-  if (iter == channels.end()) {
-    static const std::set<std::string> emptySet;
-    return emptySet;
+std::set<const IChannel*> ChannelRegistry::getChannels() {
+  std::set<const IChannel*> ret;
+  for (std::map<std::string, IChannel*>::iterator it = _channels.begin();
+       it != _channels.end(); ++it) {
+    ret.insert(it->second);
   }
-  return iter->second->getClients();
-}
-
-int ChannelRegistry::getClientNumber(const std::string& channelName) const {
-  std::map<std::string, IChannel*>::const_iterator iter =
-      this->channels.find(channelName);
-
-  if (iter == channels.end()) return -1;  // No such channel
-
-  return iter->second->getClientNumber();
-}
-
-IRC::Numeric ChannelRegistry::addToInviteList(const std::string& channelName,
-                                              const std::string& requesterNick,
-                                              const std::string& targetNick) {
-  std::map<std::string, IChannel*>::iterator iter =
-      this->channels.find(channelName);
-
-  if (iter == channels.end()) return IRC::ERR_NOSUCHCHANNEL;
-
-  return iter->second->addToInviteList(requesterNick, targetNick);
-}
-
-bool ChannelRegistry::isInInviteList(const std::string& channelName,
-                                     const std::string& nick) const {
-  std::map<std::string, IChannel*>::const_iterator iter =
-      this->channels.find(channelName);
-
-  if (iter == channels.end()) return false;
-
-  return iter->second->isInInviteList(nick);
-}
-
-int ChannelRegistry::broadcast(const std::string& channelName,
-                               const std::string& msg,
-                               const std::string& except) {
-  std::map<std::string, IChannel*>::iterator iter =
-      this->channels.find(channelName);
-
-  if (iter == channels.end()) return -1;  // No such channel
-
-  return iter->second->broadcast(msg, except);
-}
-
-IRC::Numeric ChannelRegistry::setTopic(const std::string& channelName,
-                                       const std::string& nick,
-                                       const std::string& topic) {
-  std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
-  if (iter == channels.end()) {
-    // rfc 2812 topic does not return ERR_NOSUCHCHANNEL
-    return IRC::DO_NOTHING;
-  }
-
-  return iter->second->setTopic(nick, topic);
-}
-
-IRC::Numeric ChannelRegistry::reqTopic(const std::string& channelName,
-                                       const std::string& nick) {
-  std::map<std::string, IChannel*>::iterator iter = channels.find(channelName);
-  if (iter == channels.end()) {
-    // rfc 2812 topic does not return ERR_NOSUCHCHANNEL
-    return IRC::DO_NOTHING;
-  }
-
-  return iter->second->reqTopic(nick);
-}
-
-const std::string& ChannelRegistry::getTopic(
-    const std::string& channelName) const {
-  std::map<std::string, IChannel*>::const_iterator iter =
-      channels.find(channelName);
-  if (iter == channels.end()) {
-    static const std::string error(":ERROR:");
-    return error;
-  }
-  return iter->second->getTopic();
+  return ret;
 }

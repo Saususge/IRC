@@ -1,73 +1,18 @@
 #ifndef ICHANNELREGISTRY_HPP
 #define ICHANNELREGISTRY_HPP
 
-#include <map>
 #include <set>
-#include <vector>
 
 #include "IChannel.hpp"
-#include "IClientRegistry.hpp"
-#include "numeric.hpp"
 
 class IChannelRegistry {
  public:
   virtual ~IChannelRegistry() {};
 
-  virtual IRC::Numeric joinChannel(const std::string& channelName,
-                                   const std::string& nick,
-                                   IClientRegistry& clientRegistry,
-                                   const std::string& key = "") = 0;
-  virtual IRC::Numeric partChannel(const std::string& channelName,
-                                   const std::string& nick) = 0;
-  virtual IRC::Numeric kickChannel(const std::string& channelName,
-                                   const std::string& requesterNick,
-                                   const std::string& targetNick) = 0;
-  virtual bool hasChannel(const std::string& channelName) const = 0;
-  virtual const std::map<std::string, IChannel*>& getChannels() const = 0;
-  virtual IRC::Numeric setClientOp(const std::string& channelName,
-                                   const std::string& requesterNick,
-                                   const std::string& targetNick) = 0;
-  virtual IRC::Numeric unsetClientOp(const std::string& channelName,
-                                     const std::string& requesterNick,
-                                     const std::string& targetNick) = 0;
-  virtual IRC::Numeric setMode(const std::string& channelName,
-                               const std::string& requesterNick,
-                               IChannel::IChannelMode mode,
-                               std::vector<std::string> params) = 0;
-  virtual IRC::Numeric addMode(const std::string& channelName,
-                               const std::string& requesterNick,
-                               IChannel::IChannelMode mode,
-                               const std::string& param) = 0;
-  virtual IRC::Numeric removeMode(const std::string& channelName,
-                                  const std::string& requesterNick,
-                                  IChannel::IChannelMode mode,
-                                  const std::string& param) = 0;
-  virtual const std::string getMode(const std::string& channelName) = 0;
+  virtual std::string createChannel(const std::string& channelName) = 0;
+  virtual void deleteChannel(const std::string& channelName) = 0;
 
-  virtual bool hasClient(const std::string& channelName,
-                         const std::string& nick) const = 0;
-  virtual bool isClientOp(const std::string& channelName,
-                          const std::string& nick) const = 0;
-  virtual const std::set<std::string>& getClients(
-      const std::string& channelName) const = 0;
-
-  virtual int getClientNumber(const std::string& channelName) const = 0;
-
-  virtual IRC::Numeric addToInviteList(const std::string& channelName,
-                                       const std::string& requesterNick,
-                                       const std::string& targetNick) = 0;
-  virtual bool isInInviteList(const std::string& channelName,
-                              const std::string& nick) const = 0;
-
-  virtual IRC::Numeric setTopic(const std::string& channelName,
-                                const std::string& nick,
-                                const std::string& topic) = 0;
-  virtual IRC::Numeric reqTopic(const std::string& channelName,
-                                const std::string& nick) = 0;
-  virtual const std::string& getTopic(const std::string& channelName) const = 0;
-
-  // Use `except` only if excluding sender.
-  virtual int broadcast(const std::string& channelName, const std::string& msg,
-                        const std::string& except = "") = 0;
+  virtual IChannel* getChannel(const std::string& channelName) = 0;
+  virtual std::set<IChannel*> getChannels() = 0;
 };
 #endif  // ICHANNELREGISTRY_HPP
