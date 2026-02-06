@@ -38,6 +38,9 @@ class Session : public ISession {
 
   int getSocketFD() const;
 
+  SessionID getID() const;
+  ClientID getClientID() const;
+
   static const int BUFFER_SIZE = 512;
 
  private:
@@ -45,5 +48,8 @@ class Session : public ISession {
 
   std::string _inBuf;
   std::string _outBuf;
+
+  SessionID _sessionID;
+  ClientID _clientID;
 };
 #endif

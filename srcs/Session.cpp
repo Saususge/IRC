@@ -7,7 +7,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-Session::Session(int socketFD) : _socketFD(socketFD) {}
+#include "SessionManagement.hpp"
+
+Session::Session(int socketFD)
+    : _socketFD(socketFD), _sessionID(-1), _clientID(-1) {}
 Session::~Session() { close(_socketFD); }
 
 std::string Session::read() {
@@ -53,3 +56,7 @@ int Session::send(const std::string& msg) {
 }
 
 int Session::getSocketFD() const { return _socketFD; }
+
+ClientID Session::getClientID() const { return _clientID; }
+
+SessionID Session::getID() const { return _sessionID; }
