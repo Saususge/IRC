@@ -376,7 +376,7 @@ IRC::Numeric TopicCommand::execute(ICommandContext& ctx) const {
       requester.send(Response::error(
           "482", nick, channelName + " :You're not channel operator"));
       break;
-    case IRC::DO_NOTHING: {
+    case IRC::RPL_STRREPLY: {
       // Topic changed successfully - broadcast to channel
       const std::string topicMsg =
           ":" + nick + " TOPIC " + channelName + " :" + newTopic;
