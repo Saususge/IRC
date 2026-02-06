@@ -9,14 +9,19 @@ SRCS := \
 	main.cpp \
 	srcs/AServer.cpp \
 	srcs/Channel.cpp \
+	srcs/ChannelManagement.cpp \
 	srcs/ChannelRegistry.cpp \
 	srcs/Client.cpp \
+	srcs/ClientManagement.cpp \
 	srcs/ClientRegistry.cpp \
 	srcs/Command.cpp \
+	srcs/CommandFactory.cpp \
 	srcs/Server.cpp \
 	srcs/Session.cpp \
+	srcs/SessionManagement.cpp \
 	srcs/SessionRegistry.cpp \
 	srcs/utils.cpp \
+	srcs/Validator.cpp
 
 
 OBJS := $(SRCS:.cpp=.o)
