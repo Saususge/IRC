@@ -20,6 +20,18 @@ ISession* SessionRegistry::getSession(int socketFD) {
   return sessionIter->second;
 }
 
+ISession* SessionRegistry::getSession(SessionID id) {
+  std::map<int, ISession*>::iterator sessionIter = _sessions.begin();
+  for (; sessionIter != _sessions.end(); sessionIter++) {
+    if ((sessionIter->second)->getID() == id) return sessionIter->second;
+  }
+  return NULL;
+}
+
+const std::map<int, ISession*>& SessionRegistry::getSessions() {
+  return _sessions;
+}
+
 const std::set<int> SessionRegistry::deleteScheduledSession() {
   for (std::set<int>::iterator it = _deletionQueue.begin();
        it != _deletionQueue.end(); ++it) {
