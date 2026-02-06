@@ -12,7 +12,7 @@ ISession* getSession(int socketFD) { return sessionReg.getSession(socketFD); }
 
 ISession* getSession(SessionID sessionID) {
   (void)sessionID;
-  return NULL;
+  return sessionReg.getSession(sessionID);
 }
 
 ISession* getSession(ClientID clientID) {
@@ -21,8 +21,7 @@ ISession* getSession(ClientID clientID) {
 }
 
 ISession* getSession(IClient* client) {
-  (void)client;
-  return NULL;
+  return getSession(client->getSessionID());
 }
 
 ISession* getSession(const std::string& nick) {
@@ -32,22 +31,25 @@ ISession* getSession(const std::string& nick) {
 
 std::set<ISession*> getSessions() { return std::set<ISession*>(); }
 
-SessionID getSessionID(ISession* session) {
-  (void)session;
-  return SessionID(-1);
-}
+SessionID getSessionID(ISession* session) { return session->getID(); }
 
-SessionID getSessionID(IClient* client) {
-  (void)client;
-  return SessionID(-1);
-}
+SessionID getSessionID(IClient* client) { return client->getSessionID(); }
 
 SessionID getSessionID(const std::string& nick) {
   (void)nick;
   return SessionID(-1);
 }
 
-std::set<SessionID> getSessionIDs() { return std::set<SessionID>(); }
+std::set<SessionID> getSessionIDs() {
+  const std::map<int, ISession*> sessions = sessionReg.getSessions();
+  std::set<SessionID> idSet;
+
+  for (std::map<int, ISession*>::const_iterator iter = sessions.begin();
+       iter != sessions.end(); iter++) {
+    idSet.insert(iter->second->getID());
+  }
+  return idSet;
+}
 
 void scheduleForDeletion(int socketFD) {
   sessionReg.scheduleForDeletion(socketFD);
