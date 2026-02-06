@@ -32,6 +32,8 @@ class IClient {
   virtual const std::string& getUser() const = 0;
   virtual const std::string& getRealName() const = 0;
 
+  virtual void setSessionID(SessionID id) = 0;
+  virtual SessionID getSessionID() const = 0;
   virtual ClientID getID() const = 0;
 };
 #endif  // ICLIENT_HPP
