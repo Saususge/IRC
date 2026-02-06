@@ -9,6 +9,8 @@
 
 class ChannelRegistry : public IChannelRegistry {
  public:
+  ChannelRegistry();
+  virtual ~ChannelRegistry();
   IRC::Numeric joinChannel(const std::string& channelName,
                            const std::string& nick,
                            IClientRegistry& clientRegistry,
