@@ -14,6 +14,8 @@ Channel::~Channel() {}
 const std::string& Channel::getChannelName() const { return channelName; }
 
 int Channel::broadcast(const std::string& msg, const std::string& except) {
+  (void)msg;
+  (void)except;
   return 1;
 }
 
