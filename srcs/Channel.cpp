@@ -6,6 +6,8 @@
 #include "ClientManagement.hpp"
 #include "SessionManagement.hpp"
 
+Channel::Channel() : channelName(""), topic(""), key(""), mode(0), limit(0) {}
+
 Channel::Channel(const std::string& channelName)
     : channelName(channelName), topic(""), key(""), mode(0), limit(0) {}
 
@@ -52,6 +54,12 @@ IRC::Numeric Channel::removeClient(const ClientID id) {
   joinedUsers.erase(id);
   return IRC::RPL_STRREPLY;  // <prefix> PART <channel> :<comment>
 }
+
+IRC::Numeric Channel::join(ClientID clientID, const std::string& key) {
+  return addClient(clientID, key);
+}
+IRC::Numeric Channel::part(ClientID clientID) { return removeClient(clientID); }
+
 IRC::Numeric Channel::kickClient(ClientID requesterID, ClientID targetID) {
   if (joinedUsers.find(requesterID) == joinedUsers.end())
     return IRC::ERR_NOTONCHANNEL;
