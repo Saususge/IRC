@@ -13,6 +13,6 @@ class IClientRegistry {
   virtual void deleteClient(ClientID id) = 0;
 
   virtual IClient* getClient(ClientID id) = 0;
-  virtual std::set<const IClient*> getClients() = 0;
+  virtual const std::set<const IClient*> getClients() = 0;
 };
 #endif  // ICLIENTREGISTRY_HPP

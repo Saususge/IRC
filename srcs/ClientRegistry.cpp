@@ -35,8 +35,8 @@ IClient* ClientRegistry::getClient(ClientID id) {
   return it->second;
 }
 
-const std::set<IClient*> ClientRegistry::getClients() {
-  std::set<IClient*> ret;
+const std::set<const IClient*> ClientRegistry::getClients() {
+  std::set<const IClient*> ret;
   for (iterator it = _clients.begin(); it != _clients.end(); ++it) {
     ret.insert(it->second);
   }

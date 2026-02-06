@@ -10,7 +10,7 @@ ClientID createClient() { return _clientReg.createClient(); }
 void deleteClient(ClientID id) { _clientReg.deleteClient(id); }
 
 IClient* getClient(ClientID id) { return _clientReg.getClient(id); }
-const std::set<IClient*> getClients() { return _clientReg.getClients(); }
+const std::set<const IClient*> getClients() { return _clientReg.getClients(); }
 
 bool isNickinUse(const std::string& nick) {
   return _clientReg.isNickinUse(nick);
