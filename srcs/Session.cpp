@@ -39,7 +39,7 @@ std::string Session::read() {
   return "";
 }
 
-int Session::enqueueMsg(const std::string& msg) { _outBuf.append(msg); }
+void Session::enqueueMsg(const std::string& msg) { _outBuf.append(msg); }
 
 int Session::send() {
   if (_outBuf.empty()) return 0;

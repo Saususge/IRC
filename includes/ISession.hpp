@@ -11,7 +11,7 @@ class ISession {
 
   virtual std::string read() = 0;
 
-  virtual int enqueueMsg(const std::string& msg) = 0;
+  virtual void enqueueMsg(const std::string& msg) = 0;
   virtual int send() = 0;
   virtual int getSocketFD() const = 0;
   virtual SessionID getID() const = 0;
