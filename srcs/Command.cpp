@@ -69,8 +69,8 @@ IRC::Numeric PassCommand::execute(ICommandContext& ctx) const {
     ctx.requester().enqueueMsg(
         Response::error("464", target, "PASS :Password incorrect"));
     ctx.requester().enqueueMsg("ERROR :Closing Link: * (Password incorrect)");
-    // TODO: DeletionQueue should wait to send ERROR message
-    SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD());
+    SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD(),
+                                           ISession::CLOSING);
   }
 
   IClient& client = ctx.requesterClient();
@@ -135,8 +135,8 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
   if (ctx.requesterClient().isAuthenticated() == false) {
     ctx.requester().enqueueMsg(
         "ERROR :Closing Link: * (Password required or incorrect)");
-    // TODO: DeletionQueue should wait to send ERROR message
-    SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD());
+    SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD(),
+                                           ISession::CLOSING);
   }
 
   const std::string target = ctx.requesterClient().getNick().empty()
@@ -241,8 +241,8 @@ IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
   // Send ERROR to the quitting client
   ctx.requester().enqueueMsg("ERROR :Closing Link: " + nick + " (" + quitMsg +
                              ")");
-  // TODO: DeletionQueue should wait to send ERROR message
-  SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD());
+  SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD(),
+                                         ISession::CLOSING);
   return IRC::DO_NOTHING;
 }
 

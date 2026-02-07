@@ -57,6 +57,7 @@ void AServer::run() {
 
       if (_pollfds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) {
         removeFDs.insert(_pollfds[i].fd);
+        SessionManagement::scheduleForDeletion(_pollfds[i].fd, ISession::DEAD);
         continue;
       }
       bool shouldRemove = false;

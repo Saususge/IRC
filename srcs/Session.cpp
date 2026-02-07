@@ -21,7 +21,7 @@ std::string Session::read() {
 
   ssize_t n = recv(_socketFD, buf, sizeof(buf), 0);
   if (n <= 0) {
-    SessionManagement::scheduleForDeletion(_socketFD);
+    SessionManagement::scheduleForDeletion(_socketFD, ISession::DEAD);
     return "";
   }
 
@@ -50,7 +50,7 @@ int Session::send() {
   ssize_t n = ::send(_socketFD, _outBuf.c_str(), _outBuf.size(), 0);
   if (n < 0) {
     if (errno != EAGAIN && errno != EWOULDBLOCK) {
-      SessionManagement::scheduleForDeletion(_socketFD);
+      SessionManagement::scheduleForDeletion(_socketFD, ISession::DEAD);
       return 1;
     }
   }
