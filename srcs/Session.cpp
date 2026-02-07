@@ -10,7 +10,10 @@
 #include "SessionManagement.hpp"
 
 Session::Session(int socketFD)
-    : _socketFD(socketFD), _sessionID(-1), _clientID(-1) {}
+    : _status(ISession::ALIVE),
+      _socketFD(socketFD),
+      _sessionID(-1),
+      _clientID(-1) {}
 Session::~Session() { close(_socketFD); }
 
 std::string Session::read() {
