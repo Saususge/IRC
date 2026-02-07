@@ -35,6 +35,7 @@ class AServer {
   void initSocketOrDie(int port);
   void acceptClient();
   bool handlePollIn(size_t index);
+  bool handlePollOut(size_t index);
 
   std::vector<struct pollfd> _pollfds;
   int _listeningSocketFD;

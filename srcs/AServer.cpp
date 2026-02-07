@@ -67,6 +67,9 @@ void AServer::run() {
           bool shouldRemove = handlePollIn(i);
           if (shouldRemove) removeFDs.insert(_pollfds[i].fd);
         }
+      } else if (_pollfds[i].revents & POLLOUT) {
+        bool shouldRemove = handlePollIn(i);
+        if (shouldRemove) removeFDs.insert(_pollfds[i].fd);
       }
     }
 
@@ -115,5 +118,17 @@ bool AServer::handlePollIn(size_t index) {
     return true;
   }
   this->onClientMessage(fd, msg);
+  return false;
+}
+
+bool AServer::handlePollOut(size_t index) {
+  int fd = _pollfds[index].fd;
+  ISession* session = SessionManagement::getSession(fd);
+  if (session == NULL) {
+    return true;
+  }
+
+  int retVal = session->send();
+  if (retVal == 1) return true;
   return false;
 }

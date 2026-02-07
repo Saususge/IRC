@@ -39,9 +39,9 @@ std::string Session::read() {
   return "";
 }
 
-int Session::send(const std::string& msg) {
-  _outBuf.append(msg);
+int Session::enqueueMsg(const std::string& msg) { _outBuf.append(msg); }
 
+int Session::send() {
   if (_outBuf.empty()) return 0;
 
   ssize_t n = ::send(_socketFD, _outBuf.c_str(), _outBuf.size(), 0);

@@ -35,8 +35,9 @@ class Session : public ISession {
   // Return empty string on failure.
   std::string read();
 
+  int enqueueMsg(const std::string& msg);
   // Return 0 on sucess
-  int send(const std::string& msg);
+  int send();
 
   int getSocketFD() const;
 
