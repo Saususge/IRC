@@ -7,6 +7,8 @@
 
 class ISession {
  public:
+  enum SessionStatus { ALIVE, CLOSING, DEAD };
+
   virtual ~ISession() {};
 
   virtual std::string read() = 0;
