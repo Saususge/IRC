@@ -60,3 +60,9 @@ int Session::getSocketFD() const { return _socketFD; }
 ClientID Session::getClientID() const { return _clientID; }
 
 SessionID Session::getID() const { return _sessionID; }
+
+void Session::setStatus(ISession::SessionStatus status) { _status = status; }
+
+ISession::SessionStatus Session::getStatus() { return _status; }
+
+bool Session::isOutBufEmpty() { return _outBuf.empty(); }

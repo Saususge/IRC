@@ -18,6 +18,11 @@ class ISession {
   virtual int getSocketFD() const = 0;
   virtual SessionID getID() const = 0;
   virtual ClientID getClientID() const = 0;
+
+  virtual void setStatus(SessionStatus status) = 0;
+  virtual SessionStatus getStatus() = 0;
+
+  virtual bool isOutBufEmpty() = 0;
 };
 
 #endif
