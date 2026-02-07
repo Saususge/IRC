@@ -59,18 +59,17 @@ void AServer::run() {
         removeFDs.insert(_pollfds[i].fd);
         continue;
       }
-
+      bool shouldRemove = false;
       if (_pollfds[i].revents & POLLIN) {
         if (_pollfds[i].fd == _listeningSocketFD)
           acceptClient();
         else {
-          bool shouldRemove = handlePollIn(i);
-          if (shouldRemove) removeFDs.insert(_pollfds[i].fd);
+          shouldRemove = handlePollIn(i);
         }
       } else if (_pollfds[i].revents & POLLOUT) {
-        bool shouldRemove = handlePollIn(i);
-        if (shouldRemove) removeFDs.insert(_pollfds[i].fd);
+        shouldRemove = handlePollOut(i);
       }
+      if (shouldRemove) removeFDs.insert(_pollfds[i].fd);
     }
 
     const std::set<int> releasedFDs =
