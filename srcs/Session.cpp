@@ -10,7 +10,10 @@
 #include "SessionManagement.hpp"
 
 Session::Session(int socketFD)
-    : _socketFD(socketFD), _sessionID(-1), _clientID(-1) {}
+    : _status(ISession::ALIVE),
+      _socketFD(socketFD),
+      _sessionID(-1),
+      _clientID(-1) {}
 Session::~Session() { close(_socketFD); }
 
 std::string Session::read() {
@@ -18,7 +21,7 @@ std::string Session::read() {
 
   ssize_t n = recv(_socketFD, buf, sizeof(buf), 0);
   if (n <= 0) {
-    SessionManagement::scheduleForDeletion(_socketFD);
+    SessionManagement::scheduleForDeletion(_socketFD, ISession::DEAD);
     return "";
   }
 
@@ -39,15 +42,15 @@ std::string Session::read() {
   return "";
 }
 
-int Session::send(const std::string& msg) {
-  _outBuf.append(msg);
+void Session::enqueueMsg(const std::string& msg) { _outBuf.append(msg); }
 
+int Session::send() {
   if (_outBuf.empty()) return 0;
 
   ssize_t n = ::send(_socketFD, _outBuf.c_str(), _outBuf.size(), 0);
   if (n < 0) {
     if (errno != EAGAIN && errno != EWOULDBLOCK) {
-      SessionManagement::scheduleForDeletion(_socketFD);
+      SessionManagement::scheduleForDeletion(_socketFD, ISession::DEAD);
       return 1;
     }
   }
@@ -60,3 +63,9 @@ int Session::getSocketFD() const { return _socketFD; }
 ClientID Session::getClientID() const { return _clientID; }
 
 SessionID Session::getID() const { return _sessionID; }
+
+void Session::setStatus(ISession::SessionStatus status) { _status = status; }
+
+ISession::SessionStatus Session::getStatus() { return _status; }
+
+bool Session::isOutBufEmpty() { return _outBuf.empty(); }

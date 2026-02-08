@@ -57,17 +57,20 @@ void AServer::run() {
 
       if (_pollfds[i].revents & (POLLHUP | POLLERR | POLLNVAL)) {
         removeFDs.insert(_pollfds[i].fd);
+        SessionManagement::scheduleForDeletion(_pollfds[i].fd, ISession::DEAD);
         continue;
       }
-
+      bool shouldRemove = false;
       if (_pollfds[i].revents & POLLIN) {
         if (_pollfds[i].fd == _listeningSocketFD)
           acceptClient();
         else {
-          bool shouldRemove = handlePollIn(i);
-          if (shouldRemove) removeFDs.insert(_pollfds[i].fd);
+          shouldRemove = handlePollIn(i);
         }
+      } else if (_pollfds[i].revents & POLLOUT) {
+        shouldRemove = handlePollOut(i);
       }
+      if (shouldRemove) removeFDs.insert(_pollfds[i].fd);
     }
 
     const std::set<int> releasedFDs =
@@ -115,5 +118,17 @@ bool AServer::handlePollIn(size_t index) {
     return true;
   }
   this->onClientMessage(fd, msg);
+  return false;
+}
+
+bool AServer::handlePollOut(size_t index) {
+  int fd = _pollfds[index].fd;
+  ISession* session = SessionManagement::getSession(fd);
+  if (session == NULL) {
+    return true;
+  }
+
+  int retVal = session->send();
+  if (retVal == 1) return true;
   return false;
 }
