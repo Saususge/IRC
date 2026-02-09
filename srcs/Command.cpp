@@ -187,6 +187,9 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
       sendWelcomeMessage(ctx);
       break;
 
+    case IRC::DO_NOTHING:
+      break;
+
     default:
       assert(0 && "Unxpedted result");
       break;
@@ -224,6 +227,9 @@ IRC::Numeric UserCommand::execute(ICommandContext& ctx) const {
   switch (result) {
     case IRC::RPL_WELCOME:
       sendWelcomeMessage(ctx);
+      break;
+
+    case IRC::DO_NOTHING:
       break;
 
     default:
@@ -489,7 +495,8 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
         requester.enqueueMsg(Response::error(
             "471", nick, channelNames[i] + " :Cannot join channel (+l)"));
         break;
-      case IRC::RPL_STRREPLY: {
+      case IRC::RPL_NOTOPIC:
+      case IRC::RPL_TOPIC: {
         // Send topic and names
         const std::string joinMsg = ":" + nick + " JOIN :" + channelNames[i];
         channel->broadcast(joinMsg, ClientID(-1));
