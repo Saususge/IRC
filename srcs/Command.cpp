@@ -463,7 +463,11 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
 
   // Normal case
   const std::vector<std::string> channelNames = split(ctx.args()[0]);
-  std::vector<std::string> keys = split(ctx.args()[1]);
+  std::vector<std::string> keys;
+  if (ctx.args().size() > 1)
+    keys = split(ctx.args()[1]);
+  else
+    keys = std::vector<std::string>();
   while (keys.size() < channelNames.size()) {
     keys.push_back("");
   }
