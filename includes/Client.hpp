@@ -8,7 +8,7 @@
 
 class Client : public IClient {
  public:
-  Client();
+  Client(ClientID id);
   ~Client();
 
   // PASS

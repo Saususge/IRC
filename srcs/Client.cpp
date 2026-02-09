@@ -4,14 +4,14 @@
 
 #include "numeric.hpp"
 
-Client::Client()
+Client::Client(ClientID id)
     : _nickname(""),
       _username(""),
       _realname(""),
       _loginFlags(0),
       _registered(false),
       _sessionID(-1),
-      _clientID(-1) {}
+      _clientID(id) {}
 
 Client::~Client() {}
 

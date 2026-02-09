@@ -14,7 +14,7 @@ ClientRegistry::~ClientRegistry() {
 };
 
 ClientID ClientRegistry::createClient() {
-  _clients[_nextClientID] = new Client();
+  _clients[_nextClientID] = new Client(_nextClientID);
   return _nextClientID++;
 }
 
