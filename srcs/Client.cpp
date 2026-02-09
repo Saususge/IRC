@@ -99,7 +99,8 @@ IRC::Numeric Client::checkLoginFlags() {
   }
   // caller should check that the client has joined any channel. if so,
   // broadcast to all joined channels
-  return IRC::RPL_STRREPLY;
+  if (_registered) return IRC::RPL_STRREPLY;
+  return IRC::DO_NOTHING;
 }
 
 // std::vector<std::string>::iterator Client::findFromJoinedChannel(
