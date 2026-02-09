@@ -12,9 +12,11 @@ class CommandContext : public ICommandContext {
   CommandContext(ISession& sessionRef, IClient& clientRef,
                  IClientRegistry& clientRegistry,
                  IChannelRegistry& channelRegistry,
-                 IServerConfig& serverConfig);
+                 const IServerConfig& serverConfig);
   ~CommandContext();
 
+  void setCommandType(const std::string& cmdType);
+  void setArgs(const std::vector<std::string>& argsVec);
   const std::string& getCommandType() const;
   const std::vector<std::string>& args() const;
   // Use for disconnecting or replying to user
@@ -33,7 +35,7 @@ class CommandContext : public ICommandContext {
   IClient& clientRef;
   IClientRegistry& clientRegistry;
   IChannelRegistry& channelRegistry;
-  IServerConfig& serverConfigRef;
+  const IServerConfig& serverConfigRef;
 };
 
 // 3.1.1 Password message
