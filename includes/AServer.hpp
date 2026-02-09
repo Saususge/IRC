@@ -24,7 +24,8 @@ class AServer {
  protected:
   AServer(int port);
 
-  virtual ISession* createSession(int fd);
+  virtual ISession* createSession(int fd, ClientID id);
+  virtual ClientID createClient() = 0;
 
   virtual void onClientMessage(int fd, const std::string& msg) = 0;
 

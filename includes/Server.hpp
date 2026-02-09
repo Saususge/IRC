@@ -17,6 +17,7 @@ class Server : public AServer {
 
  protected:
   virtual void onClientMessage(int fd, const std::string& msg);
+  virtual ClientID createClient();
 
  private:
   ServerConfig _config;

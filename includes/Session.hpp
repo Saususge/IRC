@@ -29,7 +29,7 @@ class SessionRegistry {
 class Session : public ISession {
  public:
   // Session owns a socket file descriptor
-  Session(int socketFD);
+  Session(int socketFD, ClientID id);
   ~Session();
 
   // Return empty string on failure.

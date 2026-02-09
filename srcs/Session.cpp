@@ -9,11 +9,11 @@
 
 #include "SessionManagement.hpp"
 
-Session::Session(int socketFD)
+Session::Session(int socketFD, ClientID id)
     : _status(ISession::ALIVE),
       _socketFD(socketFD),
       _sessionID(-1),
-      _clientID(-1) {}
+      _clientID(id) {}
 Session::~Session() { close(_socketFD); }
 
 std::string Session::read() {

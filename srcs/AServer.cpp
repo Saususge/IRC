@@ -97,15 +97,20 @@ void AServer::acceptClient() {
 
   struct pollfd pfd;
   pfd.fd = clientFD;
-  pfd.events = POLLIN;
+  pfd.events = POLLIN | POLLOUT;
   pfd.revents = 0;
   _pollfds.push_back(pfd);
 
-  SessionManagement::addSession(createSession(clientFD));
+  ClientID id = createClient();
+
+  ISession* session = createSession(clientFD, id);
+  SessionManagement::addSession(session);
   std::cout << "Client connected: fd=" << clientFD << std::endl;
 }
 
-ISession* AServer::createSession(int fd) { return new Session(fd); }
+ISession* AServer::createSession(int fd, ClientID id) {
+  return new Session(fd, id);
+}
 
 bool AServer::handlePollIn(size_t index) {
   int fd = _pollfds[index].fd;

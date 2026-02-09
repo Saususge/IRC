@@ -11,7 +11,6 @@ void addSession(ISession* session) { return sessionReg.addSession(session); }
 ISession* getSession(int socketFD) { return sessionReg.getSession(socketFD); }
 
 ISession* getSession(SessionID sessionID) {
-  (void)sessionID;
   return sessionReg.getSession(sessionID);
 }
 

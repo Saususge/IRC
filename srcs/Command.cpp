@@ -24,7 +24,7 @@
 CommandContext::CommandContext(ISession& sessionRef, IClient& clientRef,
                                IClientRegistry& clientRegistry,
                                IChannelRegistry& channelRegistry,
-                               IServerConfig& serverConfig)
+                               const IServerConfig& serverConfig)
     : sessionRef(sessionRef),
       clientRef(clientRef),
       clientRegistry(clientRegistry),
@@ -32,6 +32,14 @@ CommandContext::CommandContext(ISession& sessionRef, IClient& clientRef,
       serverConfigRef(serverConfig) {}
 
 CommandContext::~CommandContext() {}
+
+void CommandContext::setCommandType(const std::string& cmdType) {
+  this->commandType = cmdType;
+}
+
+void CommandContext::setArgs(const std::vector<std::string>& argsVec) {
+  this->argsVec = argsVec;
+}
 
 const std::string& CommandContext::getCommandType() const {
   return commandType;
