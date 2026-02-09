@@ -21,6 +21,7 @@ class CommandPool {
     _pool["PRIVMSG"] = &_privmsgCmd;
     _pool["NOTICE"] = &_noticeCmd;
     _pool["DCC"] = &_dccSendCmd;
+    _pool["UNKNOWN"] = &_unknownCmd;
   };
   const std::map<std::string, ICommand*>& getPool() { return _pool; }
 
@@ -40,6 +41,7 @@ class CommandPool {
   PrivmsgCommand _privmsgCmd;
   NoticeCommand _noticeCmd;
   DccSendCommand _dccSendCmd;
+  UnknownCommand _unknownCmd;
 };
 
 CommandPool _pool;
@@ -49,7 +51,7 @@ namespace CommandFactory {
 
 const ICommand& getCommand(const std::string& cmd) {
   if (_pool.getPool().find(cmd) == _pool.getPool().end()) {
-    assert(0 && "Unexpected Command");
+    return *_pool.getPool().find("UNKNOWN")->second;
   }
   return *_pool.getPool().find(cmd)->second;
 }

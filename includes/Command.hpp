@@ -116,6 +116,14 @@ class DccSendCommand : public ICommand {
   }
 };
 
+// UNKNOWN COMMAND
+class UnknownCommand : public ICommand {
+  IRC::Numeric execute(ICommandContext& ctx) const {
+    (void)ctx;
+    return IRC::DO_NOTHING;
+  }
+};
+
 namespace CommandFactory {
 const ICommand& getCommand(const std::string& cmd);
 };
