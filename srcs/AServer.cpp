@@ -49,6 +49,7 @@ void AServer::run() {
   std::cout << "Server started..." << std::endl;
   while (true) {
     std::set<int> removeFDs;
+    std::set<ISession*> hasBytes;
     int ret = poll(&_pollfds[0], _pollfds.size(), -1);
     if (ret < 0) break;
 
@@ -65,7 +66,7 @@ void AServer::run() {
         if (_pollfds[i].fd == _listeningSocketFD)
           acceptClient();
         else {
-          shouldRemove = handlePollIn(i);
+          shouldRemove = handlePollIn(i, hasBytes);
         }
       } else if (_pollfds[i].revents & POLLOUT) {
         shouldRemove = handlePollOut(i);
@@ -73,10 +74,19 @@ void AServer::run() {
       if (shouldRemove) removeFDs.insert(_pollfds[i].fd);
     }
 
+    for (std::set<ISession*>::iterator iter = hasBytes.begin();
+         iter != hasBytes.end(); iter++) {
+      std::string line = (*iter)->readLine();
+      while (!(line.empty())) {
+        this->onClientMessage((*iter)->getSocketFD(), line);
+        line = (*iter)->readLine();
+      }
+    }
+
     const std::set<int> releasedFDs =
         SessionManagement::deleteScheduledSession();
     for (std::set<int>::iterator it = releasedFDs.begin();
-         it != removeFDs.end(); ++it) {
+         it != releasedFDs.end(); ++it) {
       int fd = *it;
       for (std::vector<struct pollfd>::iterator pIt = _pollfds.begin();
            pIt != _pollfds.end(); ++pIt) {
@@ -112,17 +122,17 @@ ISession* AServer::createSession(int fd, ClientID id) {
   return new Session(fd, id);
 }
 
-bool AServer::handlePollIn(size_t index) {
+bool AServer::handlePollIn(size_t index, std::set<ISession*>& hasBytes) {
   int fd = _pollfds[index].fd;
   ISession* session = SessionManagement::getSession(fd);
   if (session == NULL) {
     return true;
   }
-  std::string msg = session->read();
-  if (msg.empty()) {
+  int msg = session->read();
+  if (msg == 0) {
     return true;
   }
-  this->onClientMessage(fd, msg);
+  hasBytes.insert(session);
   return false;
 }
 

@@ -11,7 +11,8 @@ class ISession {
 
   virtual ~ISession() {};
 
-  virtual std::string read() = 0;
+  virtual int read() = 0;
+  virtual std::string readLine() = 0;
 
   virtual void enqueueMsg(const std::string& msg) = 0;
   virtual int send() = 0;

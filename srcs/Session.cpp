@@ -16,15 +16,24 @@ Session::Session(int socketFD, ClientID id)
       _clientID(id) {}
 Session::~Session() { close(_socketFD); }
 
-std::string Session::read() {
+int Session::read() {
   char buf[BUFFER_SIZE];
 
   ssize_t n = recv(_socketFD, buf, sizeof(buf), 0);
-  if (n <= 0) {
+  if (n < 0 && (errno != EAGAIN && errno != EWOULDBLOCK)) {
     SessionManagement::scheduleForDeletion(_socketFD, ISession::DEAD);
-    return "";
+    return 0;
+  }
+  if (n == 0) {
+    SessionManagement::scheduleForDeletion(_socketFD, ISession::DEAD);
+    return 0;
   }
 
+  _inBuf.append(buf, n);
+  return 1;
+}
+
+std::string Session::readLine() {
   std::string line;
   size_t pos;
   while ((pos = _inBuf.find("\r\n")) != std::string::npos) {

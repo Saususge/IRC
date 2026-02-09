@@ -33,7 +33,8 @@ class Session : public ISession {
   ~Session();
 
   // Return empty string on failure.
-  std::string read();
+  int read();
+  std::string readLine();
 
   void enqueueMsg(const std::string& msg);
   // Return 0 on sucess
