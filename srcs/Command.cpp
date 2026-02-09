@@ -115,10 +115,6 @@ inline void sendWelcomeMessage(ICommandContext& ctx) {
                           ctx.serverConfig().getVersion() + " " +
                           ctx.serverConfig().getUserModes() + " " +
                           ctx.serverConfig().getChannelModes()));
-  ctx.requester().enqueueMsg(Response::build("002", nick, ":Your host is "));
-  ctx.requester().enqueueMsg(
-      Response::build("003", nick, ":This server was created "));
-  ctx.requester().enqueueMsg(Response::build("004", nick, ""));
 }
 };  // namespace
 
@@ -401,7 +397,7 @@ IRC::Numeric TopicCommand::execute(ICommandContext& ctx) const {
     case IRC::RPL_STRREPLY: {
       // Topic changed successfully - broadcast to channel
       const std::string topicMsg =
-          ":" + nick + " TOPIC " + channelName + " :" + newTopic;
+          ":" + nick + " TOPIC " + channelName + " :" + newTopic + "\r\n";
       channel->broadcast(topicMsg, ClientID(-1));
     } break;
     default:
