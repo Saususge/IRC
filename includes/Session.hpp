@@ -18,7 +18,7 @@ class SessionRegistry {
   ISession* getSession(int socketFD);
   ISession* getSession(SessionID id);
   const std::map<int, ISession*>& getSessions();
-  void scheduleForDeletion(int socketFD);
+  void scheduleForDeletion(int socketFD, ISession::SessionStatus status);
   const std::set<int> deleteScheduledSession();
 
  private:
@@ -29,23 +29,31 @@ class SessionRegistry {
 class Session : public ISession {
  public:
   // Session owns a socket file descriptor
-  Session(int socketFD);
+  Session(int socketFD, ClientID id);
   ~Session();
 
   // Return empty string on failure.
-  std::string read();
+  int read();
+  std::string readLine();
 
+  void enqueueMsg(const std::string& msg);
   // Return 0 on sucess
-  int send(const std::string& msg);
+  int send();
 
   int getSocketFD() const;
 
   SessionID getID() const;
   ClientID getClientID() const;
 
+  void setStatus(ISession::SessionStatus status);
+  ISession::SessionStatus getStatus();
+
+  bool isOutBufEmpty();
+
   static const int BUFFER_SIZE = 512;
 
  private:
+  ISession::SessionStatus _status;
   const int _socketFD;
 
   std::string _inBuf;

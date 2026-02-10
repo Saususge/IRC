@@ -15,6 +15,8 @@ class ICommandContext {
  public:
   virtual ~ICommandContext() {};
 
+  virtual void setCommandType(const std::string& cmdType) = 0;
+  virtual void setArgs(const std::vector<std::string>& argsVec) = 0;
   virtual const std::string& getCommandType() const = 0;
   virtual const std::vector<std::string>& args() const = 0;
   // Use for disconnecting or replying to user

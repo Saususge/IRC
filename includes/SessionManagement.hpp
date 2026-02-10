@@ -8,7 +8,7 @@
 
 namespace SessionManagement {
 void addSession(ISession* session);
-void scheduleForDeletion(int socketFD);
+void scheduleForDeletion(int socketFD, ISession::SessionStatus status);
 const std::set<int> deleteScheduledSession();
 
 ISession* getSession(int socketFD);

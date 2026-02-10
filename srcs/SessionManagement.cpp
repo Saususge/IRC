@@ -11,7 +11,6 @@ void addSession(ISession* session) { return sessionReg.addSession(session); }
 ISession* getSession(int socketFD) { return sessionReg.getSession(socketFD); }
 
 ISession* getSession(SessionID sessionID) {
-  (void)sessionID;
   return sessionReg.getSession(sessionID);
 }
 
@@ -51,8 +50,8 @@ std::set<SessionID> getSessionIDs() {
   return idSet;
 }
 
-void scheduleForDeletion(int socketFD) {
-  sessionReg.scheduleForDeletion(socketFD);
+void scheduleForDeletion(int socketFD, ISession::SessionStatus status) {
+  sessionReg.scheduleForDeletion(socketFD, status);
 }
 const std::set<int> deleteScheduledSession() {
   return sessionReg.deleteScheduledSession();

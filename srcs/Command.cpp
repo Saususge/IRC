@@ -24,7 +24,7 @@
 CommandContext::CommandContext(ISession& sessionRef, IClient& clientRef,
                                IClientRegistry& clientRegistry,
                                IChannelRegistry& channelRegistry,
-                               IServerConfig& serverConfig)
+                               const IServerConfig& serverConfig)
     : sessionRef(sessionRef),
       clientRef(clientRef),
       clientRegistry(clientRegistry),
@@ -32,6 +32,14 @@ CommandContext::CommandContext(ISession& sessionRef, IClient& clientRef,
       serverConfigRef(serverConfig) {}
 
 CommandContext::~CommandContext() {}
+
+void CommandContext::setCommandType(const std::string& cmdType) {
+  this->commandType = cmdType;
+}
+
+void CommandContext::setArgs(const std::vector<std::string>& argsVec) {
+  this->argsVec = argsVec;
+}
 
 const std::string& CommandContext::getCommandType() const {
   return commandType;
@@ -58,7 +66,7 @@ IRC::Numeric PassCommand::execute(ICommandContext& ctx) const {
                                  ? "*"
                                  : ctx.requesterClient().getNick();
   if (ctx.args().empty()) {
-    ctx.requester().send(
+    ctx.requester().enqueueMsg(
         Response::error("461", target, "PASS :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
@@ -66,17 +74,18 @@ IRC::Numeric PassCommand::execute(ICommandContext& ctx) const {
   const std::string& password = ctx.args()[0];
   const IServerConfig& serverConfig = ctx.serverConfig();
   if (password != serverConfig.getPassword()) {
-    ctx.requester().send(
+    ctx.requester().enqueueMsg(
         Response::error("464", target, "PASS :Password incorrect"));
-    ctx.requester().send("ERROR :Closing Link: * (Password incorrect)");
-    SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD());
+    ctx.requester().enqueueMsg("ERROR :Closing Link: * (Password incorrect)");
+    SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD(),
+                                           ISession::CLOSING);
   }
 
   IClient& client = ctx.requesterClient();
   IRC::Numeric result = client.Authenticate();
   switch (result) {
     case IRC::ERR_ALREADYREGISTRED:
-      ctx.requester().send(Response::error(
+      ctx.requester().enqueueMsg(Response::error(
           "462", target, ":Unauthorized command (already registered)"));
       break;
     case IRC::DO_NOTHING:
@@ -91,25 +100,21 @@ IRC::Numeric PassCommand::execute(ICommandContext& ctx) const {
 namespace {
 inline void sendWelcomeMessage(ICommandContext& ctx) {
   const std::string nick = ctx.requesterClient().getNick();
-  ctx.requester().send(Response::build(
+  ctx.requester().enqueueMsg(Response::build(
       "001", nick, ":Welcome to the Internet Relay Network " + nick));
-  ctx.requester().send(Response::build(
+  ctx.requester().enqueueMsg(Response::build(
       "002", nick,
       ":Your host is " + ctx.serverConfig().getServerName() +
           ", running version " + ctx.serverConfig().getVersion()));
-  ctx.requester().send(Response::build(
+  ctx.requester().enqueueMsg(Response::build(
       "003", nick,
       ":This server was created " + ctx.serverConfig().getCreationDate()));
-  ctx.requester().send(
+  ctx.requester().enqueueMsg(
       Response::build("004", nick,
                       ctx.serverConfig().getServerName() + " " +
                           ctx.serverConfig().getVersion() + " " +
                           ctx.serverConfig().getUserModes() + " " +
                           ctx.serverConfig().getChannelModes()));
-  ctx.requester().send(Response::build("002", nick, ":Your host is "));
-  ctx.requester().send(
-      Response::build("003", nick, ":This server was created "));
-  ctx.requester().send(Response::build("004", nick, ""));
 }
 };  // namespace
 
@@ -132,9 +137,10 @@ std::set<IChannel*> getJoinedChannels(ClientID client) {
 // ERR_NICKNAMEINUSE, ERR_NICKCOLLISION
 IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
   if (ctx.requesterClient().isAuthenticated() == false) {
-    ctx.requester().send(
+    ctx.requester().enqueueMsg(
         "ERROR :Closing Link: * (Password required or incorrect)");
-    SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD());
+    SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD(),
+                                           ISession::CLOSING);
   }
 
   const std::string target = ctx.requesterClient().getNick().empty()
@@ -142,18 +148,19 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
                                  : ctx.requesterClient().getNick();
   if (ctx.args().empty()) {
     // ERR_NONICKNAMEGIVEN (431): ":No nickname given"
-    ctx.requester().send(Response::error("431", target, ":No nickname given"));
+    ctx.requester().enqueueMsg(
+        Response::error("431", target, ":No nickname given"));
     return IRC::ERR_NONICKNAMEGIVEN;
   }
 
   const std::string& newNick = ctx.args()[0];
   if (ClientManagement::getClient(newNick) != NULL) {
-    ctx.requester().send(Response::error(
+    ctx.requester().enqueueMsg(Response::error(
         "433", target, newNick + " :Nickname is already in use"));
     return IRC::ERR_NICKNAMEINUSE;
   }
   if (!Validator::isValidNickname(newNick)) {
-    ctx.requester().send(
+    ctx.requester().enqueueMsg(
         Response::error("432", target, newNick + " :Erroneous nickname"));
     return IRC::ERR_ERRONEUSNICKNAME;
   }
@@ -169,11 +176,14 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
            it != joinedChannel.end(); ++it) {
         (*it)->broadcast(nickChangeMsg, client.getNick());
       }
-      ctx.requester().send(nickChangeMsg);
+      ctx.requester().enqueueMsg(nickChangeMsg);
     } break;
 
     case IRC::RPL_WELCOME:
       sendWelcomeMessage(ctx);
+      break;
+
+    case IRC::DO_NOTHING:
       break;
 
     default:
@@ -192,7 +202,7 @@ IRC::Numeric UserCommand::execute(ICommandContext& ctx) const {
 
   if (ctx.args().size() < 4) {
     // ERR_NEEDMOREPARAMS (461): "<command> :Not enough parameters"
-    ctx.requester().send(
+    ctx.requester().enqueueMsg(
         Response::error("461", target, "USER :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
@@ -204,7 +214,7 @@ IRC::Numeric UserCommand::execute(ICommandContext& ctx) const {
 
   IClient& client = ctx.requesterClient();
   if (client.isRegistered()) {
-    ctx.requester().send(Response::error(
+    ctx.requester().enqueueMsg(Response::error(
         "462", target, ":Unauthorized command (already registered)"));
     return IRC::ERR_ALREADYREGISTRED;
   }
@@ -213,6 +223,9 @@ IRC::Numeric UserCommand::execute(ICommandContext& ctx) const {
   switch (result) {
     case IRC::RPL_WELCOME:
       sendWelcomeMessage(ctx);
+      break;
+
+    case IRC::DO_NOTHING:
       break;
 
     default:
@@ -236,8 +249,10 @@ IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
     (*it)->broadcast(quitNotification, client.getID());
   }
   // Send ERROR to the quitting client
-  ctx.requester().send("ERROR :Closing Link: " + nick + " (" + quitMsg + ")");
-  SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD());
+  ctx.requester().enqueueMsg("ERROR :Closing Link: " + nick + " (" + quitMsg +
+                             ")");
+  SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD(),
+                                         ISession::CLOSING);
   return IRC::DO_NOTHING;
 }
 
@@ -258,11 +273,11 @@ void sendChannelNames(ISession& requester, const std::string& requesterNick,
     namesList += nickPrefix + clientNick;
   }
   if (!namesList.empty()) {
-    requester.send(Response::build("353", requesterNick,
-                                   "= " + channelName + " :" + namesList));
+    requester.enqueueMsg(Response::build(
+        "353", requesterNick, "= " + channelName + " :" + namesList));
   }
-  requester.send(Response::build("366", requesterNick,
-                                 channelName + " :End of NAMES list"));
+  requester.enqueueMsg(Response::build("366", requesterNick,
+                                       channelName + " :End of NAMES list"));
 }
 
 void sendWildcardNames(ISession& requester, const std::string& requesterNick,
@@ -282,9 +297,11 @@ void sendWildcardNames(ISession& requester, const std::string& requesterNick,
     namesList += clientNick;
   }
   if (!namesList.empty()) {
-    requester.send(Response::build("353", requesterNick, "= * :" + namesList));
+    requester.enqueueMsg(
+        Response::build("353", requesterNick, "= * :" + namesList));
   }
-  requester.send(Response::build("366", requesterNick, "* :End of NAMES list"));
+  requester.enqueueMsg(
+      Response::build("366", requesterNick, "* :End of NAMES list"));
 }
 };  // namespace
 
@@ -318,7 +335,7 @@ IRC::Numeric NamesCommand::execute(ICommandContext& ctx) const {
     IChannel* _channel = ChannelManagement::getChannel(*it);
     if (_channel == NULL) {
       // ERR_NOSUCHCHANNEL (403)
-      ctx.requester().send(
+      ctx.requester().enqueueMsg(
           Response::error("403", nick, *it + " :No such channel"));
       continue;
     }
@@ -335,7 +352,7 @@ IRC::Numeric TopicCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
   if (ctx.args().empty()) {
     // ERR_NEEDMOREPARAMS (461)
-    requester.send(
+    requester.enqueueMsg(
         Response::error("461", nick, "TOPIC :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
@@ -343,13 +360,13 @@ IRC::Numeric TopicCommand::execute(ICommandContext& ctx) const {
   IChannel* channel = ChannelManagement::getChannel(channelName);
   if (channel == NULL) {
     // ERR_NOSUCHCHANNEL (403)
-    requester.send(
+    requester.enqueueMsg(
         Response::error("403", nick, channelName + " :No such channel"));
     return IRC::ERR_NOSUCHCHANNEL;
   }
   if (!channel->hasClient(clientID)) {
     // ERR_NOTONCHANNEL (442)
-    requester.send(Response::error(
+    requester.enqueueMsg(Response::error(
         "442", nick, channelName + " :You're not on that channel"));
     return IRC::ERR_NOTONCHANNEL;
   }
@@ -359,12 +376,13 @@ IRC::Numeric TopicCommand::execute(ICommandContext& ctx) const {
     const std::string& topic = channel->getTopic();
     if (topic.empty()) {
       // RPL_NOTOPIC (331)
-      requester.send(
+      requester.enqueueMsg(
           Response::build("331", nick, channelName + " :No topic is set"));
       return IRC::RPL_NOTOPIC;
     }
     // RPL_TOPIC (332)
-    requester.send(Response::build("332", nick, channelName + " :" + topic));
+    requester.enqueueMsg(
+        Response::build("332", nick, channelName + " :" + topic));
     return IRC::RPL_TOPIC;
   }
 
@@ -373,13 +391,13 @@ IRC::Numeric TopicCommand::execute(ICommandContext& ctx) const {
   IRC::Numeric result = channel->setTopic(clientID, newTopic);
   switch (result) {
     case IRC::ERR_CHANOPRIVSNEEDED:
-      requester.send(Response::error(
+      requester.enqueueMsg(Response::error(
           "482", nick, channelName + " :You're not channel operator"));
       break;
     case IRC::RPL_STRREPLY: {
       // Topic changed successfully - broadcast to channel
       const std::string topicMsg =
-          ":" + nick + " TOPIC " + channelName + " :" + newTopic;
+          ":" + nick + " TOPIC " + channelName + " :" + newTopic + "\r\n";
       channel->broadcast(topicMsg, ClientID(-1));
     } break;
     default:
@@ -418,7 +436,8 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
   ISession& requester = ctx.requester();
   if (ctx.args().empty()) {
     // ERR_NEEDMOREPARAMS (461)
-    requester.send(Response::error("461", nick, "JOIN :Not enough parameters"));
+    requester.enqueueMsg(
+        Response::error("461", nick, "JOIN :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
 
@@ -440,14 +459,18 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
 
   // Normal case
   const std::vector<std::string> channelNames = split(ctx.args()[0]);
-  std::vector<std::string> keys = split(ctx.args()[1]);
+  std::vector<std::string> keys;
+  if (ctx.args().size() > 1)
+    keys = split(ctx.args()[1]);
+  else
+    keys = std::vector<std::string>();
   while (keys.size() < channelNames.size()) {
     keys.push_back("");
   }
   IRC::Numeric lastResult;
   for (size_t i = 0; i < channelNames.size(); ++i) {
     if (!Validator::isChannelNameValid(channelNames[i])) {
-      requester.send(
+      requester.enqueueMsg(
           Response::error("476", nick, channelNames[i] + " :Bad Channel Mask"));
       lastResult = IRC::ERR_BADCHANMASK;
       continue;
@@ -461,27 +484,28 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
     result = channel->join(clientID, keys[i]);
     switch (result) {
       case IRC::ERR_BADCHANNELKEY:
-        requester.send(Response::error(
+        requester.enqueueMsg(Response::error(
             "475", nick, channelNames[i] + " :Cannot join channel (+k)"));
         break;
       case IRC::ERR_INVITEONLYCHAN:
-        requester.send(Response::error(
+        requester.enqueueMsg(Response::error(
             "473", nick, channelNames[i] + " :Cannot join channel (+i)"));
         break;
       case IRC::ERR_CHANNELISFULL:
-        requester.send(Response::error(
+        requester.enqueueMsg(Response::error(
             "471", nick, channelNames[i] + " :Cannot join channel (+l)"));
         break;
-      case IRC::RPL_STRREPLY: {
+      case IRC::RPL_NOTOPIC:
+      case IRC::RPL_TOPIC: {
         // Send topic and names
         const std::string joinMsg = ":" + nick + " JOIN :" + channelNames[i];
         channel->broadcast(joinMsg, ClientID(-1));
         const std::string& topic = channel->getTopic();
         if (!topic.empty()) {
-          requester.send(
+          requester.enqueueMsg(
               Response::build("332", nick, channelNames[i] + " :" + topic));
         } else {
-          requester.send(Response::build(
+          requester.enqueueMsg(Response::build(
               "331", nick, channelNames[i] + " :No topic is set"));
         }
         sendChannelNames(requester, nick, *channel);
@@ -500,7 +524,8 @@ IRC::Numeric PartCommand::execute(ICommandContext& ctx) const {
   ISession& requester = ctx.requester();
   ClientID clientID = ctx.requesterClient().getID();
   if (ctx.args().empty()) {
-    requester.send(Response::error("461", nick, "PART :Not enough parameters"));
+    requester.enqueueMsg(
+        Response::error("461", nick, "PART :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
   const std::vector<std::string> channelNames = split(ctx.args()[0]);
@@ -511,21 +536,21 @@ IRC::Numeric PartCommand::execute(ICommandContext& ctx) const {
     const std::string& channelName = channelNames[i];
     IChannel* channel = ChannelManagement::getChannel(channelName);
     if (channel == NULL) {
-      requester.send(
+      requester.enqueueMsg(
           Response::error("403", nick, channelName + " :No such channel"));
       lastResult = IRC::ERR_NOSUCHCHANNEL;
       continue;
     }
     IRC::Numeric result = channel->part(clientID);
     if (result == IRC::ERR_NOTONCHANNEL) {
-      requester.send(Response::error(
+      requester.enqueueMsg(Response::error(
           "442", nick, channelName + " :You're not on that channel"));
       lastResult = IRC::ERR_NOTONCHANNEL;
     } else {
       const std::string partNotification =
           ":" + nick + " PART " + channelName + " :" + partMsg;
       channel->broadcast(partNotification, clientID);
-      requester.send(partNotification);
+      requester.enqueueMsg(partNotification);
       if (channel->getClientNumber() == 0) {
         ChannelManagement::deleteChannel(channelName);
       }
@@ -543,7 +568,8 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
   ClientID requesterID = ctx.requesterClient().getID();
 
   if (ctx.args().size() < 2) {
-    requester.send(Response::error("461", nick, "KICK :Not enough parameters"));
+    requester.enqueueMsg(
+        Response::error("461", nick, "KICK :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
 
@@ -554,7 +580,8 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
   bool isOneToN = (channelNames.size() == 1);
   bool isNToN = (channelNames.size() == targetNicks.size());
   if (!isOneToN && !isNToN) {
-    requester.send(Response::error("461", nick, "KICK :Not enough parameters"));
+    requester.enqueueMsg(
+        Response::error("461", nick, "KICK :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
 
@@ -563,23 +590,24 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
     std::string currentChanName = isOneToN ? channelNames[0] : channelNames[i];
     std::string currentTargetNick = targetNicks[i];
     if (!Validator::isChannelNameValid(channelNames[i])) {
-      requester.send(
+      requester.enqueueMsg(
           Response::error("476", nick, channelNames[i] + " :Bad Channel Mask"));
       lastResult = IRC::ERR_BADCHANMASK;
       continue;
     }
     IChannel* channel = ChannelManagement::getChannel(currentChanName);
     if (channel == NULL) {
-      requester.send(
+      requester.enqueueMsg(
           Response::error("403", nick, currentChanName + " :No such channel"));
       lastResult = IRC::ERR_NOSUCHCHANNEL;
       continue;
     }
     IClient* targetClient = ClientManagement::getClient(currentTargetNick);
     if (targetClient == NULL || !channel->hasClient(targetClient->getID())) {
-      requester.send(Response::error("441", nick,
-                                     currentTargetNick + " " + currentChanName +
-                                         " :They aren't on that channel"));
+      requester.enqueueMsg(
+          Response::error("441", nick,
+                          currentTargetNick + " " + currentChanName +
+                              " :They aren't on that channel"));
       lastResult = IRC::ERR_USERNOTINCHANNEL;
       continue;
     }
@@ -587,25 +615,26 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
         channel->kickClient(requesterID, targetClient->getID());
     switch (result) {
       case IRC::ERR_NOTONCHANNEL:
-        requester.send(Response::error(
+        requester.enqueueMsg(Response::error(
             "442", nick, currentChanName + " :You're not on that channel"));
         break;
       case IRC::ERR_CHANOPRIVSNEEDED:
-        requester.send(Response::error(
+        requester.enqueueMsg(Response::error(
             "482", nick, currentChanName + " :You're not channel operator"));
         break;
       case IRC::ERR_USERNOTINCHANNEL:
-        requester.send(Response::error("441", nick,
-                                       currentTargetNick + " " +
-                                           currentChanName +
-                                           " :They aren't on that channel"));
+        requester.enqueueMsg(
+            Response::error("441", nick,
+                            currentTargetNick + " " + currentChanName +
+                                " :They aren't on that channel"));
         break;
       case IRC::RPL_STRREPLY: {
         const std::string kickNotification = ":" + nick + " KICK " +
                                              currentChanName + " " +
                                              currentTargetNick + " :" + kickMsg;
         channel->broadcast(kickNotification, targetClient->getID());
-        SessionManagement::getSession(targetClient)->send(kickNotification);
+        SessionManagement::getSession(targetClient)
+            ->enqueueMsg(kickNotification);
       } break;
       default:
         assert(0 && "Unexpected result");
@@ -625,7 +654,7 @@ IRC::Numeric InviteCommand::execute(ICommandContext& ctx) const {
   ClientID requesterID = ctx.requesterClient().getID();
 
   if (ctx.args().size() < 2) {
-    requester.send(
+    requester.enqueueMsg(
         Response::error("461", nick, "INVITE :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
@@ -633,7 +662,8 @@ IRC::Numeric InviteCommand::execute(ICommandContext& ctx) const {
   const std::string& targetNick = ctx.args()[0];
   IClient* targetClient = ClientManagement::getClient(targetNick);
   if (targetClient == NULL) {
-    requester.send(Response::error("401", nick, targetNick + " :No such nick"));
+    requester.enqueueMsg(
+        Response::error("401", nick, targetNick + " :No such nick"));
     return IRC::ERR_NOSUCHNICK;
   }
   const std::string& channelName = ctx.args()[1];
@@ -641,7 +671,7 @@ IRC::Numeric InviteCommand::execute(ICommandContext& ctx) const {
   if (channel == NULL) {
     const std::string inviteNotification =
         ":" + nick + " INVITE " + targetNick + " :" + channelName;
-    requester.send(inviteNotification);
+    requester.enqueueMsg(inviteNotification);
     return IRC::RPL_INVITING;
   }
 
@@ -649,24 +679,24 @@ IRC::Numeric InviteCommand::execute(ICommandContext& ctx) const {
       requesterID, ClientManagement::getClientID(targetClient));
   switch (result) {
     case IRC::ERR_NOTONCHANNEL:
-      requester.send(Response::error(
+      requester.enqueueMsg(Response::error(
           "442", nick, channelName + " :You're not on that channel"));
       break;
     case IRC::ERR_CHANOPRIVSNEEDED:
-      requester.send(Response::error(
+      requester.enqueueMsg(Response::error(
           "482", nick, channelName + " :You're not channel operator"));
       break;
     case IRC::ERR_USERONCHANNEL:
-      requester.send(Response::error(
+      requester.enqueueMsg(Response::error(
           "443", nick,
           targetNick + " " + channelName + " :is already on channel"));
       break;
     case IRC::RPL_INVITING: {
-      requester.send(
+      requester.enqueueMsg(
           Response::build("341", nick, targetNick + " " + channelName));
       const std::string inviteNotification =
           ":" + nick + " INVITE " + targetNick + " :" + channelName;
-      requester.send(inviteNotification);
+      requester.enqueueMsg(inviteNotification);
     } break;
 
     default:
@@ -740,26 +770,27 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
   ClientID clientID = ctx.requesterClient().getID();
 
   if (ctx.args().empty()) {
-    requester.send(Response::error("461", nick, "MODE :Not enough parameters"));
+    requester.enqueueMsg(
+        Response::error("461", nick, "MODE :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
 
   const std::string& channelName = ctx.args()[0];
   if (!Validator::isChannelNameValid(channelName)) {
-    requester.send(
+    requester.enqueueMsg(
         Response::error("502", nick, ":Can't change mode for other users"));
     return IRC::ERR_USERSDONTMATCH;
   }
 
   IChannel* channel = ChannelManagement::getChannel(channelName);
   if (channel == NULL) {
-    requester.send(
+    requester.enqueueMsg(
         Response::error("403", nick, channelName + " :No such channel"));
     return IRC::ERR_NOSUCHCHANNEL;
   }
 
   if (ctx.args().size() == 1) {
-    requester.send(Response::build(
+    requester.enqueueMsg(Response::build(
         "324", nick, channelName + " " + getFullModeResponse(channel)));
     return IRC::RPL_CHANNELMODEIS;
   }
@@ -809,9 +840,10 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
         IClient* targetClient = ClientManagement::getClient(currentParam);
         if (targetClient == NULL ||
             !channel->hasClient(targetClient->getID())) {
-          requester.send(Response::error("441", nick,
-                                         currentParam + " " + channelName +
-                                             " :They aren't on that channel"));
+          requester.enqueueMsg(
+              Response::error("441", nick,
+                              currentParam + " " + channelName +
+                                  " :They aren't on that channel"));
           result = IRC::ERR_USERNOTINCHANNEL;
         } else {
           result =
@@ -821,7 +853,7 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
         }
       } break;
       default:
-        requester.send(Response::error(
+        requester.enqueueMsg(Response::error(
             "472", nick, std::string(1, mode) + " :is unknown mode char"));
         continue;
     }
@@ -838,15 +870,15 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
         appliedParams += currentParam;
       }
     } else if (result == IRC::ERR_CHANOPRIVSNEEDED) {
-      requester.send(Response::error(
+      requester.enqueueMsg(Response::error(
           "482", nick, channelName + " :You're not channel operator"));
       break;  // Early stop
     } else if (result == IRC::ERR_NOCHANMODES) {
-      requester.send(Response::error(
+      requester.enqueueMsg(Response::error(
           "477", nick, channelName + " :Channel doesn't support modes"));
       break;  // Early stop
     } else if (result == IRC::ERR_KEYSET) {
-      requester.send(Response::error(
+      requester.enqueueMsg(Response::error(
           "467", nick, channelName + " :Channel key already set"));
     } else {
       assert(0 && "Unexpected result");
@@ -861,7 +893,7 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
     if (!appliedParams.empty()) diffString += " " + appliedParams;
     channel->broadcast(channelName,
                        ":" + nick + " MODE " + channelName + " " + diffString);
-    requester.send(Response::build(
+    requester.enqueueMsg(Response::build(
         "324", nick, channelName + " " + getFullModeResponse(channel)));
   }
 
@@ -875,12 +907,12 @@ IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
   ISession& requester = ctx.requester();
   if (ctx.args().empty()) {
-    requester.send(
+    requester.enqueueMsg(
         Response::error("411", nick, ":No recipient given (PRIVMSG)"));
     return IRC::ERR_NORECIPIENT;
   }
   if (ctx.args().size() < 2 || ctx.args()[1].empty()) {
-    requester.send(Response::error("412", nick, ":No text to send"));
+    requester.enqueueMsg(Response::error("412", nick, ":No text to send"));
     return IRC::ERR_NOTEXTTOSEND;
   }
   const std::string& target = ctx.args()[0];
@@ -891,7 +923,7 @@ IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
     // Channel message
     IChannel* channel = ChannelManagement::getChannel(target);
     if (channel == NULL) {
-      requester.send(
+      requester.enqueueMsg(
           Response::error("403", nick, target + " :No such channel"));
       return IRC::ERR_NOSUCHCHANNEL;
     }
@@ -902,11 +934,11 @@ IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
   // Private message to user
   IClient* client = ClientManagement::getClient(target);
   if (client == NULL) {
-    requester.send(
+    requester.enqueueMsg(
         Response::error("401", nick, target + " :No such nick/channel"));
     return IRC::ERR_NOSUCHNICK;
   }
-  SessionManagement::getSession(client)->send(privmsgNotification);
+  SessionManagement::getSession(client)->enqueueMsg(privmsgNotification);
   return IRC::DO_NOTHING;
 }
 
@@ -937,6 +969,6 @@ IRC::Numeric NoticeCommand::execute(ICommandContext& ctx) const {
   if (client == NULL) {
     return IRC::DO_NOTHING;
   }
-  SessionManagement::getSession(client)->send(noticeNotification);
+  SessionManagement::getSession(client)->enqueueMsg(noticeNotification);
   return IRC::DO_NOTHING;
 }

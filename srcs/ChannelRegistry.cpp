@@ -14,7 +14,7 @@ ChannelRegistry::~ChannelRegistry() {
 };
 
 std::string ChannelRegistry::createChannel(const std::string& channelName) {
-  _channels[channelName] = new Channel();
+  _channels[channelName] = new Channel(channelName);
   return channelName;
 }
 void ChannelRegistry::deleteChannel(const std::string& channelName) {

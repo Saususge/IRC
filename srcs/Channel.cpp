@@ -26,7 +26,7 @@ int Channel::broadcast(const std::string& msg, const ClientID except) {
        iter != joinedUsers.end(); iter++) {
     IClient* c = ClientManagement::getClient(*iter);
     if (*iter == except || c == NULL) continue;
-    SessionManagement::getSession(c)->send(msg);
+    SessionManagement::getSession(c)->enqueueMsg(msg);
   }
   return 1;
 }

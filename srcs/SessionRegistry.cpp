@@ -8,7 +8,12 @@ void SessionRegistry::addSession(ISession* session) {
   _sessions[session->getSocketFD()] = session;
 }
 
-void SessionRegistry::scheduleForDeletion(int socketFD) {
+void SessionRegistry::scheduleForDeletion(int socketFD,
+                                          ISession::SessionStatus status) {
+  ISession* session = getSession(socketFD);
+  if (session == NULL) return;
+  // prevent DEAD -> CLOSING overwrite
+  if (session->getStatus() != ISession::DEAD) session->setStatus(status);
   _deletionQueue.insert(socketFD);
 }
 
@@ -33,15 +38,28 @@ const std::map<int, ISession*>& SessionRegistry::getSessions() {
 }
 
 const std::set<int> SessionRegistry::deleteScheduledSession() {
+  std::set<int> ret;
+
   for (std::set<int>::iterator it = _deletionQueue.begin();
        it != _deletionQueue.end(); ++it) {
     int fd = *it;
-    if (_sessions.find(fd) != _sessions.end()) {
-      delete _sessions[fd];
-      _sessions.erase(fd);
+    std::map<int, ISession*>::iterator sessionIter = _sessions.find(fd);
+    if (sessionIter != _sessions.end()) {
+      ISession::SessionStatus status = sessionIter->second->getStatus();
+
+      if (status == ISession::DEAD || (status == ISession::CLOSING &&
+                                       sessionIter->second->isOutBufEmpty())) {
+        delete sessionIter->second;
+        _sessions.erase(sessionIter);
+        ret.insert(fd);
+      }
+    } else {
+      // erase orphan file descriptor
+      ret.insert(fd);
     }
   }
-  const std::set<int> ret = _deletionQueue;
-  _deletionQueue.clear();
+
+  for (std::set<int>::iterator i = ret.begin(); i != ret.end(); i++)
+    _deletionQueue.erase(*i);
   return ret;
 }
