@@ -5,12 +5,15 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <csignal>
 #include <iostream>
 #include <set>
 
 #include "Session.hpp"
 #include "SessionManagement.hpp"
 #include "utils.hpp"
+
+extern sig_atomic_t running;
 
 AServer::AServer(int port) : _listeningSocketFD(-1) { initSocketOrDie(port); }
 
@@ -47,7 +50,7 @@ void AServer::initSocketOrDie(int port) {
 
 void AServer::run() {
   std::cout << "Server started..." << std::endl;
-  while (true) {
+  while (running) {
     std::set<int> removeFDs;
     std::set<ISession*> hasBytes;
     int ret = poll(&_pollfds[0], _pollfds.size(), -1);

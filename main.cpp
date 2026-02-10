@@ -5,10 +5,12 @@
 
 #include "Server.hpp"
 
+sig_atomic_t running = true;
+
 void gracefulQuit(int sig) {
   (void)sig;
   std::cout << "Terminating the server." << std::endl;
-  exit(0);
+  running = false;
 }
 
 void set_signal(void) {
@@ -32,6 +34,7 @@ int main(int argc, char** argv) {
     std::cerr << "Usage: ./ircserv <port> <password>" << std::endl;
     return 1;
   }
+  set_signal();
   int port = std::atoi(argv[1]);
   std::string password = argv[2];
 
