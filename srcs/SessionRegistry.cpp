@@ -1,6 +1,8 @@
+#include <iostream>
 #include <map>
 #include <set>
 
+#include "ClientManagement.hpp"
 #include "ISession.hpp"
 #include "Session.hpp"
 
@@ -49,6 +51,7 @@ const std::set<int> SessionRegistry::deleteScheduledSession() {
 
       if (status == ISession::DEAD || (status == ISession::CLOSING &&
                                        sessionIter->second->isOutBufEmpty())) {
+        ClientManagement::deleteClient(sessionIter->second->getClientID());
         delete sessionIter->second;
         _sessions.erase(sessionIter);
         ret.insert(fd);
