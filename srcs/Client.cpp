@@ -4,14 +4,14 @@
 
 #include "numeric.hpp"
 
-Client::Client(ClientID id)
+Client::Client()
     : _nickname(""),
       _username(""),
       _realname(""),
       _loginFlags(0),
       _registered(false),
       _sessionID(-1),
-      _clientID(id) {}
+      _clientID(-1) {}
 
 Client::~Client() {}
 
@@ -99,8 +99,7 @@ IRC::Numeric Client::checkLoginFlags() {
   }
   // caller should check that the client has joined any channel. if so,
   // broadcast to all joined channels
-  if (_registered) return IRC::RPL_STRREPLY;
-  return IRC::DO_NOTHING;
+  return IRC::RPL_STRREPLY;
 }
 
 // std::vector<std::string>::iterator Client::findFromJoinedChannel(
