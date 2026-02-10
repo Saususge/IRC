@@ -550,6 +550,7 @@ IRC::Numeric PartCommand::execute(ICommandContext& ctx) const {
       const std::string partNotification =
           ":" + nick + " PART " + channelName + " :" + partMsg;
       channel->broadcast(partNotification, clientID);
+      channel->part(clientID);
       requester.enqueueMsg(partNotification);
       if (channel->getClientNumber() == 0) {
         ChannelManagement::deleteChannel(channelName);
