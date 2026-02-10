@@ -18,6 +18,8 @@ class ISession {
   virtual int send() = 0;
   virtual int getSocketFD() const = 0;
   virtual SessionID getID() const = 0;
+
+  virtual void setClientID(ClientID id) = 0;
   virtual ClientID getClientID() const = 0;
 
   virtual void setStatus(SessionStatus status) = 0;

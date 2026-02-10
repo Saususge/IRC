@@ -43,6 +43,8 @@ class Session : public ISession {
   int getSocketFD() const;
 
   SessionID getID() const;
+
+  void setClientID(ClientID id);
   ClientID getClientID() const;
 
   void setStatus(ISession::SessionStatus status);
