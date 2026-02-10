@@ -117,6 +117,7 @@ void AServer::acceptClient() {
   ClientID id = createClient();
 
   ISession* session = createSession(clientFD, id);
+  session->setClientID(id);
   SessionManagement::addSession(session);
   std::cout << "Client connected: fd=" << clientFD << std::endl;
 }
