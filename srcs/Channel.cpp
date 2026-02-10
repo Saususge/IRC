@@ -52,6 +52,7 @@ IRC::Numeric Channel::addClient(ClientID id, const std::string& key) {
 IRC::Numeric Channel::removeClient(const ClientID id) {
   if (joinedUsers.find(id) == joinedUsers.end()) return IRC::ERR_NOTONCHANNEL;
 
+  if (operators.find(id) != operators.end()) operators.erase(id);
   joinedUsers.erase(id);
   return IRC::RPL_STRREPLY;  // <prefix> PART <channel> :<comment>
 }
