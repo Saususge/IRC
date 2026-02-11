@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "ChannelManagement.hpp"
+#include "ClientManagement.hpp"
 #include "Command.hpp"
 #include "CommandUtility.hpp"
 #include "IChannel.hpp"
@@ -12,6 +13,7 @@
 #include "ICommand.hpp"
 #include "ISession.hpp"
 #include "Response.hpp"
+#include "SessionManagement.hpp"
 #include "Validator.hpp"
 #include "defs.hpp"
 #include "numeric.hpp"
@@ -20,18 +22,21 @@
 // ERR_TOOMANYCHANNELS, ERR_BADCHANNELKEY, ERR_BANNEDFROMCHAN,
 // ERR_CHANNELISFULL, ERR_INVITEONLYCHAN, RPL_TOPIC
 IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
-  ClientID clientID = ctx.requesterClient().getID();
-  IClient& client = ctx.requesterClient();
-  const std::string& nick = ctx.requesterClient().getNick();
-  ISession& requester = ctx.requester();
-  if (!client.isRegistered()) {
-    ctx.requester().enqueueMsg(
+  ClientID clientID = ctx.clientID();
+  IClient* client = ClientManagement::getClient(clientID);
+  SessionID sessionID = ctx.sessionID();
+  ISession* session = SessionManagement::getSession(sessionID);
+
+  const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
+
+  if (!client->isRegistered()) {
+    session->enqueueMsg(
         Response::error("451", nick, ": You have not registered"));
     return IRC::ERR_NOTREGISTERED;
   }
   if (ctx.args().empty()) {
     // ERR_NEEDMOREPARAMS (461)
-    requester.enqueueMsg(
+    session->enqueueMsg(
         Response::error("461", nick, "JOIN :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
@@ -68,7 +73,7 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
   IRC::Numeric lastResult;
   for (size_t i = 0; i < channelNames.size(); ++i) {
     if (!Validator::isChannelNameValid(channelNames[i])) {
-      requester.enqueueMsg(
+      session->enqueueMsg(
           Response::error("476", nick, channelNames[i] + " :Bad Channel Mask"));
       lastResult = IRC::ERR_BADCHANMASK;
       continue;
@@ -80,7 +85,7 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
       channel = ChannelManagement::getChannel(channelNames[i]);
     }
     if (channel->hasClient(clientID)) {
-      requester.enqueueMsg(
+      session->enqueueMsg(
           Response::build("443", nick + " " + channel->getChannelName(),
                           ":is already in channel"));
       return IRC::ERR_USERONCHANNEL;
@@ -88,15 +93,15 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
     result = channel->join(clientID, keys[i]);
     switch (result) {
       case IRC::ERR_BADCHANNELKEY:
-        requester.enqueueMsg(Response::error(
+        session->enqueueMsg(Response::error(
             "475", nick, channelNames[i] + " :Cannot join channel (+k)"));
         break;
       case IRC::ERR_INVITEONLYCHAN:
-        requester.enqueueMsg(Response::error(
+        session->enqueueMsg(Response::error(
             "473", nick, channelNames[i] + " :Cannot join channel (+i)"));
         break;
       case IRC::ERR_CHANNELISFULL:
-        requester.enqueueMsg(Response::error(
+        session->enqueueMsg(Response::error(
             "471", nick, channelNames[i] + " :Cannot join channel (+l)"));
         break;
       case IRC::RPL_NOTOPIC:
@@ -107,13 +112,13 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
         channel->broadcast(joinMsg, ClientID(-1));
         const std::string& topic = channel->getTopic();
         if (!topic.empty()) {
-          requester.enqueueMsg(
+          session->enqueueMsg(
               Response::build("332", nick, channelNames[i] + " :" + topic));
         } else {
-          requester.enqueueMsg(Response::build(
+          session->enqueueMsg(Response::build(
               "331", nick, channelNames[i] + " :No topic is set"));
         }
-        CommandUtility::sendChannelNames(requester, nick, *channel);
+        CommandUtility::sendChannelNames(*session, nick, *channel);
       } break;
       default:
         std::cerr << result << '\n';

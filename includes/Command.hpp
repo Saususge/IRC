@@ -1,18 +1,17 @@
 #ifndef COMMAND_HPP
 #define COMMAND_HPP
 
-#include <map>
 #include <string>
 
 #include "ICommand.hpp"
+#include "ISession.hpp"
 #include "Response.hpp"
+#include "SessionManagement.hpp"
 #include "numeric.hpp"
 
 class CommandContext : public ICommandContext {
  public:
   CommandContext(ISession& sessionRef, IClient& clientRef,
-                 IClientRegistry& clientRegistry,
-                 IChannelRegistry& channelRegistry,
                  const IServerConfig& serverConfig);
   ~CommandContext();
 
@@ -21,11 +20,9 @@ class CommandContext : public ICommandContext {
   const std::string& getCommandType() const;
   const std::vector<std::string>& args() const;
   // Use for disconnecting or replying to user
-  ISession& requester() const;
-  IClient& requesterClient() const;
+  SessionID sessionID() const;
+  ClientID clientID() const;
 
-  IClientRegistry& clients() const;
-  IChannelRegistry& channels() const;
   const IServerConfig& serverConfig() const;
 
  private:
@@ -34,8 +31,6 @@ class CommandContext : public ICommandContext {
 
   ISession& sessionRef;
   IClient& clientRef;
-  IClientRegistry& clientRegistry;
-  IChannelRegistry& channelRegistry;
   const IServerConfig& serverConfigRef;
 };
 
@@ -120,7 +115,9 @@ class DccSendCommand : public ICommand {
 // UNKNOWN COMMAND
 class UnknownCommand : public ICommand {
   IRC::Numeric execute(ICommandContext& ctx) const {
-    ctx.requester().enqueueMsg(
+    SessionID sessionID = ctx.sessionID();
+    ISession* session = SessionManagement::getSession(sessionID);
+    session->enqueueMsg(
         Response::build("421", ctx.getCommandType(), ":Unknown command"));
     return IRC::ERR_UNKNOWNCOMMAND;
   }

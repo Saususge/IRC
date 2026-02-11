@@ -11,17 +11,21 @@
 #include "ICommand.hpp"
 #include "ISession.hpp"
 #include "Response.hpp"
+#include "SessionManagement.hpp"
 #include "defs.hpp"
 #include "numeric.hpp"
 
 // Numeric Replies: ERR_NOSUCHCHANNEL, RPL_NAMREPLY, RPL_ENDOFNAMES
 IRC::Numeric NamesCommand::execute(ICommandContext& ctx) const {
-  ISession& requester = ctx.requester();
-  IClient& client = ctx.requesterClient();
-  const std::string& nick =
-      ClientManagement::getClient(requester.getClientID())->getNick();
-  if (!client.isRegistered()) {
-    ctx.requester().enqueueMsg(
+  ClientID clientID = ctx.clientID();
+  IClient* client = ClientManagement::getClient(clientID);
+  SessionID sessionID = ctx.sessionID();
+  ISession* session = SessionManagement::getSession(sessionID);
+
+  const std::string nick = client->getNick().empty() ? "*" : client->getNick();
+
+  if (!client->isRegistered()) {
+    session->enqueueMsg(
         Response::error("451", nick, ": You have not registered"));
     return IRC::ERR_NOTREGISTERED;
   }
@@ -32,7 +36,7 @@ IRC::Numeric NamesCommand::execute(ICommandContext& ctx) const {
     std::set<ClientID> remainClientIDs = ClientManagement::getClientIDs();
     for (std::set<IChannel*>::const_iterator it = allChannels.begin();
          it != allChannels.end(); ++it) {
-      CommandUtility::sendChannelNames(requester, nick, **it);
+      CommandUtility::sendChannelNames(*session, nick, **it);
       const std::set<ClientID> joined = (*it)->getJoinedClients();
       for (std::set<ClientID>::const_iterator cIt = joined.begin();
            cIt != joined.end(); ++cIt) {
@@ -40,7 +44,7 @@ IRC::Numeric NamesCommand::execute(ICommandContext& ctx) const {
       }
     }
     // RPL_ENDOFNAMES for wildcard query
-    CommandUtility::sendWildcardNames(requester, nick, remainClientIDs);
+    CommandUtility::sendWildcardNames(*session, nick, remainClientIDs);
     return IRC::RPL_NAMREPLY;
   }
   // Channel(s) specified
@@ -50,11 +54,11 @@ IRC::Numeric NamesCommand::execute(ICommandContext& ctx) const {
     IChannel* _channel = ChannelManagement::getChannel(*it);
     if (_channel == NULL) {
       // ERR_NOSUCHCHANNEL (403)
-      ctx.requester().enqueueMsg(
+      session->enqueueMsg(
           Response::error("403", nick, *it + " :No such channel"));
       continue;
     }
-    CommandUtility::sendChannelNames(requester, nick, *_channel);
+    CommandUtility::sendChannelNames(*session, nick, *_channel);
   }
   return IRC::RPL_NAMREPLY;
 }

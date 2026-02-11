@@ -1,4 +1,5 @@
 #include <cassert>
+#include <map>
 
 #include "Command.hpp"
 

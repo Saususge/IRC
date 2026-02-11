@@ -12,7 +12,7 @@
 
 namespace CommandUtility {
 
-void sendWelcomeMessage(ICommandContext& ctx);
+void sendWelcomeMessageAndRegister(ICommandContext& ctx);
 
 std::set<IChannel*> getJoinedChannels(ClientID client);
 

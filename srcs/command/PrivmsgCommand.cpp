@@ -15,23 +15,26 @@
 // ERR_NOTOPLEVEL, ERR_WILDTOPLEVEL, ERR_TOOMANYTARGETS, ERR_NOSUCHNICK,
 // ERR_NOSUCHSERVER
 IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
-  const std::string& nick = ctx.requesterClient().getNick();
-  ISession& requester = ctx.requester();
-  {
-    IClient& client = ctx.requesterClient();
-    if (!client.isRegistered()) {
-      ctx.requester().enqueueMsg(
-          Response::error("451", nick, ": You have not registered"));
-      return IRC::ERR_NOTREGISTERED;
-    }
+  ClientID clientID = ctx.clientID();
+  IClient* client = ClientManagement::getClient(clientID);
+  SessionID sessionID = ctx.sessionID();
+  ISession* session = SessionManagement::getSession(sessionID);
+
+  const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
+
+  if (!client->isRegistered()) {
+    session->enqueueMsg(
+        Response::error("451", nick, ": You have not registered"));
+    return IRC::ERR_NOTREGISTERED;
   }
+
   if (ctx.args().empty()) {
-    requester.enqueueMsg(
+    session->enqueueMsg(
         Response::error("411", nick, ":No recipient given (PRIVMSG)"));
     return IRC::ERR_NORECIPIENT;
   }
   if (ctx.args().size() < 2 || ctx.args()[1].empty()) {
-    requester.enqueueMsg(Response::error("412", nick, ":No text to send"));
+    session->enqueueMsg(Response::error("412", nick, ":No text to send"));
     return IRC::ERR_NOTEXTTOSEND;
   }
   const std::string& target = ctx.args()[0];
@@ -42,21 +45,21 @@ IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
     // Channel message
     IChannel* channel = ChannelManagement::getChannel(target);
     if (channel == NULL) {
-      requester.enqueueMsg(
+      session->enqueueMsg(
           Response::error("403", nick, target + " :No such channel"));
       return IRC::ERR_NOSUCHCHANNEL;
     }
-    channel->broadcast(privmsgNotification, ctx.requesterClient().getID());
+    channel->broadcast(privmsgNotification, clientID);
     return IRC::DO_NOTHING;
   }
 
   // Private message to user
-  IClient* client = ClientManagement::getClient(target);
-  if (client == NULL) {
-    requester.enqueueMsg(
+  IClient* targetClient = ClientManagement::getClient(target);
+  if (targetClient == NULL) {
+    session->enqueueMsg(
         Response::error("401", nick, target + " :No such nick/channel"));
     return IRC::ERR_NOSUCHNICK;
   }
-  SessionManagement::getSession(client)->enqueueMsg(privmsgNotification);
+  SessionManagement::getSession(targetClient)->enqueueMsg(privmsgNotification);
   return IRC::DO_NOTHING;
 }

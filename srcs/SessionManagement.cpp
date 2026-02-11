@@ -59,6 +59,11 @@ std::set<SessionID> getSessionIDs() {
 void scheduleForDeletion(int socketFD, ISession::SessionStatus status) {
   sessionReg.scheduleForDeletion(socketFD, status);
 }
+
+void scheduleForDeletion(SessionID sessionID, ISession::SessionStatus status) {
+  sessionReg.scheduleForDeletion(sessionID, status);
+}
+
 const std::set<int> deleteScheduledSession() {
   return sessionReg.deleteScheduledSession();
 }

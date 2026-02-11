@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "ChannelManagement.hpp"
+#include "ClientManagement.hpp"
 #include "Command.hpp"
 #include "CommandUtility.hpp"
 #include "IChannel.hpp"
@@ -9,21 +10,25 @@
 #include "ICommand.hpp"
 #include "ISession.hpp"
 #include "Response.hpp"
+#include "SessionManagement.hpp"
 #include "defs.hpp"
 #include "numeric.hpp"
 
 IRC::Numeric PartCommand::execute(ICommandContext& ctx) const {
-  const std::string& nick = ctx.requesterClient().getNick();
-  ISession& requester = ctx.requester();
-  ClientID clientID = ctx.requesterClient().getID();
-  IClient& client = ctx.requesterClient();
-  if (!client.isRegistered()) {
-    ctx.requester().enqueueMsg(
+  ClientID clientID = ctx.clientID();
+  IClient* client = ClientManagement::getClient(clientID);
+  SessionID sessionID = ctx.sessionID();
+  ISession* session = SessionManagement::getSession(sessionID);
+
+  const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
+
+  if (!client->isRegistered()) {
+    session->enqueueMsg(
         Response::error("451", nick, ": You have not registered"));
     return IRC::ERR_NOTREGISTERED;
   }
   if (ctx.args().empty()) {
-    requester.enqueueMsg(
+    session->enqueueMsg(
         Response::error("461", nick, "PART :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
@@ -36,14 +41,14 @@ IRC::Numeric PartCommand::execute(ICommandContext& ctx) const {
     const std::string& channelName = channelNames[i];
     IChannel* channel = ChannelManagement::getChannel(channelName);
     if (channel == NULL) {
-      requester.enqueueMsg(
+      session->enqueueMsg(
           Response::error("403", nick, channelName + " :No such channel"));
       lastResult = IRC::ERR_NOSUCHCHANNEL;
       continue;
     }
     IRC::Numeric result = channel->part(clientID);
     if (result == IRC::ERR_NOTONCHANNEL) {
-      requester.enqueueMsg(Response::error(
+      session->enqueueMsg(Response::error(
           "442", nick, channelName + " :You're not on that channel"));
       lastResult = IRC::ERR_NOTONCHANNEL;
     } else {
@@ -51,7 +56,7 @@ IRC::Numeric PartCommand::execute(ICommandContext& ctx) const {
           ":" + nick + " PART " + channelName + " :" + partMsg + "\r\n";
       channel->broadcast(partNotification, clientID);
       channel->part(clientID);
-      requester.enqueueMsg(partNotification);
+      session->enqueueMsg(partNotification);
       if (channel->getClientNumber() == 0) {
         ChannelManagement::deleteChannel(channelName);
       }

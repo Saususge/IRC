@@ -11,7 +11,11 @@
 
 // Numeric Replies: Same as PRIVMSG except no automatic replies
 IRC::Numeric NoticeCommand::execute(ICommandContext& ctx) const {
-  const std::string& nick = ctx.requesterClient().getNick();
+  ClientID clientID = ctx.clientID();
+  IClient* client = ClientManagement::getClient(clientID);
+
+  const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
+
   // NOTICE never returns errors
   if (ctx.args().empty() || ctx.args().size() < 2 || ctx.args()[1].empty()) {
     return IRC::DO_NOTHING;
@@ -27,15 +31,15 @@ IRC::Numeric NoticeCommand::execute(ICommandContext& ctx) const {
     if (channel == NULL) {
       return IRC::DO_NOTHING;
     }
-    channel->broadcast(noticeNotification, ctx.requesterClient().getID());
+    channel->broadcast(noticeNotification, clientID);
     return IRC::DO_NOTHING;
   }
 
   // Private notice to user
-  IClient* client = ClientManagement::getClient(target);
-  if (client == NULL) {
+  IClient* targetClient = ClientManagement::getClient(target);
+  if (targetClient == NULL) {
     return IRC::DO_NOTHING;
   }
-  SessionManagement::getSession(client)->enqueueMsg(noticeNotification);
+  SessionManagement::getSession(targetClient)->enqueueMsg(noticeNotification);
   return IRC::DO_NOTHING;
 }

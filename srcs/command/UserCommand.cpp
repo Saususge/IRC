@@ -1,5 +1,6 @@
 #include <cassert>
 
+#include "ClientManagement.hpp"
 #include "Command.hpp"
 #include "CommandUtility.hpp"
 #include "IClient.hpp"
@@ -11,21 +12,23 @@
 
 // Numeric Replies: ERR_NEEDMOREPARAMS, ERR_ALREADYREGISTRED
 IRC::Numeric UserCommand::execute(ICommandContext& ctx) const {
-  if (ctx.requesterClient().isAuthenticated() == false) {
-    ctx.requester().enqueueMsg(
+  ClientID clientID = ctx.clientID();
+  IClient* client = ClientManagement::getClient(clientID);
+  SessionID sessionID = ctx.sessionID();
+  ISession* session = SessionManagement::getSession(sessionID);
+
+  if (client->isAuthenticated() == false) {
+    session->enqueueMsg(
         "ERROR :Closing Link: * (Password required or incorrect)\r\n");
-    SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD(),
-                                           ISession::CLOSING);
+    SessionManagement::scheduleForDeletion(sessionID, ISession::CLOSING);
     return IRC::ERR_REGISTERBEFOREPASS;
   }
 
-  const std::string target = ctx.requesterClient().getNick().empty()
-                                 ? "*"
-                                 : ctx.requesterClient().getNick();
+  const std::string nick = client->getNick().empty() ? "*" : client->getNick();
   if (ctx.args().size() < 4) {
     // ERR_NEEDMOREPARAMS (461): "<command> :Not enough parameters"
-    ctx.requester().enqueueMsg(
-        Response::error("461", target, "USER :Not enough parameters"));
+    session->enqueueMsg(
+        Response::error("461", nick, "USER :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
 
@@ -34,17 +37,16 @@ IRC::Numeric UserCommand::execute(ICommandContext& ctx) const {
   // args()[2]
   const std::string& realname = ctx.args()[3];
 
-  IClient& client = ctx.requesterClient();
-  if (client.isRegistered()) {
-    ctx.requester().enqueueMsg(Response::error(
-        "462", target, ":Unauthorized command (already registered)"));
+  if (client->isRegistered()) {
+    session->enqueueMsg(Response::error(
+        "462", nick, ":Unauthorized command (already registered)"));
     return IRC::ERR_ALREADYREGISTRED;
   }
 
-  IRC::Numeric result = client.setUserInfo(username, realname);
+  IRC::Numeric result = client->setUserInfo(username, realname);
   switch (result) {
     case IRC::RPL_WELCOME:
-      CommandUtility::sendWelcomeMessage(ctx);
+      CommandUtility::sendWelcomeMessageAndRegister(ctx);
       break;
 
     case IRC::DO_NOTHING:

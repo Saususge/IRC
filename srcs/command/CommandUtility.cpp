@@ -11,31 +11,37 @@
 #include "ClientManagement.hpp"
 #include "IChannel.hpp"
 #include "IClient.hpp"
+#include "ISession.hpp"
 #include "Response.hpp"
+#include "SessionManagement.hpp"
 #include "defs.hpp"
 
 namespace CommandUtility {
 
-void sendWelcomeMessage(ICommandContext& ctx) {
-  const std::string nick = ctx.requesterClient().getNick();
-  ctx.requester().enqueueMsg(Response::build(
+void sendWelcomeMessageAndRegister(ICommandContext& ctx) {
+  ClientID clientID = ctx.clientID();
+  SessionID sessionID = ctx.sessionID();
+  IClient* client = ClientManagement::getClient(clientID);
+  ISession* session = SessionManagement::getSession(sessionID);
+
+  const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
+  ;
+  session->enqueueMsg(Response::build(
       "001", nick, ":Welcome to the Internet Relay Network " + nick));
-  ctx.requester().enqueueMsg(Response::build(
+  session->enqueueMsg(Response::build(
       "002", nick,
       ":Your host is " + ctx.serverConfig().getServerName() +
           ", running version " + ctx.serverConfig().getVersion()));
-  ctx.requester().enqueueMsg(Response::build(
+  session->enqueueMsg(Response::build(
       "003", nick,
       ":This server was created " + ctx.serverConfig().getCreationDate()));
-  ctx.requester().enqueueMsg(
+  session->enqueueMsg(
       Response::build("004", nick,
                       ctx.serverConfig().getServerName() + " " +
                           ctx.serverConfig().getVersion() + " " +
                           ctx.serverConfig().getUserModes() + " " +
                           ctx.serverConfig().getChannelModes()));
-  if (!ctx.requesterClient().isRegistered()) {
-    ctx.requesterClient().Register();
-  }
+  client->Register();
 }
 
 std::set<IChannel*> getJoinedChannels(ClientID client) {

@@ -12,43 +12,47 @@
 #include "ICommand.hpp"
 #include "ISession.hpp"
 #include "Response.hpp"
+#include "SessionManagement.hpp"
 #include "Validator.hpp"
 #include "defs.hpp"
 #include "numeric.hpp"
 
 IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
-  const std::string& nick = ctx.requesterClient().getNick();
-  ISession& requester = ctx.requester();
-  ClientID clientID = ctx.requesterClient().getID();
-  IClient& client = ctx.requesterClient();
-  if (!client.isRegistered()) {
-    ctx.requester().enqueueMsg(
+  ClientID clientID = ctx.clientID();
+  IClient* client = ClientManagement::getClient(clientID);
+  SessionID sessionID = ctx.sessionID();
+  ISession* session = SessionManagement::getSession(sessionID);
+
+  const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
+
+  if (!client->isRegistered()) {
+    session->enqueueMsg(
         Response::error("451", nick, ": You have not registered"));
     return IRC::ERR_NOTREGISTERED;
   }
 
   if (ctx.args().empty()) {
-    requester.enqueueMsg(
+    session->enqueueMsg(
         Response::error("461", nick, "MODE :Not enough parameters"));
     return IRC::ERR_NEEDMOREPARAMS;
   }
 
   const std::string& channelName = ctx.args()[0];
   if (!Validator::isChannelNameValid(channelName)) {
-    requester.enqueueMsg(
+    session->enqueueMsg(
         Response::error("502", nick, ":Can't change mode for other users"));
     return IRC::ERR_USERSDONTMATCH;
   }
 
   IChannel* channel = ChannelManagement::getChannel(channelName);
   if (channel == NULL) {
-    requester.enqueueMsg(
+    session->enqueueMsg(
         Response::error("403", nick, channelName + " :No such channel"));
     return IRC::ERR_NOSUCHCHANNEL;
   }
 
   if (ctx.args().size() == 1) {
-    requester.enqueueMsg(Response::build(
+    session->enqueueMsg(Response::build(
         "324", nick,
         channelName + " " + CommandUtility::getFullModeResponse(channel)));
     return IRC::RPL_CHANNELMODEIS;
@@ -100,7 +104,7 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
         IClient* targetClient = ClientManagement::getClient(currentParam);
         if (targetClient == NULL ||
             !channel->hasClient(targetClient->getID())) {
-          requester.enqueueMsg(
+          session->enqueueMsg(
               Response::error("441", nick,
                               currentParam + " " + channelName +
                                   " :They aren't on that channel"));
@@ -113,7 +117,7 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
         }
       } break;
       default:
-        requester.enqueueMsg(Response::error(
+        session->enqueueMsg(Response::error(
             "472", nick, std::string(1, mode) + " :is unknown mode char"));
         continue;
     }
@@ -130,15 +134,15 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
         appliedParams += currentParam;
       }
     } else if (result == IRC::ERR_CHANOPRIVSNEEDED) {
-      requester.enqueueMsg(Response::error(
+      session->enqueueMsg(Response::error(
           "482", nick, channelName + " :You're not channel operator"));
       break;  // Early stop
     } else if (result == IRC::ERR_NOCHANMODES) {
-      requester.enqueueMsg(Response::error(
+      session->enqueueMsg(Response::error(
           "477", nick, channelName + " :Channel doesn't support modes"));
       break;  // Early stop
     } else if (result == IRC::ERR_KEYSET) {
-      requester.enqueueMsg(Response::error(
+      session->enqueueMsg(Response::error(
           "467", nick, channelName + " :Channel key already set"));
     } else {
       assert(0 && "Unexpected result");
@@ -153,7 +157,7 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
     if (!appliedParams.empty()) diffString += " " + appliedParams;
     channel->broadcast(channelName,
                        ":" + nick + " MODE " + channelName + " " + diffString);
-    requester.enqueueMsg(Response::build(
+    session->enqueueMsg(Response::build(
         "324", nick,
         channelName + " " + CommandUtility::getFullModeResponse(channel)));
   }

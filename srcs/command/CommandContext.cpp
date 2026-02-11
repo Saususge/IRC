@@ -1,13 +1,9 @@
 #include "Command.hpp"
 
 CommandContext::CommandContext(ISession& sessionRef, IClient& clientRef,
-                               IClientRegistry& clientRegistry,
-                               IChannelRegistry& channelRegistry,
                                const IServerConfig& serverConfig)
     : sessionRef(sessionRef),
       clientRef(clientRef),
-      clientRegistry(clientRegistry),
-      channelRegistry(channelRegistry),
       serverConfigRef(serverConfig) {}
 
 CommandContext::~CommandContext() {}
@@ -27,13 +23,9 @@ const std::string& CommandContext::getCommandType() const {
 const std::vector<std::string>& CommandContext::args() const { return argsVec; }
 
 // Use for disconnecting or replying to user
-ISession& CommandContext::requester() const { return sessionRef; }
+SessionID CommandContext::sessionID() const { return sessionRef.getID(); }
 
-IClient& CommandContext::requesterClient() const { return clientRef; }
-
-IClientRegistry& CommandContext::clients() const { return clientRegistry; }
-
-IChannelRegistry& CommandContext::channels() const { return channelRegistry; }
+ClientID CommandContext::clientID() const { return clientRef.getID(); }
 
 const IServerConfig& CommandContext::serverConfig() const {
   return serverConfigRef;
