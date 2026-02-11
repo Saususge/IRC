@@ -4,8 +4,6 @@
 #include <string>
 #include <vector>
 
-#include "IChannelRegistry.hpp"
-#include "IClientRegistry.hpp"
 #include "IServerConfig.hpp"
 #include "defs.hpp"
 #include "numeric.hpp"

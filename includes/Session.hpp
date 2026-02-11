@@ -5,8 +5,6 @@
 #include <set>
 #include <string>
 
-#include "IClient.hpp"
-#include "IClientRegistry.hpp"
 #include "ISession.hpp"
 #include "defs.hpp"
 

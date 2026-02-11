@@ -2,7 +2,6 @@
 
 #include <ctime>
 #include <iostream>
-#include <sstream>
 
 #include "ClientManagement.hpp"
 #include "Command.hpp"

@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "IChannel.hpp"
-#include "IClientRegistry.hpp"
 
 class Channel : public IChannel {
  public:
