@@ -6,16 +6,13 @@ SRCS_DIR    = srcs
 OBJS_DIR    = objs
 INC_DIR     = includes
 
-SHARED_SRC  = ../srcs
-SHARED_INC  = ../includes
-
-SRCS_FILES  = Bot.cpp
+SRCS_FILES  = main.cpp Bot.cpp Parser.cpp
 
 OBJS        = $(addprefix $(OBJS_DIR)/, $(SRCS_FILES:.cpp=.o))
 
-IFLAGS      = -I$(INC_DIR) -I$(SHARED_INC)
+IFLAGS      = -I$(INC_DIR)
 
-vpath %.cpp $(SRCS_DIR) $(SHARED_SRC)
+vpath %.cpp $(SRCS_DIR)
 
 
 all: $(NAME)

@@ -5,9 +5,12 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -16,11 +19,12 @@
 
 class Bot {
  private:
-  // 1. 연결 정보 (Config)
+  // Connection config
   std::string _serverIp;
   int _port;
   std::string _password;
   std::string _nickname;
+  std::string _channel;
 
   int _socket;
   bool _isConnected;
@@ -34,16 +38,17 @@ class Bot {
 
   Bot();
   Bot(const Bot& src);
-  Bot& operator=(const B ot& src);
+  Bot& operator=(const Bot& src);
 
  public:
-  Bot(std::string ip, int port, std::string password);
+  Bot(const std::string& ip, int port, const std::string& password,
+      const std::string& channel);
   ~Bot();
 
   void connectServer();
   void start();
 
-  void sendMessage(std::string msg);
+  void sendMessage(const std::string& msg);
 };
 
 #endif
