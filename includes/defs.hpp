@@ -17,5 +17,11 @@ struct SessionID {
   size_t value;
   explicit SessionID(size_t v) : value(v) {}
   operator size_t() const { return value; }
+
+  SessionID operator++(int) {
+    SessionID temp = *this;
+    this->value++;
+    return temp;
+  }
 };
 #endif
