@@ -27,6 +27,9 @@ void set_signal(void) {
     std::cerr << "sigaction: SIGQUIT" << std::endl;
     return;
   }
+
+  // Ignore SIGPIPE to prevent crash when sending to disconnected clients
+  signal(SIGPIPE, SIG_IGN);
 }
 
 int main(int argc, char** argv) {
