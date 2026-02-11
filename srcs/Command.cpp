@@ -938,7 +938,7 @@ IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
           Response::error("403", nick, target + " :No such channel"));
       return IRC::ERR_NOSUCHCHANNEL;
     }
-    channel->broadcast(privmsgNotification, nick);
+    channel->broadcast(privmsgNotification, ctx.requesterClient().getID());
     return IRC::DO_NOTHING;
   }
 
@@ -971,7 +971,7 @@ IRC::Numeric NoticeCommand::execute(ICommandContext& ctx) const {
     if (channel == NULL) {
       return IRC::DO_NOTHING;
     }
-    channel->broadcast(noticeNotification, nick);
+    channel->broadcast(noticeNotification, ctx.requesterClient().getID());
     return IRC::DO_NOTHING;
   }
 
