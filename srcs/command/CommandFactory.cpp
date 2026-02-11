@@ -21,6 +21,7 @@ class CommandPool {
     _pool["KICK"] = &_kickCmd;
     _pool["PRIVMSG"] = &_privmsgCmd;
     _pool["NOTICE"] = &_noticeCmd;
+    _pool["PING"] = &_pingCmd;
     _pool["DCC"] = &_dccSendCmd;
     _pool["UNKNOWN"] = &_unknownCmd;
   };
@@ -41,6 +42,7 @@ class CommandPool {
   KickCommand _kickCmd;
   PrivmsgCommand _privmsgCmd;
   NoticeCommand _noticeCmd;
+  PingCommand _pingCmd;
   DccSendCommand _dccSendCmd;
   UnknownCommand _unknownCmd;
 };

@@ -104,6 +104,17 @@ class NoticeCommand : public ICommand {
   IRC::Numeric execute(ICommandContext& ctx) const;
 };
 
+// PING
+class PingCommand : public ICommand {
+  IRC::Numeric execute(ICommandContext& ctx) const {
+    SessionID sessionID = ctx.sessionID();
+    ISession* session = SessionManagement::getSession(sessionID);
+    std::string token = ctx.args().empty() ? "" : ctx.args()[0];
+    session->enqueueMsg("PONG :" + token + "\r\n");
+    return IRC::DO_NOTHING;
+  }
+};
+
 // DCC SEND (CTCP)
 class DccSendCommand : public ICommand {
   IRC::Numeric execute(ICommandContext& ctx) const {
