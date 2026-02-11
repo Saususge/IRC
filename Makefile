@@ -36,17 +36,22 @@ $(NAME): $(OBJS)
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
+bonus: $(NAME)
+	@make -C bot
+
 clean:
 	rm -f $(OBJS)
 	rm -f $(DEPS)
+	@make -C bot clean
 
 fclean: clean
 	rm -f $(NAME)
+	@make -C bot fclean
 
 re:
 	$(MAKE) fclean
 	$(MAKE)
 
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re bonus
 
 -include $(DEPS)
