@@ -15,7 +15,13 @@ ISession* getSession(SessionID sessionID) {
 }
 
 ISession* getSession(ClientID clientID) {
-  (void)clientID;
+  const std::map<int, ISession*>& sessions = sessionReg.getSessions();
+  std::map<int, ISession*>::const_iterator it;
+  for (it = sessions.begin(); it != sessions.end(); it++) {
+    if (it->second->getClientID() == clientID) {
+      return it->second;
+    }
+  }
   return NULL;
 }
 
