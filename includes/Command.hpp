@@ -5,6 +5,7 @@
 #include <string>
 
 #include "ICommand.hpp"
+#include "Response.hpp"
 #include "numeric.hpp"
 
 class CommandContext : public ICommandContext {
@@ -119,8 +120,9 @@ class DccSendCommand : public ICommand {
 // UNKNOWN COMMAND
 class UnknownCommand : public ICommand {
   IRC::Numeric execute(ICommandContext& ctx) const {
-    (void)ctx;
-    return IRC::DO_NOTHING;
+    ctx.requester().enqueueMsg(
+        Response::build("421", ctx.getCommandType(), ":Unknown command"));
+    return IRC::ERR_UNKNOWNCOMMAND;
   }
 };
 
