@@ -239,7 +239,7 @@ IRC::Numeric Channel::addToInviteList(const ClientID requesterid,
                                       const ClientID targetid) {
   if (joinedUsers.find(requesterid) == joinedUsers.end()) {
     return IRC::ERR_NOTONCHANNEL;
-  } else if (joinedUsers.find(targetid) == joinedUsers.end()) {
+  } else if (joinedUsers.find(targetid) != joinedUsers.end()) {
     return IRC::ERR_USERONCHANNEL;
   } else if (mode & IChannel::MINVITE &&
              operators.find(requesterid) == operators.end()) {

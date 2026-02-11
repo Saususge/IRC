@@ -14,14 +14,29 @@ SRCS := \
 	srcs/Client.cpp \
 	srcs/ClientManagement.cpp \
 	srcs/ClientRegistry.cpp \
-	srcs/Command.cpp \
-	srcs/CommandFactory.cpp \
 	srcs/Server.cpp \
 	srcs/Session.cpp \
 	srcs/SessionManagement.cpp \
 	srcs/SessionRegistry.cpp \
 	srcs/utils.cpp \
-	srcs/Validator.cpp
+	srcs/Validator.cpp \
+	srcs/numeric.cpp \
+	srcs/command/CommandUtility.cpp \
+	srcs/command/CommandContext.cpp \
+	srcs/command/PassCommand.cpp \
+	srcs/command/NickCommand.cpp \
+	srcs/command/UserCommand.cpp \
+	srcs/command/QuitCommand.cpp \
+	srcs/command/NamesCommand.cpp \
+	srcs/command/TopicCommand.cpp \
+	srcs/command/JoinCommand.cpp \
+	srcs/command/PartCommand.cpp \
+	srcs/command/KickCommand.cpp \
+	srcs/command/InviteCommand.cpp \
+	srcs/command/ChannelModeCommand.cpp \
+	srcs/command/PrivmsgCommand.cpp \
+	srcs/command/NoticeCommand.cpp \
+	srcs/command/CommandFactory.cpp
 
 
 OBJS := $(SRCS:.cpp=.o)

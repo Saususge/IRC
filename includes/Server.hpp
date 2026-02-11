@@ -2,8 +2,6 @@
 #define SERVER_HPP
 
 #include "AServer.hpp"
-#include "ChannelRegistry.hpp"
-#include "ClientRegistry.hpp"
 #include "ServerConfig.hpp"
 
 class Server : public AServer {
@@ -11,8 +9,6 @@ class Server : public AServer {
   Server(int port, const std::string& password);
   virtual ~Server();
 
-  virtual IClientRegistry& clients();
-  virtual IChannelRegistry& channels();
   virtual const IServerConfig& serverConfig() const;
 
  protected:
@@ -21,8 +17,6 @@ class Server : public AServer {
 
  private:
   ServerConfig _config;
-  ClientRegistry _clients;
-  ChannelRegistry _channels;
 };
 
 #endif

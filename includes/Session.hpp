@@ -5,8 +5,6 @@
 #include <set>
 #include <string>
 
-#include "IClient.hpp"
-#include "IClientRegistry.hpp"
 #include "ISession.hpp"
 #include "defs.hpp"
 
@@ -20,6 +18,7 @@ class SessionRegistry {
   ISession* getSession(SessionID id);
   const std::map<int, ISession*>& getSessions();
   void scheduleForDeletion(int socketFD, ISession::SessionStatus status);
+  void scheduleForDeletion(SessionID sessionID, ISession::SessionStatus status);
   const std::set<int> deleteScheduledSession();
 
  private:

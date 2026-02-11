@@ -1,4 +1,3 @@
-#include <iostream>
 #include <map>
 #include <set>
 
@@ -18,6 +17,15 @@ void SessionRegistry::scheduleForDeletion(int socketFD,
   // prevent DEAD -> CLOSING overwrite
   if (session->getStatus() != ISession::DEAD) session->setStatus(status);
   _deletionQueue.insert(socketFD);
+}
+
+void SessionRegistry::scheduleForDeletion(SessionID sessionID,
+                                          ISession::SessionStatus status) {
+  ISession* session = getSession(sessionID);
+  if (session == NULL) return;
+  // prevent DEAD -> CLOSING overwrite
+  if (session->getStatus() != ISession::DEAD) session->setStatus(status);
+  _deletionQueue.insert(session->getSocketFD());
 }
 
 ISession* SessionRegistry::getSession(int socketFD) {

@@ -95,12 +95,14 @@ bool Client::isRegistered() const { return _registered; }
 // }
 
 IRC::Numeric Client::checkLoginFlags() {
+  // caller should check that the client has joined any channel. if so,
+  // broadcast to all joined channels
+  if (_registered) {
+    return IRC::RPL_STRREPLY;
+  }
   if (_loginFlags == (IClient::RPASS | IClient::RNICK | IClient::RUSER)) {
     return IRC::RPL_WELCOME;
   }
-  // caller should check that the client has joined any channel. if so,
-  // broadcast to all joined channels
-  if (_registered) return IRC::RPL_STRREPLY;
   return IRC::DO_NOTHING;
 }
 

@@ -1,6 +1,8 @@
 #ifndef NUMERIC_HPP
 #define NUMERIC_HPP
 
+#include <string>
+
 namespace IRC {
 
 enum Numeric {
@@ -68,6 +70,10 @@ enum Numeric {
   ERR_TOOMANYMATCHES =
       999  // Does not exist on RFC 2812, assigned a high number
 };
+
+// Convert IRC::Numeric enum to string code (e.g., RPL_WELCOME -> "001")
+// Returns "000" for unknown numeric codes
+std::string numericToCode(Numeric numeric);
 
 }  // namespace IRC
 
