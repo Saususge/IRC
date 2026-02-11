@@ -1,5 +1,9 @@
 #include "Bot.hpp"
 
+#include <csignal>
+
+extern sig_atomic_t g_running;
+
 Bot::Bot(const std::string& ip, int port, const std::string& password,
          const std::string& channel)
     : _serverIp(ip),
@@ -76,9 +80,10 @@ void Bot::start() {
 
   char buf[512];
 
-  while (_isConnected) {
-    int ret = poll(&pfd, 1, -1);
+  while (_isConnected && g_running) {
+    int ret = poll(&pfd, 1, 1000);
     if (ret < 0) {
+      if (!g_running) break;
       std::cerr << "Error: poll failed" << std::endl;
       break;
     }
