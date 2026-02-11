@@ -1,5 +1,6 @@
 #include "Bot.hpp"
 
+#include <cerrno>
 #include <csignal>
 
 extern sig_atomic_t g_running;
@@ -62,10 +63,38 @@ void Bot::_authenticate() {
 }
 
 void Bot::sendMessage(const std::string& msg) {
-  if (_socket < 0) {
+  _outBuf.append(msg);
+}
+
+void Bot::_flushOutBuf() {
+  if (_outBuf.empty() || _socket < 0) return;
+
+  ssize_t n = ::send(_socket, _outBuf.c_str(), _outBuf.size(), 0);
+  if (n < 0) {
+    if (errno != EAGAIN && errno != EWOULDBLOCK) {
+      std::cerr << "Error: send failed" << std::endl;
+      _isConnected = false;
+    }
     return;
   }
-  send(_socket, msg.c_str(), msg.size(), 0);
+  _outBuf.erase(0, n);
+}
+
+std::string Bot::_readLine() {
+  std::string::size_type pos;
+  while ((pos = _inBuf.find("\r\n")) != std::string::npos) {
+    std::string line = _inBuf.substr(0, pos);
+    _inBuf.erase(0, pos + 2);
+    return line;
+  }
+  while ((pos = _inBuf.find("\n")) != std::string::npos) {
+    std::string line = _inBuf.substr(0, pos);
+    if (!line.empty() && line[line.size() - 1] == '\r')
+      line.erase(line.size() - 1);
+    _inBuf.erase(0, pos + 1);
+    return line;
+  }
+  return "";
 }
 
 void Bot::start() {
@@ -76,11 +105,15 @@ void Bot::start() {
 
   struct pollfd pfd;
   pfd.fd = _socket;
-  pfd.events = POLLIN;
 
-  char buf[512];
+  char buf[BUFFER_SIZE];
 
   while (_isConnected && g_running) {
+    pfd.events = POLLIN;
+    if (!_outBuf.empty()) {
+      pfd.events |= POLLOUT;
+    }
+
     int ret = poll(&pfd, 1, 1000);
     if (ret < 0) {
       if (!g_running) break;
@@ -92,14 +125,31 @@ void Bot::start() {
     }
 
     if (pfd.revents & POLLIN) {
-      std::memset(buf, 0, sizeof(buf));
-      ssize_t bytes = recv(_socket, buf, sizeof(buf) - 1, 0);
-      if (bytes <= 0) {
+      ssize_t bytes = recv(_socket, buf, sizeof(buf), 0);
+      if (bytes < 0 && (errno != EAGAIN && errno != EWOULDBLOCK)) {
         std::cerr << "Disconnected from server" << std::endl;
         _isConnected = false;
         break;
       }
-      _processRecv(std::string(buf, bytes));
+      if (bytes == 0) {
+        std::cerr << "Disconnected from server" << std::endl;
+        _isConnected = false;
+        break;
+      }
+      if (bytes > 0) {
+        _inBuf.append(buf, bytes);
+      }
+
+      std::string line;
+      while (!(line = _readLine()).empty()) {
+        std::cout << "<< " << line << std::endl;
+        Message msg = Parser::parse(line);
+        _handleMessage(msg);
+      }
+    }
+
+    if (pfd.revents & POLLOUT) {
+      _flushOutBuf();
     }
 
     if (pfd.revents & (POLLERR | POLLHUP)) {
@@ -107,20 +157,6 @@ void Bot::start() {
       _isConnected = false;
       break;
     }
-  }
-}
-
-void Bot::_processRecv(const std::string& data) {
-  _recvBuffer += data;
-
-  std::string::size_type pos;
-  while ((pos = _recvBuffer.find("\r\n")) != std::string::npos) {
-    std::string line = _recvBuffer.substr(0, pos + 2);
-    _recvBuffer = _recvBuffer.substr(pos + 2);
-
-    std::cout << "<< " << line;
-    Message msg = Parser::parse(line);
-    _handleMessage(msg);
   }
 }
 

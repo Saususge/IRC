@@ -29,11 +29,15 @@ class Bot {
   int _socket;
   bool _isConnected;
 
-  std::string _recvBuffer;
+  std::string _inBuf;
+  std::string _outBuf;
+
+  static const int BUFFER_SIZE = 512;
 
  private:
   void _authenticate();
-  void _processRecv(const std::string& data);
+  std::string _readLine();
+  void _flushOutBuf();
   void _handleMessage(const Message& msg);
 
   Bot();
