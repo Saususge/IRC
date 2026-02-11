@@ -12,6 +12,7 @@
 
 class SessionRegistry {
  public:
+  SessionRegistry() : _nextSessionID(0) {}
   ~SessionRegistry() { deleteScheduledSession(); }
 
   void addSession(ISession* session);
@@ -24,6 +25,7 @@ class SessionRegistry {
  private:
   std::set<int> _deletionQueue;
   std::map<int, ISession*> _sessions;
+  SessionID _nextSessionID;
 };
 
 class Session : public ISession {
@@ -42,6 +44,7 @@ class Session : public ISession {
 
   int getSocketFD() const;
 
+  void setID(SessionID id);
   SessionID getID() const;
 
   void setClientID(ClientID id);

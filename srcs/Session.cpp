@@ -73,6 +73,8 @@ void Session::setClientID(ClientID id) { _clientID = id; }
 
 ClientID Session::getClientID() const { return _clientID; }
 
+void Session::setID(SessionID id) { _sessionID = id; }
+
 SessionID Session::getID() const { return _sessionID; }
 
 void Session::setStatus(ISession::SessionStatus status) { _status = status; }

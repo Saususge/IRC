@@ -450,8 +450,9 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
     const std::set<IChannel*> _joinedChannels = getJoinedChannels(clientID);
     for (std::set<IChannel*>::const_iterator it = _joinedChannels.begin();
          it != _joinedChannels.end(); ++it) {
-      const std::string partNotification =
-          ":" + nick + " PART " + (*it)->getChannelName() + " :" + nick;
+      const std::string partNotification = ":" + nick + " PART " +
+                                           (*it)->getChannelName() + " :" +
+                                           nick + "\r\n";
       (*it)->broadcast(partNotification, nick);
       (*it)->removeClient(clientID);
       if ((*it)->getClientNumber() == 0) {
@@ -502,7 +503,8 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
       case IRC::RPL_NOTOPIC:
       case IRC::RPL_TOPIC: {
         // Send topic and names
-        const std::string joinMsg = ":" + nick + " JOIN :" + channelNames[i];
+        const std::string joinMsg =
+            ":" + nick + " JOIN :" + channelNames[i] + "\r\n";
         channel->broadcast(joinMsg, ClientID(-1));
         const std::string& topic = channel->getTopic();
         if (!topic.empty()) {
@@ -552,7 +554,7 @@ IRC::Numeric PartCommand::execute(ICommandContext& ctx) const {
       lastResult = IRC::ERR_NOTONCHANNEL;
     } else {
       const std::string partNotification =
-          ":" + nick + " PART " + channelName + " :" + partMsg;
+          ":" + nick + " PART " + channelName + " :" + partMsg + "\r\n";
       channel->broadcast(partNotification, clientID);
       channel->part(clientID);
       requester.enqueueMsg(partNotification);
@@ -700,8 +702,12 @@ IRC::Numeric InviteCommand::execute(ICommandContext& ctx) const {
       requester.enqueueMsg(
           Response::build("341", nick, targetNick + " " + channelName));
       const std::string inviteNotification =
-          ":" + nick + " INVITE " + targetNick + " :" + channelName;
+          ":" + nick + " INVITE " + targetNick + " :" + channelName + "\r\n";
+      // TODO: why above message sending to requester?
       requester.enqueueMsg(inviteNotification);
+      ISession* targetSession = SessionManagement::getSession(targetClient);
+      if (targetSession == NULL) assert(0 && "targetSession is null");
+      targetSession->enqueueMsg(inviteNotification);
     } break;
 
     default:
@@ -923,7 +929,7 @@ IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
   const std::string& target = ctx.args()[0];
   const std::string& message = ctx.args()[1];
   const std::string privmsgNotification =
-      ":" + nick + " PRIVMSG " + target + " :" + message;
+      ":" + nick + " PRIVMSG " + target + " :" + message + "\r\n";
   if (target[0] == '#' || target[0] == '&' || target[0] == '+') {
     // Channel message
     IChannel* channel = ChannelManagement::getChannel(target);

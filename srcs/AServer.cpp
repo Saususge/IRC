@@ -5,10 +5,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <cassert>
 #include <csignal>
 #include <iostream>
 #include <set>
 
+#include "ClientManagement.hpp"
 #include "Session.hpp"
 #include "SessionManagement.hpp"
 #include "utils.hpp"
@@ -119,6 +121,9 @@ void AServer::acceptClient() {
   ISession* session = createSession(clientFD, id);
   session->setClientID(id);
   SessionManagement::addSession(session);
+  IClient* client = ClientManagement::getClient(id);
+  if (client == NULL) assert(0 && "client not found that just created. wtf?");
+  client->setSessionID(session->getID());
   std::cout << "Client connected: fd=" << clientFD << std::endl;
 }
 
