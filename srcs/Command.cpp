@@ -182,9 +182,8 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
           ":" + target + " NICK :" + newNick + "\r\n";
       for (std::set<IChannel*>::iterator it = joinedChannel.begin();
            it != joinedChannel.end(); ++it) {
-        (*it)->broadcast(nickChangeMsg, client.getNick());
+        (*it)->broadcast(nickChangeMsg, ClientID(-1));
       }
-      ctx.requester().enqueueMsg(nickChangeMsg);
     } break;
 
     case IRC::RPL_WELCOME:
