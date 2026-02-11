@@ -554,7 +554,7 @@ IRC::Numeric PartCommand::execute(ICommandContext& ctx) const {
       lastResult = IRC::ERR_NOTONCHANNEL;
     } else {
       const std::string partNotification =
-          ":" + nick + " PART " + channelName + " :" + partMsg;
+          ":" + nick + " PART " + channelName + " :" + partMsg + "\r\n";
       channel->broadcast(partNotification, clientID);
       channel->part(clientID);
       requester.enqueueMsg(partNotification);
@@ -929,7 +929,7 @@ IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
   const std::string& target = ctx.args()[0];
   const std::string& message = ctx.args()[1];
   const std::string privmsgNotification =
-      ":" + nick + " PRIVMSG " + target + " :" + message;
+      ":" + nick + " PRIVMSG " + target + " :" + message + "\r\n";
   if (target[0] == '#' || target[0] == '&' || target[0] == '+') {
     // Channel message
     IChannel* channel = ChannelManagement::getChannel(target);
