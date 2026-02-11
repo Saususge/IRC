@@ -171,7 +171,8 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
     case IRC::RPL_STRREPLY: {
       const std::set<IChannel*> joinedChannel =
           getJoinedChannels(client.getID());
-      const std::string nickChangeMsg = ":" + target + " NICK :" + newNick;
+      const std::string nickChangeMsg =
+          ":" + target + " NICK :" + newNick + "\r\n";
       for (std::set<IChannel*>::iterator it = joinedChannel.begin();
            it != joinedChannel.end(); ++it) {
         (*it)->broadcast(nickChangeMsg, client.getNick());
@@ -242,7 +243,8 @@ IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = client.getNick();
   // Quit message is optional, default to client's nick
   const std::string quitMsg = ctx.args().empty() ? nick : ctx.args()[0];
-  const std::string quitNotification = ":" + nick + " QUIT :" + quitMsg;
+  const std::string quitNotification =
+      ":" + nick + " QUIT :" + quitMsg + "\r\n";
   const std::set<IChannel*> joinedchannels = getJoinedChannels(client.getID());
   for (std::set<IChannel*>::const_iterator it = joinedchannels.begin();
        it != joinedchannels.end(); ++it) {
@@ -636,9 +638,9 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
                                 " :They aren't on that channel"));
         break;
       case IRC::RPL_STRREPLY: {
-        const std::string kickNotification = ":" + nick + " KICK " +
-                                             currentChanName + " " +
-                                             currentTargetNick + " :" + kickMsg;
+        const std::string kickNotification =
+            ":" + nick + " KICK " + currentChanName + " " + currentTargetNick +
+            " :" + kickMsg + "\r\n";
         channel->broadcast(kickNotification, targetClient->getID());
         SessionManagement::getSession(targetClient)
             ->enqueueMsg(kickNotification);
@@ -677,7 +679,7 @@ IRC::Numeric InviteCommand::execute(ICommandContext& ctx) const {
   IChannel* channel = ChannelManagement::getChannel(channelName);
   if (channel == NULL) {
     const std::string inviteNotification =
-        ":" + nick + " INVITE " + targetNick + " :" + channelName;
+        ":" + nick + " INVITE " + targetNick + " :" + channelName + "\r\n";
     requester.enqueueMsg(inviteNotification);
     return IRC::RPL_INVITING;
   }
@@ -963,7 +965,7 @@ IRC::Numeric NoticeCommand::execute(ICommandContext& ctx) const {
   const std::string& target = ctx.args()[0];
   const std::string& message = ctx.args()[1];
   const std::string noticeNotification =
-      ":" + nick + " NOTICE " + target + " :" + message;
+      ":" + nick + " NOTICE " + target + " :" + message + "\r\n";
 
   if (target[0] == '#' || target[0] == '&' || target[0] == '+') {
     // Channel notice
