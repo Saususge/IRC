@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <iostream>
 #include <set>
 #include <sstream>
 #include <string>
@@ -138,9 +139,10 @@ std::set<IChannel*> getJoinedChannels(ClientID client) {
 IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
   if (ctx.requesterClient().isAuthenticated() == false) {
     ctx.requester().enqueueMsg(
-        "ERROR :Closing Link: * (Password required or incorrect)");
+        "ERROR :Closing Link: * (Password required or incorrect)\r\n");
     SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD(),
                                            ISession::CLOSING);
+    return IRC::ERR_REGISTERBEFOREPASS;
   }
 
   const std::string target = ctx.requesterClient().getNick().empty()

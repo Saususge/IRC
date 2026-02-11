@@ -24,6 +24,7 @@ IRC::Numeric Client::Authenticate() {
 // The registry should check for duplicate nicknames before calling this
 // function.
 IRC::Numeric Client::setNick(const std::string& nick) {
+  // TODO: Are we forcing to send PASS before NICK or USER?
   if (isAuthenticated() == false) {
     return IRC::ERR_REGISTERBEFOREPASS;
   }
