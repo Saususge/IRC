@@ -246,7 +246,11 @@ IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
   const std::set<IChannel*> joinedchannels = getJoinedChannels(client.getID());
   for (std::set<IChannel*>::const_iterator it = joinedchannels.begin();
        it != joinedchannels.end(); ++it) {
+    (*it)->part(client.getID());
     (*it)->broadcast(quitNotification, client.getID());
+    if ((*it)->getClientNumber() == 0) {
+      ChannelManagement::deleteChannel((*it)->getChannelName());
+    }
   }
   // Send ERROR to the quitting client
   ctx.requester().enqueueMsg("ERROR :Closing Link: " + nick + " (" + quitMsg +
@@ -550,6 +554,7 @@ IRC::Numeric PartCommand::execute(ICommandContext& ctx) const {
       const std::string partNotification =
           ":" + nick + " PART " + channelName + " :" + partMsg;
       channel->broadcast(partNotification, clientID);
+      channel->part(clientID);
       requester.enqueueMsg(partNotification);
       if (channel->getClientNumber() == 0) {
         ChannelManagement::deleteChannel(channelName);

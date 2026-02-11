@@ -69,6 +69,8 @@ int Session::send() {
 
 int Session::getSocketFD() const { return _socketFD; }
 
+void Session::setClientID(ClientID id) { _clientID = id; }
+
 ClientID Session::getClientID() const { return _clientID; }
 
 SessionID Session::getID() const { return _sessionID; }
