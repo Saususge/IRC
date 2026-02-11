@@ -73,7 +73,8 @@ void AServer::run() {
         else {
           shouldRemove = handlePollIn(i, hasBytes);
         }
-      } else if (_pollfds[i].revents & POLLOUT) {
+      }
+      if (!shouldRemove && (_pollfds[i].revents & POLLOUT)) {
         shouldRemove = handlePollOut(i);
       }
       if (shouldRemove) removeFDs.insert(_pollfds[i].fd);
