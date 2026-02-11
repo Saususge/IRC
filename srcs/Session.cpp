@@ -62,6 +62,7 @@ int Session::send() {
       SessionManagement::scheduleForDeletion(_socketFD, ISession::DEAD);
       return 1;
     }
+    return 0;
   }
   _outBuf.erase(0, n);
   return 0;
