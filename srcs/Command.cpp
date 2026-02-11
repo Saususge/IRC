@@ -118,6 +118,7 @@ inline void sendWelcomeMessage(ICommandContext& ctx) {
                           ctx.serverConfig().getVersion() + " " +
                           ctx.serverConfig().getUserModes() + " " +
                           ctx.serverConfig().getChannelModes()));
+  ctx.requesterClient().Register();
 }
 };  // namespace
 
@@ -201,10 +202,17 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
 
 // Numeric Replies: ERR_NEEDMOREPARAMS, ERR_ALREADYREGISTRED
 IRC::Numeric UserCommand::execute(ICommandContext& ctx) const {
+  if (ctx.requesterClient().isAuthenticated() == false) {
+    ctx.requester().enqueueMsg(
+        "ERROR :Closing Link: * (Password required or incorrect)\r\n");
+    SessionManagement::scheduleForDeletion(ctx.requester().getSocketFD(),
+                                           ISession::CLOSING);
+    return IRC::ERR_REGISTERBEFOREPASS;
+  }
+
   const std::string target = ctx.requesterClient().getNick().empty()
                                  ? "*"
                                  : ctx.requesterClient().getNick();
-
   if (ctx.args().size() < 4) {
     // ERR_NEEDMOREPARAMS (461): "<command> :Not enough parameters"
     ctx.requester().enqueueMsg(
@@ -244,7 +252,12 @@ IRC::Numeric UserCommand::execute(ICommandContext& ctx) const {
 // Numeric Replies: None (QUIT has no error cases)
 IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
   IClient& client = ctx.requesterClient();
-  const std::string& nick = client.getNick();
+  const std::string& nick = client.getNick().empty() ? "*" : client.getNick();
+  if (!client.isRegistered()) {
+    ctx.requester().enqueueMsg(
+        Response::error("451", nick, ": You have not registered"));
+    return IRC::ERR_NOTREGISTERED;
+  }
   // Quit message is optional, default to client's nick
   const std::string quitMsg = ctx.args().empty() ? nick : ctx.args()[0];
   const std::string quitNotification =
@@ -318,8 +331,14 @@ void sendWildcardNames(ISession& requester, const std::string& requesterNick,
 // Numeric Replies: ERR_NOSUCHCHANNEL, RPL_NAMREPLY, RPL_ENDOFNAMES
 IRC::Numeric NamesCommand::execute(ICommandContext& ctx) const {
   ISession& requester = ctx.requester();
+  IClient& client = ctx.requesterClient();
   const std::string& nick =
       ClientManagement::getClient(requester.getClientID())->getNick();
+  if (!client.isRegistered()) {
+    ctx.requester().enqueueMsg(
+        Response::error("451", nick, ": You have not registered"));
+    return IRC::ERR_NOTREGISTERED;
+  }
   if (ctx.args().empty()) {
     // No channel specified - list all visible channels
     // For single server: send names for all channels user is in
@@ -358,8 +377,14 @@ IRC::Numeric NamesCommand::execute(ICommandContext& ctx) const {
 // ERR_CHANOPRIVSNEEDED, RPL_NOTOPIC, RPL_TOPIC
 IRC::Numeric TopicCommand::execute(ICommandContext& ctx) const {
   ISession& requester = ctx.requester();
+  IClient& client = ctx.requesterClient();
   ClientID clientID = ctx.requesterClient().getID();
   const std::string& nick = ctx.requesterClient().getNick();
+  if (!client.isRegistered()) {
+    ctx.requester().enqueueMsg(
+        Response::error("451", nick, ": You have not registered"));
+    return IRC::ERR_NOTREGISTERED;
+  }
   if (ctx.args().empty()) {
     // ERR_NEEDMOREPARAMS (461)
     requester.enqueueMsg(
@@ -442,8 +467,14 @@ std::vector<std::string> split(const std::string& str,
 // ERR_CHANNELISFULL, ERR_INVITEONLYCHAN, RPL_TOPIC
 IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
   ClientID clientID = ctx.requesterClient().getID();
+  IClient& client = ctx.requesterClient();
   const std::string& nick = ctx.requesterClient().getNick();
   ISession& requester = ctx.requester();
+  if (!client.isRegistered()) {
+    ctx.requester().enqueueMsg(
+        Response::error("451", nick, ": You have not registered"));
+    return IRC::ERR_NOTREGISTERED;
+  }
   if (ctx.args().empty()) {
     // ERR_NEEDMOREPARAMS (461)
     requester.enqueueMsg(
@@ -535,6 +566,12 @@ IRC::Numeric PartCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
   ISession& requester = ctx.requester();
   ClientID clientID = ctx.requesterClient().getID();
+  IClient& client = ctx.requesterClient();
+  if (!client.isRegistered()) {
+    ctx.requester().enqueueMsg(
+        Response::error("451", nick, ": You have not registered"));
+    return IRC::ERR_NOTREGISTERED;
+  }
   if (ctx.args().empty()) {
     requester.enqueueMsg(
         Response::error("461", nick, "PART :Not enough parameters"));
@@ -579,6 +616,12 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
   ISession& requester = ctx.requester();
   ClientID requesterID = ctx.requesterClient().getID();
+  IClient& client = ctx.requesterClient();
+  if (!client.isRegistered()) {
+    ctx.requester().enqueueMsg(
+        Response::error("451", nick, ": You have not registered"));
+    return IRC::ERR_NOTREGISTERED;
+  }
 
   if (ctx.args().size() < 2) {
     requester.enqueueMsg(
@@ -665,6 +708,12 @@ IRC::Numeric InviteCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
   ISession& requester = ctx.requester();
   ClientID requesterID = ctx.requesterClient().getID();
+  IClient& client = ctx.requesterClient();
+  if (!client.isRegistered()) {
+    ctx.requester().enqueueMsg(
+        Response::error("451", nick, ": You have not registered"));
+    return IRC::ERR_NOTREGISTERED;
+  }
 
   if (ctx.args().size() < 2) {
     requester.enqueueMsg(
@@ -785,6 +834,12 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
   ISession& requester = ctx.requester();
   ClientID clientID = ctx.requesterClient().getID();
+  IClient& client = ctx.requesterClient();
+  if (!client.isRegistered()) {
+    ctx.requester().enqueueMsg(
+        Response::error("451", nick, ": You have not registered"));
+    return IRC::ERR_NOTREGISTERED;
+  }
 
   if (ctx.args().empty()) {
     requester.enqueueMsg(
@@ -923,6 +978,14 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
 IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
   const std::string& nick = ctx.requesterClient().getNick();
   ISession& requester = ctx.requester();
+  {
+    IClient& client = ctx.requesterClient();
+    if (!client.isRegistered()) {
+      ctx.requester().enqueueMsg(
+          Response::error("451", nick, ": You have not registered"));
+      return IRC::ERR_NOTREGISTERED;
+    }
+  }
   if (ctx.args().empty()) {
     requester.enqueueMsg(
         Response::error("411", nick, ":No recipient given (PRIVMSG)"));
