@@ -1,0 +1,35 @@
+NAME        = ircbot
+CXX         = c++
+CXXFLAGS    = -Wall -Wextra -Werror -std=c++98
+
+SRCS_DIR    = srcs
+OBJS_DIR    = objs
+INC_DIR     = includes
+
+SRCS_FILES  = main.cpp Bot.cpp Parser.cpp
+
+OBJS        = $(addprefix $(OBJS_DIR)/, $(SRCS_FILES:.cpp=.o))
+
+IFLAGS      = -I$(INC_DIR)
+
+vpath %.cpp $(SRCS_DIR)
+
+
+all: $(NAME)
+
+$(NAME): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
+
+$(OBJS_DIR)/%.o: %.cpp
+	@mkdir -p $(OBJS_DIR)
+	$(CXX) $(CXXFLAGS) $(IFLAGS) -c $< -o $@
+
+clean:
+	rm -rf $(OBJS_DIR)
+
+fclean: clean
+	rm -f $(NAME)
+
+re: fclean all
+
+.PHONY: all clean fclean re
