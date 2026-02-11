@@ -8,6 +8,7 @@
 
 void SessionRegistry::addSession(ISession* session) {
   _sessions[session->getSocketFD()] = session;
+  session->setID(_nextSessionID++);
 }
 
 void SessionRegistry::scheduleForDeletion(int socketFD,
