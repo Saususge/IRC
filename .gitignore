@@ -5,3 +5,4 @@ ircserv
 .cache
 compile_commands.json
 en.subject.*
+compile_flags.txt

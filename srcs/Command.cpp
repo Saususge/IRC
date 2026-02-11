@@ -118,7 +118,9 @@ inline void sendWelcomeMessage(ICommandContext& ctx) {
                           ctx.serverConfig().getVersion() + " " +
                           ctx.serverConfig().getUserModes() + " " +
                           ctx.serverConfig().getChannelModes()));
-  ctx.requesterClient().Register();
+  if (!ctx.requesterClient().isRegistered()) {
+    ctx.requesterClient().Register();
+  }
 }
 };  // namespace
 
