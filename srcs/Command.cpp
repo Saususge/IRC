@@ -72,6 +72,13 @@ IRC::Numeric PassCommand::execute(ICommandContext& ctx) const {
     return IRC::ERR_NEEDMOREPARAMS;
   }
 
+  IClient& client = ctx.requesterClient();
+  if (client.isAuthenticated()) {
+    ctx.requester().enqueueMsg(Response::error(
+        "462", target, ":Unauthorized command (already registered)"));
+    return IRC::ERR_ALREADYREGISTRED;
+  }
+
   const std::string& password = ctx.args()[0];
   const IServerConfig& serverConfig = ctx.serverConfig();
   if (password != serverConfig.getPassword()) {
@@ -82,13 +89,8 @@ IRC::Numeric PassCommand::execute(ICommandContext& ctx) const {
                                            ISession::CLOSING);
   }
 
-  IClient& client = ctx.requesterClient();
   IRC::Numeric result = client.Authenticate();
   switch (result) {
-    case IRC::ERR_ALREADYREGISTRED:
-      ctx.requester().enqueueMsg(Response::error(
-          "462", target, ":Unauthorized command (already registered)"));
-      break;
     case IRC::DO_NOTHING:
       break;
     default:
