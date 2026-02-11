@@ -4,8 +4,8 @@
 #include <string>
 
 namespace Response {
-std::string build(const std::string& code, const std::string& target,
-                  const std::string& message) {
+inline std::string build(const std::string& code, const std::string& target,
+                         const std::string& message) {
   return ":" + std::string("irc.local") + " " + code + " " + target + " " +
          message + "\r\n";
 }
