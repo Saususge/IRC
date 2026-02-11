@@ -59,7 +59,6 @@ void Bot::_authenticate() {
   sendMessage("PASS " + _password + "\r\n");
   sendMessage("NICK " + _nickname + "\r\n");
   sendMessage("USER " + _nickname + " 0 * :" + _nickname + "\r\n");
-  sendMessage("JOIN " + _channel + "\r\n");
 }
 
 void Bot::sendMessage(const std::string& msg) {
@@ -161,6 +160,13 @@ void Bot::start() {
 }
 
 void Bot::_handleMessage(const Message& msg) {
+  // Wait for 001 (RPL_WELCOME) before joining channel
+  if (msg.command == "001") {
+    std::cout << "Registered successfully, joining " << _channel << std::endl;
+    sendMessage("JOIN " + _channel + "\r\n");
+    return;
+  }
+
   // Respond to PING to stay alive
   if (msg.command == "PING") {
     sendMessage("PONG :" + msg.trailing + "\r\n");
