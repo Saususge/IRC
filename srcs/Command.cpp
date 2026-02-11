@@ -523,6 +523,12 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
       ChannelManagement::createChannel(channelNames[i]);
       channel = ChannelManagement::getChannel(channelNames[i]);
     }
+    if (channel->hasClient(clientID)) {
+      requester.enqueueMsg(
+          Response::build("443", nick + " " + channel->getChannelName(),
+                          ":is already in channel"));
+      return IRC::ERR_USERONCHANNEL;
+    }
     result = channel->join(clientID, keys[i]);
     switch (result) {
       case IRC::ERR_BADCHANNELKEY:
@@ -554,6 +560,7 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
         sendChannelNames(requester, nick, *channel);
       } break;
       default:
+        std::cerr << result << '\n';
         assert(0 && "Unexpected result");
         break;
     }
