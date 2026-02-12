@@ -50,8 +50,9 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
       const std::string partNotification = ":" + nick + " PART " +
                                            (*it)->getChannelName() + " :" +
                                            nick + "\r\n";
-      (*it)->broadcast(partNotification, nick);
       (*it)->removeClient(clientID);
+      (*it)->broadcast(partNotification, clientID);
+      session->enqueueMsg(partNotification);
       if ((*it)->getClientNumber() == 0) {
         ChannelManagement::deleteChannel((*it)->getChannelName());
       }

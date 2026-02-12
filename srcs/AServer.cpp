@@ -55,6 +55,23 @@ void AServer::run() {
   while (running) {
     std::set<int> removeFDs;
     std::set<ISession*> hasBytes;
+
+    for (size_t i = 0; i < _pollfds.size(); ++i) {
+      if (_pollfds[i].fd == _listeningSocketFD) {
+        _pollfds[i].events = POLLIN;
+        continue;
+      }
+
+      ISession* session = SessionManagement::getSession(_pollfds[i].fd);
+
+      if (session && !session->isOutBufEmpty()) {
+        _pollfds[i].events = POLLIN | POLLOUT;
+      } else {
+        _pollfds[i].events = POLLIN;
+      }
+      _pollfds[i].revents = 0;
+    }
+
     int ret = poll(&_pollfds[0], _pollfds.size(), -1);
     if (ret < 0) break;
 
@@ -89,6 +106,15 @@ void AServer::run() {
       }
     }
 
+    // Flush pending outgoing data that was enqueued during message processing
+    for (size_t i = 0; i < _pollfds.size(); ++i) {
+      if (_pollfds[i].fd == _listeningSocketFD) continue;
+      ISession* session = SessionManagement::getSession(_pollfds[i].fd);
+      if (session && !session->isOutBufEmpty()) {
+        session->send();
+      }
+    }
+
     const std::set<int> releasedFDs =
         SessionManagement::deleteScheduledSession();
     for (std::set<int>::iterator it = releasedFDs.begin();
@@ -113,7 +139,7 @@ void AServer::acceptClient() {
 
   struct pollfd pfd;
   pfd.fd = clientFD;
-  pfd.events = POLLIN | POLLOUT;
+  pfd.events = POLLIN;
   pfd.revents = 0;
   _pollfds.push_back(pfd);
 

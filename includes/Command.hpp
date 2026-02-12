@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "ClientManagement.hpp"
 #include "ICommand.hpp"
 #include "ISession.hpp"
 #include "Response.hpp"
@@ -128,8 +129,12 @@ class UnknownCommand : public ICommand {
   IRC::Numeric execute(ICommandContext& ctx) const {
     SessionID sessionID = ctx.sessionID();
     ISession* session = SessionManagement::getSession(sessionID);
-    session->enqueueMsg(
-        Response::build("421", ctx.getCommandType(), ":Unknown command"));
+    ClientID clientID = ctx.clientID();
+    IClient* client = ClientManagement::getClient(clientID);
+    std::string nick =
+        (client && !client->getNick().empty()) ? client->getNick() : "*";
+    session->enqueueMsg(Response::build(
+        "421", nick, ctx.getCommandType() + " :Unknown command"));
     return IRC::ERR_UNKNOWNCOMMAND;
   }
 };

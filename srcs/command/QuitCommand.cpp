@@ -21,27 +21,26 @@ IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
   SessionID sessionID = ctx.sessionID();
   ISession* session = SessionManagement::getSession(sessionID);
   const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
-  if (!client->isRegistered()) {
-    session->enqueueMsg(
-        Response::error("451", nick, ": You have not registered"));
-    return IRC::ERR_NOTREGISTERED;
-  }
   // Quit message is optional, default to client's nick
   const std::string quitMsg = ctx.args().empty() ? nick : ctx.args()[0];
-  const std::string quitNotification =
-      ":" + nick + " QUIT :" + quitMsg + "\r\n";
-  const std::set<IChannel*> joinedchannels =
-      CommandUtility::getJoinedChannels(client->getID());
-  for (std::set<IChannel*>::const_iterator it = joinedchannels.begin();
-       it != joinedchannels.end(); ++it) {
-    (*it)->part(client->getID());
-    (*it)->broadcast(quitNotification, client->getID());
-    if ((*it)->getClientNumber() == 0) {
-      ChannelManagement::deleteChannel((*it)->getChannelName());
+
+  if (client->isRegistered()) {
+    const std::string quitNotification =
+        ":" + nick + " QUIT :" + quitMsg + "\r\n";
+    const std::set<IChannel*> joinedchannels =
+        CommandUtility::getJoinedChannels(client->getID());
+    for (std::set<IChannel*>::const_iterator it = joinedchannels.begin();
+         it != joinedchannels.end(); ++it) {
+      (*it)->part(client->getID());
+      (*it)->broadcast(quitNotification, client->getID());
+      if ((*it)->getClientNumber() == 0) {
+        ChannelManagement::deleteChannel((*it)->getChannelName());
+      }
     }
   }
   // Send ERROR to the quitting client
-  session->enqueueMsg("ERROR :Closing Link: " + nick + " (" + quitMsg + ")");
+  session->enqueueMsg("ERROR :Closing Link: " + nick + " (" + quitMsg +
+                      ")\r\n");
   SessionManagement::scheduleForDeletion(sessionID, ISession::CLOSING);
   return IRC::DO_NOTHING;
 }

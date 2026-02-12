@@ -26,7 +26,9 @@ int Channel::broadcast(const std::string& msg, const ClientID except) {
        iter != joinedUsers.end(); iter++) {
     IClient* c = ClientManagement::getClient(*iter);
     if (*iter == except || c == NULL) continue;
-    SessionManagement::getSession(c)->enqueueMsg(msg);
+    ISession* session = SessionManagement::getSession(c);
+    if (session == NULL) continue;
+    session->enqueueMsg(msg);
   }
   return 1;
 }
@@ -161,10 +163,7 @@ IRC::Numeric Channel::addMode(ClientID requesterID, IChannelMode mode,
                              ClientManagement::getClientID(params));
 
   } else if (mode & IChannel::MLIMIT) {
-    if (this->limit != 0) return IRC::DO_NOTHING;
     if (params.empty()) return IRC::ERR_NEEDMOREPARAMS;
-
-    this->mode |= IChannel::MLIMIT;
 
     char* end;
     long num_limit = std::strtol(params.c_str(), &end, 10);
@@ -173,6 +172,7 @@ IRC::Numeric Channel::addMode(ClientID requesterID, IChannelMode mode,
         IChannel::MAXUSER < (size_t)num_limit)
       return IRC::DO_NOTHING;
 
+    this->mode |= IChannel::MLIMIT;
     this->limit = static_cast<size_t>(num_limit);
   } else {
     return IRC::DO_NOTHING;

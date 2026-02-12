@@ -55,9 +55,10 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
           CommandUtility::getJoinedChannels(client->getID());
       const std::string nickChangeMsg =
           ":" + nick + " NICK :" + newNick + "\r\n";
+      session->enqueueMsg(nickChangeMsg);
       for (std::set<IChannel*>::iterator it = joinedChannel.begin();
            it != joinedChannel.end(); ++it) {
-        (*it)->broadcast(nickChangeMsg, ClientID(-1));
+        (*it)->broadcast(nickChangeMsg, clientID);
       }
     } break;
 

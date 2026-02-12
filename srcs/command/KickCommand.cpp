@@ -57,9 +57,9 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
   for (size_t i = 0; i < targetNicks.size(); ++i) {
     std::string currentChanName = isOneToN ? channelNames[0] : channelNames[i];
     std::string currentTargetNick = targetNicks[i];
-    if (!Validator::isChannelNameValid(channelNames[i])) {
+    if (!Validator::isChannelNameValid(currentChanName)) {
       session->enqueueMsg(
-          Response::error("476", nick, channelNames[i] + " :Bad Channel Mask"));
+          Response::error("476", nick, currentChanName + " :Bad Channel Mask"));
       lastResult = IRC::ERR_BADCHANMASK;
       continue;
     }

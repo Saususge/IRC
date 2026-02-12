@@ -14,6 +14,10 @@ ChannelRegistry::~ChannelRegistry() {
 };
 
 std::string ChannelRegistry::createChannel(const std::string& channelName) {
+  std::map<std::string, IChannel*>::iterator it = _channels.find(channelName);
+  if (it != _channels.end()) {
+    delete it->second;
+  }
   _channels[channelName] = new Channel(channelName);
   return channelName;
 }

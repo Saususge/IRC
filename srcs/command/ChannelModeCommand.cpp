@@ -144,6 +144,13 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
     } else if (result == IRC::ERR_KEYSET) {
       session->enqueueMsg(Response::error(
           "467", nick, channelName + " :Channel key already set"));
+    } else if (result == IRC::ERR_NEEDMOREPARAMS) {
+      session->enqueueMsg(
+          Response::error("461", nick, "MODE :Not enough parameters"));
+    } else if (result == IRC::ERR_USERNOTINCHANNEL) {
+      // already handled above for +o/-o
+    } else if (result == IRC::DO_NOTHING) {
+      // no change needed (e.g., mode already set/unset)
     } else {
       assert(0 && "Unexpected result");
     }
@@ -155,8 +162,9 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
   if (hasChanged) {
     std::string diffString = appliedModes;
     if (!appliedParams.empty()) diffString += " " + appliedParams;
-    channel->broadcast(channelName,
-                       ":" + nick + " MODE " + channelName + " " + diffString);
+    std::string modeNotification =
+        ":" + nick + " MODE " + channelName + " " + diffString + "\r\n";
+    channel->broadcast(modeNotification, ClientID(-1));
     session->enqueueMsg(Response::build(
         "324", nick,
         channelName + " " + CommandUtility::getFullModeResponse(channel)));

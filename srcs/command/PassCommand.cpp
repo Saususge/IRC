@@ -35,8 +35,9 @@ IRC::Numeric PassCommand::execute(ICommandContext& ctx) const {
   if (password != serverConfig.getPassword()) {
     session->enqueueMsg(
         Response::error("464", nick, "PASS :Password incorrect"));
-    session->enqueueMsg("ERROR :Closing Link: * (Password incorrect)");
+    session->enqueueMsg("ERROR :Closing Link: * (Password incorrect)\r\n");
     SessionManagement::scheduleForDeletion(sessionID, ISession::CLOSING);
+    return IRC::ERR_PASSWDMISMATCH;
   }
 
   IRC::Numeric result = client->Authenticate();
