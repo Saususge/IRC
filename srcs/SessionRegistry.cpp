@@ -65,7 +65,23 @@ const std::set<int> SessionRegistry::deleteScheduledSession() {
         ClientID clientID = sessionIter->second->getClientID();
         IClient* client = ClientManagement::getClient(clientID);
 
-        if (client != NULL) ClientManagement::deleteClient(clientID);
+        if (client != NULL) {
+          std::string nick =
+              client->getNick().empty() ? "*" : client->getNick();
+          std::string quitNotification =
+              ":" + nick + " QUIT :Connection lost\r\n";
+          std::set<IChannel*> channels =
+              CommandUtility::getJoinedChannels(clientID);
+          for (std::set<IChannel*>::iterator chIt = channels.begin();
+               chIt != channels.end(); ++chIt) {
+            (*chIt)->part(clientID);
+            (*chIt)->broadcast(quitNotification, clientID);
+            if ((*chIt)->getClientNumber() == 0) {
+              ChannelManagement::deleteChannel((*chIt)->getChannelName());
+            }
+          }
+        }
+        ClientManagement::deleteClient(clientID);
         delete sessionIter->second;
         _sessions.erase(sessionIter);
         ret.insert(fd);
