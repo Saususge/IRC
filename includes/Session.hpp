@@ -11,7 +11,12 @@
 class SessionRegistry {
  public:
   SessionRegistry() : _nextSessionID(0) {}
-  ~SessionRegistry() { deleteScheduledSession(); }
+  ~SessionRegistry() {
+    for (std::map<int, ISession*>::iterator it = _sessions.begin();
+         it != _sessions.end(); ++it) {
+      delete it->second;
+    }
+  }
 
   void addSession(ISession* session);
   ISession* getSession(int socketFD);
