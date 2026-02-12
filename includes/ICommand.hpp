@@ -22,7 +22,7 @@ class ICommandContext {
 
   // virtual IClientRegistry& clients() const = 0;
   // virtual IChannelRegistry& channels() const = 0;
-  virtual const IServerConfig& serverConfig() const = 0;
+  // virtual const IServerConfig& serverConfig() const = 0;
 };
 
 class ICommand {

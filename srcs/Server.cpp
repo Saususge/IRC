@@ -71,13 +71,13 @@ static int fillCtx(CommandContext& ctx, std::string msg) {
   return 1;
 }
 
-Server::Server(int port, const std::string& password)
-    : AServer(port), _config(password, currentTimeString()) {
+Server::Server(int port, const std::string& password) : AServer(port) {
   // Implementation of registries can be added here
+  ServerConfig::setPassword(password);
+  ServerConfig::setCreationDate(currentTimeString());
 }
 
 Server::~Server() {}
-const IServerConfig& Server::serverConfig() const { return _config; }
 
 // TODO: remove unused fields of Server and CommandContext classes.
 void Server::onClientMessage(int fd, const std::string& msg) {
@@ -92,7 +92,7 @@ void Server::onClientMessage(int fd, const std::string& msg) {
   if (client == NULL) return;
   IClient& clientRef = *client;
 
-  CommandContext ctx(sessionRef, clientRef, serverConfig());
+  CommandContext ctx(sessionRef, clientRef);
 
   if (fillCtx(ctx, msg) == 0) return;
 

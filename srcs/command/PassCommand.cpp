@@ -4,9 +4,9 @@
 #include "Command.hpp"
 #include "IClient.hpp"
 #include "ICommand.hpp"
-#include "IServerConfig.hpp"
 #include "ISession.hpp"
 #include "Response.hpp"
+#include "ServerConfig.hpp"
 #include "SessionManagement.hpp"
 #include "numeric.hpp"
 
@@ -34,8 +34,7 @@ IRC::Numeric PassCommand::execute(ICommandContext& ctx) const {
   }
 
   const std::string& password = ctx.args()[0];
-  const IServerConfig& serverConfig = ctx.serverConfig();
-  if (password != serverConfig.getPassword()) {
+  if (password != ServerConfig::getPassword()) {
     session->enqueueMsg(
         Response::error("464", nick, "PASS :Password incorrect"));
     session->enqueueMsg("ERROR :Closing Link: * (Password incorrect)\r\n");

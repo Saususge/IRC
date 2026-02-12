@@ -21,6 +21,7 @@ SRCS := \
 	srcs/utils.cpp \
 	srcs/Validator.cpp \
 	srcs/numeric.cpp \
+	srcs/ServerConfig.cpp \
 	srcs/command/CommandUtility.cpp \
 	srcs/command/CommandContext.cpp \
 	srcs/command/PassCommand.cpp \

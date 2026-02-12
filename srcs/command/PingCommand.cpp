@@ -6,6 +6,7 @@
 #include "ICommand.hpp"
 #include "ISession.hpp"
 #include "Response.hpp"
+#include "ServerConfig.hpp"
 #include "SessionManagement.hpp"
 #include "numeric.hpp"
 
@@ -20,12 +21,11 @@ IRC::Numeric PingCommand::execute(ICommandContext& ctx) const {
   }
 
   const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
-  const std::string& serverName = ctx.serverConfig().getServerName();
+  const std::string& serverName = ServerConfig::getServerName();
 
   // RFC 2812: ERR_NOORIGIN (409) - must have at least one parameter
   if (ctx.args().empty()) {
-    session->enqueueMsg(
-        Response::error("409", nick, ":No origin specified"));
+    session->enqueueMsg(Response::error("409", nick, ":No origin specified"));
     return IRC::ERR_NOORIGIN;
   }
 

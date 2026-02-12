@@ -12,8 +12,7 @@
 
 class CommandContext : public ICommandContext {
  public:
-  CommandContext(ISession& sessionRef, IClient& clientRef,
-                 const IServerConfig& serverConfig);
+  CommandContext(ISession& sessionRef, IClient& clientRef);
   ~CommandContext();
 
   void setCommandType(const std::string& cmdType);
@@ -24,15 +23,12 @@ class CommandContext : public ICommandContext {
   SessionID sessionID() const;
   ClientID clientID() const;
 
-  const IServerConfig& serverConfig() const;
-
  private:
   std::string commandType;
   std::vector<std::string> argsVec;
 
   ISession& sessionRef;
   IClient& clientRef;
-  const IServerConfig& serverConfigRef;
 };
 
 // 3.1.1 Password message

@@ -13,6 +13,7 @@
 #include "IClient.hpp"
 #include "ISession.hpp"
 #include "Response.hpp"
+#include "ServerConfig.hpp"
 #include "SessionManagement.hpp"
 #include "defs.hpp"
 
@@ -31,19 +32,18 @@ void sendWelcomeMessageAndRegister(ICommandContext& ctx) {
   const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
   session->enqueueMsg(Response::build(
       "001", nick, ":Welcome to the Internet Relay Network " + nick));
-  session->enqueueMsg(Response::build(
-      "002", nick,
-      ":Your host is " + ctx.serverConfig().getServerName() +
-          ", running version " + ctx.serverConfig().getVersion()));
+  session->enqueueMsg(
+      Response::build("002", nick,
+                      ":Your host is " + ServerConfig::getServerName() +
+                          ", running version " + ServerConfig::getVersion()));
   session->enqueueMsg(Response::build(
       "003", nick,
-      ":This server was created " + ctx.serverConfig().getCreationDate()));
-  session->enqueueMsg(
-      Response::build("004", nick,
-                      ctx.serverConfig().getServerName() + " " +
-                          ctx.serverConfig().getVersion() + " " +
-                          ctx.serverConfig().getUserModes() + " " +
-                          ctx.serverConfig().getChannelModes()));
+      ":This server was created " + ServerConfig::getCreationDate()));
+  session->enqueueMsg(Response::build("004", nick,
+                                      ServerConfig::getServerName() + " " +
+                                          ServerConfig::getVersion() + " " +
+                                          ServerConfig::getUserModes() + " " +
+                                          ServerConfig::getChannelModes()));
   client->Register();
 }
 

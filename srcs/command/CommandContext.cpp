@@ -1,10 +1,7 @@
 #include "Command.hpp"
 
-CommandContext::CommandContext(ISession& sessionRef, IClient& clientRef,
-                               const IServerConfig& serverConfig)
-    : sessionRef(sessionRef),
-      clientRef(clientRef),
-      serverConfigRef(serverConfig) {}
+CommandContext::CommandContext(ISession& sessionRef, IClient& clientRef)
+    : sessionRef(sessionRef), clientRef(clientRef) {}
 
 CommandContext::~CommandContext() {}
 
@@ -26,7 +23,3 @@ const std::vector<std::string>& CommandContext::args() const { return argsVec; }
 SessionID CommandContext::sessionID() const { return sessionRef.getID(); }
 
 ClientID CommandContext::clientID() const { return clientRef.getID(); }
-
-const IServerConfig& CommandContext::serverConfig() const {
-  return serverConfigRef;
-}
