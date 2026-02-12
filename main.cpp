@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <ostream>
 
 #include "Server.hpp"
 
@@ -29,7 +30,13 @@ void set_signal(void) {
   }
 
   // Ignore SIGPIPE to prevent crash when sending to disconnected clients
-  signal(SIGPIPE, SIG_IGN);
+  sa.sa_handler = SIG_IGN;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+  if (sigaction(SIGPIPE, &sa, NULL) == -1) {
+    std::cerr << "sigaction: SIGPIPE" << std::endl;
+    return;
+  }
 }
 
 int main(int argc, char** argv) {
