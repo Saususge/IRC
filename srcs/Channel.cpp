@@ -73,6 +73,7 @@ IRC::Numeric Channel::kickClient(ClientID requesterID, ClientID targetID) {
     return IRC::ERR_USERNOTINCHANNEL;
 
   joinedUsers.erase(targetID);
+  operators.erase(targetID);
   // should broadcast quit to other clients including requester.
   // killed client should receive <prefix> KICK <requester> :<comment>
   return IRC::RPL_STRREPLY;
