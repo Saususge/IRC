@@ -106,15 +106,6 @@ void AServer::run() {
       }
     }
 
-    // Flush pending outgoing data that was enqueued during message processing
-    for (size_t i = 0; i < _pollfds.size(); ++i) {
-      if (_pollfds[i].fd == _listeningSocketFD) continue;
-      ISession* session = SessionManagement::getSession(_pollfds[i].fd);
-      if (session && !session->isOutBufEmpty()) {
-        session->send();
-      }
-    }
-
     const std::set<int> releasedFDs =
         SessionManagement::deleteScheduledSession();
     for (std::set<int>::iterator it = releasedFDs.begin();
