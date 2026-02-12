@@ -49,9 +49,10 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
   if (ctx.args()[0] == "0") {
     const std::set<IChannel*> _joinedChannels =
         CommandUtility::getJoinedChannels(clientID);
+    const std::string prefix = CommandUtility::getClientPrefix(clientID);
     for (std::set<IChannel*>::const_iterator it = _joinedChannels.begin();
          it != _joinedChannels.end(); ++it) {
-      const std::string partNotification = ":" + nick + " PART " +
+      const std::string partNotification = ":" + prefix + " PART " +
                                            (*it)->getChannelName() + " :" +
                                            nick + "\r\n";
       (*it)->removeClient(clientID);
@@ -112,8 +113,9 @@ IRC::Numeric JoinCommand::execute(ICommandContext& ctx) const {
       case IRC::RPL_NOTOPIC:
       case IRC::RPL_TOPIC: {
         // Send topic and names
+        const std::string prefix = CommandUtility::getClientPrefix(clientID);
         const std::string joinMsg =
-            ":" + nick + " JOIN :" + channelNames[i] + "\r\n";
+            ":" + prefix + " JOIN :" + channelNames[i] + "\r\n";
         channel->broadcast(joinMsg, ClientID(-1));
         const std::string& topic = channel->getTopic();
         if (!topic.empty()) {

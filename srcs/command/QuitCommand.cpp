@@ -27,8 +27,9 @@ IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
   const std::string quitMsg = ctx.args().empty() ? nick : ctx.args()[0];
 
   if (client->isRegistered()) {
+    const std::string prefix = CommandUtility::getClientPrefix(clientID);
     const std::string quitNotification =
-        ":" + nick + " QUIT :" + quitMsg + "\r\n";
+        ":" + prefix + " QUIT :" + quitMsg + "\r\n";
     const std::set<IChannel*> joinedchannels =
         CommandUtility::getJoinedChannels(client->getID());
     for (std::set<IChannel*>::const_iterator it = joinedchannels.begin();

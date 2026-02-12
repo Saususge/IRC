@@ -55,8 +55,9 @@ IRC::Numeric PartCommand::execute(ICommandContext& ctx) const {
           "442", nick, channelName + " :You're not on that channel"));
       lastResult = IRC::ERR_NOTONCHANNEL;
     } else {
+      const std::string prefix = CommandUtility::getClientPrefix(clientID);
       const std::string partNotification =
-          ":" + nick + " PART " + channelName + " :" + partMsg + "\r\n";
+          ":" + prefix + " PART " + channelName + " :" + partMsg + "\r\n";
       channel->broadcast(partNotification, clientID);
       session->enqueueMsg(partNotification);
       if (channel->getClientNumber() == 0) {

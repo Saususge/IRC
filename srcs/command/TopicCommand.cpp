@@ -4,6 +4,7 @@
 #include "ChannelManagement.hpp"
 #include "ClientManagement.hpp"
 #include "Command.hpp"
+#include "CommandUtility.hpp"
 #include "IChannel.hpp"
 #include "IClient.hpp"
 #include "ICommand.hpp"
@@ -76,8 +77,9 @@ IRC::Numeric TopicCommand::execute(ICommandContext& ctx) const {
       break;
     case IRC::RPL_STRREPLY: {
       // Topic changed successfully - broadcast to channel
+      const std::string prefix = CommandUtility::getClientPrefix(clientID);
       const std::string topicMsg =
-          ":" + nick + " TOPIC " + channelName + " :" + newTopic + "\r\n";
+          ":" + prefix + " TOPIC " + channelName + " :" + newTopic + "\r\n";
       channel->broadcast(topicMsg, ClientID(-1));
     } break;
     default:

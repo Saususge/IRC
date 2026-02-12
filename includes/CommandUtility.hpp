@@ -34,6 +34,8 @@ std::string intToString(int n);
 
 std::string getFullModeResponse(IChannel* channel);
 
+std::string getClientPrefix(ClientID);
+
 }  // namespace CommandUtility
 
 #endif

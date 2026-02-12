@@ -101,9 +101,10 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
                                 " :They aren't on that channel"));
         break;
       case IRC::RPL_STRREPLY: {
+        const std::string prefix = CommandUtility::getClientPrefix(clientID);
         const std::string kickNotification =
-            ":" + nick + " KICK " + currentChanName + " " + currentTargetNick +
-            " :" + kickMsg + "\r\n";
+            ":" + prefix + " KICK " + currentChanName + " " +
+            currentTargetNick + " :" + kickMsg + "\r\n";
         if (channel->getClientNumber() == 0) {
           ChannelManagement::deleteChannel(channel->getChannelName());
         } else {

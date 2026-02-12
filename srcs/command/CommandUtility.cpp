@@ -31,7 +31,9 @@ void sendWelcomeMessageAndRegister(ICommandContext& ctx) {
 
   const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
   session->enqueueMsg(Response::build(
-      "001", nick, ":Welcome to the Internet Relay Network " + nick));
+      "001", nick,
+      ":Welcome to the Internet Relay Network\n" + nick + "!" +
+          client->getUser() + "@" + ServerConfig::getServerName()));
   session->enqueueMsg(
       Response::build("002", nick,
                       ":Your host is " + ServerConfig::getServerName() +
@@ -177,6 +179,13 @@ std::string getFullModeResponse(IChannel* channel) {
     params += " " + intToString(channel->getMaxMember());
   }
   return modes + params;
+}
+
+std::string getClientPrefix(ClientID clientID) {
+  IClient* client = ClientManagement::getClient(clientID);
+  // Omit realname
+  return (client->getNick().empty() ? "*" : client->getNick()) + "!" +
+         client->getUser() + "@" + ServerConfig::getServerName();
 }
 
 }  // namespace CommandUtility

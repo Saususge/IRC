@@ -172,11 +172,12 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
   if (hasChanged) {
     std::string diffString = appliedModes;
     if (!appliedParams.empty()) diffString += " " + appliedParams;
+    const std::string prefix = CommandUtility::getClientPrefix(clientID);
     std::string modeNotification =
-        ":" + nick + " MODE " + channelName + " " + diffString + "\r\n";
+        ":" + prefix + " MODE " + channelName + " " + diffString + "\r\n";
     channel->broadcast(modeNotification, ClientID(-1));
     session->enqueueMsg(Response::build(
-        "324", nick,
+        "324", prefix,
         channelName + " " + CommandUtility::getFullModeResponse(channel)));
   }
 
