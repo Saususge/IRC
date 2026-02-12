@@ -109,7 +109,6 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
         } else {
           channel->broadcast(kickNotification, targetClient->getID());
         }
-
         ISession* session = SessionManagement::getSession(targetClient);
         if (session != NULL) {
           session->enqueueMsg(kickNotification);
