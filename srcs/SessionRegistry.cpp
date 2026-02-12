@@ -62,7 +62,6 @@ const std::set<int> SessionRegistry::deleteScheduledSession() {
 
       if (status == ISession::DEAD || (status == ISession::CLOSING &&
                                        sessionIter->second->isOutBufEmpty())) {
-        // Clean up channels before deleting client
         ClientID clientID = sessionIter->second->getClientID();
         IClient* client = ClientManagement::getClient(clientID);
 
