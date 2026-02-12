@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cmath>
 #include <set>
 #include <string>
 
@@ -52,13 +53,23 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
   switch (result) {
     case IRC::RPL_STRREPLY: {
       const std::set<IChannel*> joinedChannel =
-          CommandUtility::getJoinedChannels(client->getID());
+          CommandUtility::getJoinedChannels(clientID);
+      std::set<ClientID> idiomatic;
+      idiomatic.insert(clientID);
+      for (std::set<IChannel*>::const_iterator channelIt =
+               joinedChannel.begin();
+           channelIt != joinedChannel.end(); ++channelIt) {
+        std::set<ClientID> joinedClients = (*channelIt)->getJoinedClients();
+        for (std::set<ClientID>::iterator clientIt = joinedClients.begin();
+             clientIt != joinedClients.end(); ++clientIt) {
+          idiomatic.insert(*clientIt);
+        }
+      }
       const std::string nickChangeMsg =
           ":" + nick + " NICK :" + newNick + "\r\n";
-      session->enqueueMsg(nickChangeMsg);
-      for (std::set<IChannel*>::iterator it = joinedChannel.begin();
-           it != joinedChannel.end(); ++it) {
-        (*it)->broadcast(nickChangeMsg, clientID);
+      for (std::set<ClientID>::iterator clientIt = idiomatic.begin();
+           clientIt != idiomatic.end(); ++clientIt) {
+        SessionManagement::getSession(*clientIt)->enqueueMsg(nickChangeMsg);
       }
     } break;
 
