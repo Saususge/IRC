@@ -104,7 +104,12 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
         const std::string kickNotification =
             ":" + nick + " KICK " + currentChanName + " " + currentTargetNick +
             " :" + kickMsg + "\r\n";
-        channel->broadcast(kickNotification, targetClient->getID());
+        if (channel->getClientNumber() == 0) {
+          ChannelManagement::deleteChannel(channel->getChannelName());
+        } else {
+          channel->broadcast(kickNotification, targetClient->getID());
+        }
+
         ISession* session = SessionManagement::getSession(targetClient);
         if (session != NULL) {
           session->enqueueMsg(kickNotification);
