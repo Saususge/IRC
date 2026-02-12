@@ -22,15 +22,18 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
   IClient* client = ClientManagement::getClient(clientID);
   SessionID sessionID = ctx.sessionID();
   ISession* session = SessionManagement::getSession(sessionID);
-
+  if (client == NULL || session == NULL) {
+    return IRC::DO_NOTHING;
+  }
+  const std::string nick = client->getNick().empty() ? "*" : client->getNick();
   if (client->isAuthenticated() == false) {
     session->enqueueMsg(
-        "ERROR :Closing Link: * (Password required or incorrect)\r\n");
+        Response::error(IRC::ERR_PASSWDMISMATCH, nick, ":Password incorrect"));
+    session->enqueueMsg("ERROR :Closing Link: * (Password incorrect)\r\n");
     SessionManagement::scheduleForDeletion(sessionID, ISession::CLOSING);
-    return IRC::ERR_REGISTERBEFOREPASS;
+    return IRC::ERR_PASSWDMISMATCH;
   }
 
-  const std::string nick = client->getNick().empty() ? "*" : client->getNick();
   if (ctx.args().empty()) {
     // ERR_NONICKNAMEGIVEN (431): ":No nickname given"
     session->enqueueMsg(Response::error("431", nick, ":No nickname given"));
