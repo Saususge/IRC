@@ -22,7 +22,6 @@ class CommandPool {
     _pool["PRIVMSG"] = &_privmsgCmd;
     _pool["NOTICE"] = &_noticeCmd;
     _pool["PING"] = &_pingCmd;
-    _pool["DCC"] = &_dccSendCmd;
     _pool["UNKNOWN"] = &_unknownCmd;
   };
   const std::map<std::string, ICommand*>& getPool() { return _pool; }
@@ -43,7 +42,6 @@ class CommandPool {
   PrivmsgCommand _privmsgCmd;
   NoticeCommand _noticeCmd;
   PingCommand _pingCmd;
-  DccSendCommand _dccSendCmd;
   UnknownCommand _unknownCmd;
 };
 

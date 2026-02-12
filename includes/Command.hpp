@@ -116,14 +116,6 @@ class PingCommand : public ICommand {
   }
 };
 
-// DCC SEND (CTCP)
-class DccSendCommand : public ICommand {
-  IRC::Numeric execute(ICommandContext& ctx) const {
-    (void)ctx;
-    return IRC::DO_NOTHING;
-  }
-};
-
 // UNKNOWN COMMAND
 class UnknownCommand : public ICommand {
   IRC::Numeric execute(ICommandContext& ctx) const {
