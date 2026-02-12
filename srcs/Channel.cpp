@@ -45,7 +45,7 @@ IRC::Numeric Channel::addClient(ClientID id, const std::string& key) {
     return IRC::ERR_CHANNELISFULL;
   }
 
-  if (joinedUsers.size() == 0) operators.insert(id);
+  if (joinedUsers.size() == 0 && channelName[0] != '+') operators.insert(id);
   joinedUsers.insert(id);
   if (invitedUsers.find(id) != invitedUsers.end()) this->invitedUsers.erase(id);
   return topic.empty() ? IRC::RPL_NOTOPIC : IRC::RPL_TOPIC;

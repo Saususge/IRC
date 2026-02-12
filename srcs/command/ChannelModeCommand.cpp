@@ -54,6 +54,12 @@ IRC::Numeric ChannelModeCommand::execute(ICommandContext& ctx) const {
         Response::error("403", nick, channelName + " :No such channel"));
     return IRC::ERR_NOSUCHCHANNEL;
   }
+  if (channelName[0] == '+') {
+    session->enqueueMsg(
+        Response::error(IRC::ERR_NOCHANMODES, nick,
+                        channelName + " :Channel doesn't support modes"));
+    return IRC::ERR_NOCHANMODES;
+  }
 
   if (ctx.args().size() == 1) {
     session->enqueueMsg(Response::build(
