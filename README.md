@@ -114,6 +114,7 @@ Irssi is the reference client.
 
 - [RFC 2812 — Internet Relay Chat: Client Protocol](https://datatracker.ietf.org/doc/html/rfc2812)
 - [RFC 2813 — Internet Relay Chat: Server Protocol](https://datatracker.ietf.org/doc/html/rfc2813)
+- [CTCP Spec](https://www.irchelp.org/protocol/ctcpspec.html)
 
 ## AI Usage
 
