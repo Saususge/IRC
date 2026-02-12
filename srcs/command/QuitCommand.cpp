@@ -9,7 +9,6 @@
 #include "IClient.hpp"
 #include "ICommand.hpp"
 #include "ISession.hpp"
-#include "Response.hpp"
 #include "SessionManagement.hpp"
 #include "defs.hpp"
 #include "numeric.hpp"
@@ -20,6 +19,9 @@ IRC::Numeric QuitCommand::execute(ICommandContext& ctx) const {
   IClient* client = ClientManagement::getClient(clientID);
   SessionID sessionID = ctx.sessionID();
   ISession* session = SessionManagement::getSession(sessionID);
+  if (client == NULL || session == NULL) {
+    return IRC::DO_NOTHING;
+  }
   const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
   // Quit message is optional, default to client's nick
   const std::string quitMsg = ctx.args().empty() ? nick : ctx.args()[0];

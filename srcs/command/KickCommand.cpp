@@ -24,6 +24,10 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
   SessionID sessionID = ctx.sessionID();
   ISession* session = SessionManagement::getSession(sessionID);
 
+  if (client == NULL || session == NULL) {
+    return IRC::DO_NOTHING;
+  }
+
   const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
   ClientID requesterID = clientID;
 
@@ -100,9 +104,15 @@ IRC::Numeric KickCommand::execute(ICommandContext& ctx) const {
         const std::string kickNotification =
             ":" + nick + " KICK " + currentChanName + " " + currentTargetNick +
             " :" + kickMsg + "\r\n";
-        channel->broadcast(kickNotification, targetClient->getID());
-        SessionManagement::getSession(targetClient)
-            ->enqueueMsg(kickNotification);
+        if (channel->getClientNumber() == 0) {
+          ChannelManagement::deleteChannel(channel->getChannelName());
+        } else {
+          channel->broadcast(kickNotification, targetClient->getID());
+        }
+        ISession* session = SessionManagement::getSession(targetClient);
+        if (session != NULL) {
+          session->enqueueMsg(kickNotification);
+        }
       } break;
       default:
         assert(0 && "Unexpected result");

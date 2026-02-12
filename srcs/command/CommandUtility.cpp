@@ -24,8 +24,11 @@ void sendWelcomeMessageAndRegister(ICommandContext& ctx) {
   IClient* client = ClientManagement::getClient(clientID);
   ISession* session = SessionManagement::getSession(sessionID);
 
+  if (client == NULL || session == NULL) {
+    return;
+  }
+
   const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
-  ;
   session->enqueueMsg(Response::build(
       "001", nick, ":Welcome to the Internet Relay Network " + nick));
   session->enqueueMsg(Response::build(
