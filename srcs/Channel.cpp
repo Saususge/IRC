@@ -41,7 +41,7 @@ IRC::Numeric Channel::addClient(ClientID id, const std::string& key) {
     return IRC::ERR_INVITEONLYCHAN;
   } else if (!this->key.empty() && this->key != key) {
     return IRC::ERR_BADCHANNELKEY;
-  } else if (this->limit != 0 && this->limit <= this->joinedUsers.size()) {
+  } else if (this->isLimited() && this->limit <= this->joinedUsers.size()) {
     return IRC::ERR_CHANNELISFULL;
   }
 
