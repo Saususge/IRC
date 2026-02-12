@@ -69,7 +69,10 @@ IRC::Numeric NickCommand::execute(ICommandContext& ctx) const {
           ":" + nick + " NICK :" + newNick + "\r\n";
       for (std::set<ClientID>::iterator clientIt = idiomatic.begin();
            clientIt != idiomatic.end(); ++clientIt) {
-        SessionManagement::getSession(*clientIt)->enqueueMsg(nickChangeMsg);
+        ISession* session = SessionManagement::getSession(*clientIt);
+        if (session != NULL) {
+          session->enqueueMsg(nickChangeMsg);
+        }
       }
     } break;
 

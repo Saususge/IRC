@@ -20,7 +20,9 @@ IRC::Numeric TopicCommand::execute(ICommandContext& ctx) const {
   IClient* client = ClientManagement::getClient(clientID);
   SessionID sessionID = ctx.sessionID();
   ISession* session = SessionManagement::getSession(sessionID);
-
+  if (client == NULL || session == NULL) {
+    return IRC::DO_NOTHING;
+  }
   const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
 
   if (!client->isRegistered()) {

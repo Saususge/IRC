@@ -19,6 +19,9 @@ IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
   IClient* client = ClientManagement::getClient(clientID);
   SessionID sessionID = ctx.sessionID();
   ISession* session = SessionManagement::getSession(sessionID);
+  if (client == NULL || session == NULL) {
+    return IRC::DO_NOTHING;
+  }
 
   const std::string& nick = client->getNick().empty() ? "*" : client->getNick();
 
@@ -60,6 +63,9 @@ IRC::Numeric PrivmsgCommand::execute(ICommandContext& ctx) const {
         Response::error("401", nick, target + " :No such nick/channel"));
     return IRC::ERR_NOSUCHNICK;
   }
-  SessionManagement::getSession(targetClient)->enqueueMsg(privmsgNotification);
+  ISession* targetSession = SessionManagement::getSession(targetClient);
+  if (targetSession != NULL) {
+    targetSession->enqueueMsg(privmsgNotification);
+  }
   return IRC::DO_NOTHING;
 }

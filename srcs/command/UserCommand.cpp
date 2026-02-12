@@ -16,7 +16,9 @@ IRC::Numeric UserCommand::execute(ICommandContext& ctx) const {
   IClient* client = ClientManagement::getClient(clientID);
   SessionID sessionID = ctx.sessionID();
   ISession* session = SessionManagement::getSession(sessionID);
-
+  if (client == NULL || session == NULL) {
+    return IRC::DO_NOTHING;
+  }
   if (client->isAuthenticated() == false) {
     session->enqueueMsg(
         "ERROR :Closing Link: * (Password required or incorrect)\r\n");
