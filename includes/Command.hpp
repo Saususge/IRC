@@ -105,15 +105,9 @@ class NoticeCommand : public ICommand {
   IRC::Numeric execute(ICommandContext& ctx) const;
 };
 
-// PING
+// 3.7.2 Ping message
 class PingCommand : public ICommand {
-  IRC::Numeric execute(ICommandContext& ctx) const {
-    SessionID sessionID = ctx.sessionID();
-    ISession* session = SessionManagement::getSession(sessionID);
-    std::string token = ctx.args().empty() ? "" : ctx.args()[0];
-    session->enqueueMsg("PONG :" + token + "\r\n");
-    return IRC::DO_NOTHING;
-  }
+  IRC::Numeric execute(ICommandContext& ctx) const;
 };
 
 // UNKNOWN COMMAND

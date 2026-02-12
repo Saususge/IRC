@@ -36,6 +36,7 @@ SRCS := \
 	srcs/command/ChannelModeCommand.cpp \
 	srcs/command/PrivmsgCommand.cpp \
 	srcs/command/NoticeCommand.cpp \
+	srcs/command/PingCommand.cpp \
 	srcs/command/CommandFactory.cpp
 
 
